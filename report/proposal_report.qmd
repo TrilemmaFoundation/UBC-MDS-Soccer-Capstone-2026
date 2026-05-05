@@ -16,6 +16,9 @@ format:
     toc: false
     number-sections: true
     colorlinks: true
+    include-in-header:
+      text: |
+        \usepackage{placeins}
 ---
 
 # Executive Summary
@@ -70,7 +73,19 @@ The project is built on the StatsBomb open dataset, described in @tbl-sources. E
 
 **Player and lineup data.** The `lineups` table has 165,820 rows, 10,808 unique players, 308 teams, and 25 distinct `position_name` values. Missing `position_name` occurs in 34,179 rows and missing substitution `to_time` in 110,917 rows—consistent with bench players, unclear roles, or starters who are not substituted.
 
-**Match-level context and quality.** Competition coverage is uneven: La Liga contributes 868 matches across full seasons, while the Champions League includes scattered single-match history. Match outcomes show a familiar home skew (≈45% home wins, 29% away, 26% draws). Incremental dbt materialization is sized for the full events volume (~12.2M rows) without loading the entire file into memory each run.
+**Match-level context and quality.** Competition coverage is uneven: La Liga contributes 868 matches across full seasons, while the Champions League includes scattered single-match history. Match outcomes show a familiar home skew (≈45% home wins, 29% away, 26% draws). @fig-match-outcomes illustrates this distribution for the matches in our local extract.
+
+::: {#fig-match-outcomes fig-pos="H"}
+
+![](../results/figures/sb_match_outcomes_pie.png){width=55% fig-align="center"}
+
+Distribution of match outcomes (home win, away win, draw) across all competitions in the StatsBomb extract used for exploratory analysis.
+
+:::
+
+```{=latex}
+\FloatBarrier
+```
 
 ## Data Inclusion Rules
 
