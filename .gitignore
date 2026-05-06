@@ -1,2 +1,19 @@
 # Parquet data files
 *.parquet
+
+# credentials
+service-account-key.json
+.env
+
+# data files (too large for git)
+data/
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# IDE
+.idea/
+*.iml
