@@ -45,6 +45,10 @@ conda activate soccer_capstone
 2. Copy `.env.example` to `.env` and fill in values
 3. Authenticate: `gcloud auth activate-service-account --key-file=service-account-key.json`
 
+### Databricks + BigQuery setup
+
+See `docs/databricks_bigquery_setup.md` for the Databricks Free Edition workspace setup, BigQuery connection configuration, and notebook verification steps.
+
 ## Building the proposal report (PDF)
 
 The report is a Quarto project under `report/`. From the **repository root**:
