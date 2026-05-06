@@ -4,8 +4,8 @@ This guide documents the team setup for querying BigQuery data from Databricks.
 
 ## Prerequisites
 
-- Databricks Free Edition account and workspace
-- GCP service account key JSON shared by `@quandothoang`
+- Databricks Free Edition account and workspace.
+- GCP service account key JSON.
 - GCP project ID: `football-capstone-mds-495504`
 - BigQuery dataset: `raw_statsbomb`
 
@@ -56,11 +56,3 @@ SHOW TABLES IN bq_raw_statsbomb_sa_catalog.raw_statsbomb;
 - Do not commit `service-account-key.json` to git.
 - Do not paste credentials into screenshots, PR descriptions, or chat.
 - Keep credentials only in approved secure storage (team drive/Databricks connection settings).
-
-## 5. Task completion checklist
-
-- [x] Databricks Free Edition account created
-- [x] Workspace created
-- [x] BigQuery connector configured with service account JSON
-- [x] Verification query executed successfully from Databricks notebook
-- [x] Setup steps documented for the team
