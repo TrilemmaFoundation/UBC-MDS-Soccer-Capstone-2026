@@ -24,7 +24,7 @@ conda activate soccer_capstone
 
 ## GCP Setup (Under Development)
 
-Project ID: football-capstone-mds
+Project ID: football-capstone-mds-495504
 
 ## Building the proposal report (PDF)
 
