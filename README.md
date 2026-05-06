@@ -22,6 +22,10 @@ conda env create -f environment.yml
 conda activate soccer_capstone
 ```
 
+## GCP Setup (Under Development)
+
+Project ID: football-capstone-mds
+
 ## Building the proposal report (PDF)
 
 The report is a Quarto project under `report/`. From the **repository root**:
