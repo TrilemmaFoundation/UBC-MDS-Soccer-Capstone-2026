@@ -22,9 +22,28 @@ conda env create -f environment.yml
 conda activate soccer_capstone
 ```
 
-## GCP Setup (Under Development)
+## GCP Setup
 
-Project ID: football-capstone-mds-495504
+### Project
+- **Project ID:** football-capstone-mds-495504
+- **Service Account:** football-analytics-sa@football-capstone-mds-495504.iam.gserviceaccount.com
+
+### Cloud Storage
+- **Bucket:** `gs://football-analytics-mds2026/`
+- **Folder structure:**
+  - `raw/statsbomb/matches/` — raw match data from StatsBomb
+  - `raw/statsbomb/events/` — raw event data from StatsBomb
+  - `raw/statsbomb/lineups/` — raw lineup data from StatsBomb
+  - `models/xgboost/` — trained XGBoost model artifacts
+  - `models/clustering/` — trained clustering model artifacts
+
+### BigQuery
+- **Dataset:** `raw_statsbomb`
+
+### Local Setup
+1. Place `service-account-key.json` in the project root (do not commit)
+2. Copy `.env.example` to `.env` and fill in values
+3. Authenticate: `gcloud auth activate-service-account --key-file=service-account-key.json`
 
 ## Building the proposal report (PDF)
 
