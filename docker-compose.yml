@@ -1,0 +1,16 @@
+services:
+  project-env:
+    # This tag will be automatically updated by your revised GitHub Workflow
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:latest
+    ports:
+      - "8000:8000"  # the default Django port
+      - "8888:8888"  # JupyterLab
+    volumes:
+      - .:/home/jovyan
+    working_dir: /home/jovyan
+    deploy:
+      resources:
+        limits:
+          memory: 5G
+    # Revised from linux/amd64 to linux/arm64
+    platform: linux/arm64
