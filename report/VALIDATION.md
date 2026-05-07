@@ -1,15 +1,21 @@
 # Validation Report
 
-**Date:** 2026-05-05  
-**Pipeline:** StatsBomb -> Parquet -> GCS -> BigQuery  
-**Competition:** La Liga, Season 2020/2021 (competition_id=11, season_id=90)
+**Date:** 2026-05-06  
+**Pipeline:** StatsBomb pre-built Parquet -> GCS -> BigQuery  
+**Source:** StatsBomb Open Data (provided dataset)
 
 ## Row Counts
 | Table | Rows |
 |-------|------|
-| matches | 35 |
-| events | 139,030 |
-| lineups | 1,542 |
+| matches | 3,464 |
+| events | 12,188,949 |
+| lineups | 165,820 |
+
+## Additional Tables
+| Table | Notes |
+|-------|-------|
+| reference | loaded |
+| three_sixty | loaded |
 
 ## Data Quality Checks
 | Check | Result |
@@ -17,4 +23,5 @@
 | Null match_ids in events | 0 |
 
 ## Status
-All checks passed. Tables available in `football-capstone-mds-495504.raw_statsbomb`.
+All tables loaded into `football-capstone-mds-495504.raw_statsbomb`. 
+Tables available for staging by team members.
