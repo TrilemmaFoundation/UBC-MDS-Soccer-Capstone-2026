@@ -16,3 +16,26 @@ dependencies:
   - scipy
   - pip:
     - duckdb
+    # statsbomb
+    - statsbombpy
+    # gcp
+    - google-cloud-storage
+    - google-cloud-bigquery
+    - google-cloud-bigquery-storage
+    # env
+    - python-dotenv
+    # dbt
+    - dbt-core
+    - dbt-bigquery
+    # dagster
+    - dagster
+    - dagster-webserver
+    - dagster-dbt
+    - dagster-gcp
+    # django + chatbot
+    - django
+    - djangorestframework
+    - groq
+    # ml
+    - xgboost
+    - plotly
