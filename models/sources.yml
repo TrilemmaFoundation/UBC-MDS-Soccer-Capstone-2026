@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: statsbomb
+    database: football-capstone-mds-495504
+    schema: raw_statsbomb
+    tables:
+      - name: matches
+      - name: events
+      - name: lineups
+      - name: reference
+      - name: three_sixty
+
+  - name: polymarket
+    database: football-capstone-mds-495504
+    schema: raw_polymarket
+    tables:
+      - name: soccer_markets
+      - name: soccer_tokens
+      - name: soccer_trades
+      - name: soccer_odds_history
+      - name: soccer_event_stats
+      - name: soccer_summary
