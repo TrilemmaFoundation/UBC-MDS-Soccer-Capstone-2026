@@ -14,5 +14,20 @@ dependencies:
   - seaborn
   - scikit-learn
   - scipy
+  - xgboost
   - pip:
     - duckdb
+    - django
+    - djangorestframework
+    - django-htmx
+    - groq
+    - dagster
+    - dagster-webserver
+    - dagster-dbt
+    - dbt-bigquery
+    - dbt-core
+    - google-cloud-bigquery
+    - google-cloud-storage
+    - statsbombpy
+    - python-dotenv
+    - joblib
