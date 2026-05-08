@@ -9,7 +9,7 @@ on:
     workflows: ["Update conda-lock file"]
     types: [completed]
     branches:
-      - docker
+      - main
 
 permissions:
   contents: write

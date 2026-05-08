@@ -2,7 +2,7 @@ name: Update conda-lock file
 
 on:
   push:
-    branches: [ docker ]
+    branches: [ main ]
     paths:
       - "environment.yml"
   workflow_dispatch:
