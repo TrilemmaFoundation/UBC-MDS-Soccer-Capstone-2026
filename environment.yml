@@ -14,7 +14,6 @@ dependencies:
   - seaborn
   - scikit-learn
   - scipy
-  - xgboost
   - pip:
     - duckdb
     # statsbomb
