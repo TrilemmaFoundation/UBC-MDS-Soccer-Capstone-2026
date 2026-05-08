@@ -67,6 +67,10 @@ def extract_matches():
 
     df = pd.concat(all_matches, ignore_index=True)
     df = pd.json_normalize(df.to_dict(orient="records"))
+    # cast mixed-type columns to string to avoid pyarrow errors
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].astype(str)
     df = clean_column_names(df)
     df.to_parquet(f"{OUTPUT_DIR}/matches/matches.parquet", index=False)
     print(f"Saved {len(df)} matches total")
