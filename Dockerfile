@@ -20,7 +20,7 @@ RUN conda update --quiet --file /tmp/conda-linux-aarch64.lock \
     && fix-permissions "/home/${NB_USER}"
 
 RUN pip install \
-    duckdb \
+    duckdb
 
 # Switch to root to copy the script and set permissions
 # USER root
