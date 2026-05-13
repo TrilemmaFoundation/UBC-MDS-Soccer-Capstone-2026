@@ -55,3 +55,7 @@ dagster.yaml
 # dbt generated defaults
 football_analytics/README.md
 football_analytics/.gitignore
+
+# dagster temporary files
+.tmp_dagster_home*/
+*.db
