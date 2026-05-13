@@ -25,20 +25,23 @@ conda activate soccer_capstone
 ## GCP Setup
 
 ### Project
-- **Project ID:** football-capstone-mds-495504
-- **Service Account:** football-analytics-sa@football-capstone-mds-495504.iam.gserviceaccount.com
+- **Project ID:** football-capstone-mds-496219
+- **Service Account:** football-analytics-sa@football-capstone-mds-496219.iam.gserviceaccount.com
 
 ### Cloud Storage
-- **Bucket:** `gs://football-analytics-mds2026/`
+- **Bucket:** `gs://football-analytics-mds496219/`
 - **Folder structure:**
   - `raw/statsbomb/matches/` — raw match data from StatsBomb
   - `raw/statsbomb/events/` — raw event data from StatsBomb
   - `raw/statsbomb/lineups/` — raw lineup data from StatsBomb
+  - `raw/statsbomb/reference/` — reference/lookup data
+  - `raw/statsbomb/three_sixty/` — 360° tracking data
+  - `raw/polymarket/` — Polymarket prediction market data
   - `models/xgboost/` — trained XGBoost model artifacts
   - `models/clustering/` — trained clustering model artifacts
 
 ### BigQuery
-- **Dataset:** `raw_statsbomb`
+- **Datasets:** `raw_statsbomb`, `raw_polymarket`
 
 ### Local Setup
 1. Place `service-account-key.json` in the project root (do not commit)

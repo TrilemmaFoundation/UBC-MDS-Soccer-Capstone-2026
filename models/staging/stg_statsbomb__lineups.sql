@@ -15,7 +15,11 @@ renamed AS (
         CAST(from_time AS STRING)                           AS from_time,
         CAST(to_time AS STRING)                             AS to_time,
         CAST(card_type AS STRING)                           AS card_type
+
     FROM source
+    WHERE CAST(match_id AS INT64) IN (
+        SELECT match_id FROM {{ ref('stg_statsbomb__matches') }}
+    )
 )
 
 SELECT * FROM renamed

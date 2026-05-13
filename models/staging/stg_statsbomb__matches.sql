@@ -17,7 +17,6 @@ renamed AS (
         CAST(away_score AS INT64)                        AS away_score,
         CAST(competition_name AS STRING)                 AS competition_name,
         CAST(season_name AS STRING)                      AS season_name,
-        CAST(is_international AS BOOL)                   AS is_international,
 		CAST(is_international AS BOOL)  				 AS is_international,
 		CAST(gender AS STRING)           				 AS gender,
 		CAST(is_youth AS BOOL)           				 AS is_youth,

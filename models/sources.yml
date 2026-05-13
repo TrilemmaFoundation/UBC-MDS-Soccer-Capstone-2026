@@ -2,7 +2,7 @@ version: 2
 
 sources:
   - name: statsbomb
-    database: football-capstone-mds-495504
+    database: football-capstone-mds-496219
     schema: raw_statsbomb
     config:
       freshness:
@@ -17,7 +17,7 @@ sources:
       - name: three_sixty
 
   - name: polymarket
-    database: football-capstone-mds-495504
+    database: football-capstone-mds-496219
     schema: raw_polymarket
     tables:
       - name: soccer_markets
