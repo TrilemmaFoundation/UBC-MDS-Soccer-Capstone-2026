@@ -18,7 +18,9 @@ renamed AS (
         CAST(competition_name AS STRING)                 AS competition_name,
         CAST(season_name AS STRING)                      AS season_name,
         CAST(is_international AS BOOL)                   AS is_international,
-
+		CAST(is_international AS BOOL)  				 AS is_international,
+		CAST(gender AS STRING)           				 AS gender,
+		CAST(is_youth AS BOOL)           				 AS is_youth,
         CASE
             WHEN CAST(home_score AS INT64) > CAST(away_score AS INT64) THEN 'home_win'
             WHEN CAST(home_score AS INT64) < CAST(away_score AS INT64) THEN 'away_win'
