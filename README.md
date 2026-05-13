@@ -22,6 +22,12 @@ conda env create -f environment.yml
 conda activate soccer_capstone
 ```
 
+### Docker (alternative)
+
+```bash
+docker compose up
+```
+
 ## GCP Setup
 
 ### Project
