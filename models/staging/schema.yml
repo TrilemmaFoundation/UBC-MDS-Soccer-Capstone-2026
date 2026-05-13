@@ -1,0 +1,52 @@
+version: 2
+
+models:
+  - name: stg_statsbomb__matches
+    columns:
+      - name: match_id
+        tests:
+          - unique
+          - not_null
+      - name: match_result
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home_win', 'away_win', 'draw']
+      - name: match_date
+        tests:
+          - not_null
+      - name: competition_id
+        tests:
+          - not_null
+
+  - name: stg_statsbomb__events
+    columns:
+      - name: event_id
+        tests:
+          - unique
+          - not_null
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_statsbomb__matches')
+              field: match_id
+      - name: event_type
+        tests:
+          - not_null
+
+  - name: stg_statsbomb__lineups
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_statsbomb__matches')
+              field: match_id
+      - name: minutes_played
+        tests:
+          - not_null
