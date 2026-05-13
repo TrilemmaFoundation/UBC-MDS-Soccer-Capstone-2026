@@ -35,6 +35,7 @@ dependencies:
     # django + chatbot
     - django
     - djangorestframework
+    - django-htmx
     - groq
     # ml
     - xgboost
