@@ -1,0 +1,14 @@
+models:
+  - name: int_match_stats
+    description: "Team-level match statistics including xG, passing accuracy, and possession share."
+    columns:
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_statsbomb__matches')
+              field: match_id
+      - name: possession_share
+        description: "Proxy for possession based on pass volume relative to opponent."
+        tests:
+          - not_null
