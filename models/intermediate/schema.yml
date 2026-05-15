@@ -1,0 +1,77 @@
+models:
+  - name: int_match_stats
+    description: "Team-level match statistics including xG, passing accuracy, and possession share."
+    columns:
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_statsbomb__matches')
+              field: match_id
+      - name: possession_share
+        description: "Proxy for possession based on pass volume relative to opponent."
+        tests:
+          - not_null
+
+  - name: int_player_match_stats
+    description: "Player-level match statistics used for archetype clustering and performance analysis."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_statsbomb__matches')
+              field: match_id
+
+  - name: int_player_season_stats
+    description: "Aggregated player statistics per competition season, normalized per 90 minutes. Filters for players with at least 450 minutes."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: total_minutes
+        description: "Cumulative minutes played in the season."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 450
+      - name: xg_per_90
+        description: "Expected goals normalized per 90 minutes played."
+
+  - name: int_team_season_stats
+    description: "Seasonal aggregation of team performance including points, xG, and tactical proxies."
+    columns:
+      - name: team
+        tests:
+          - not_null
+      - name: matches_played
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 10
+      - name: total_points
+        description: "Calculated points (W=3, D=1, L=0)."
+
+  - name: int_team_rolling_form
+    description: "5-match rolling averages of tactical and performance metrics to be used as features for match outcome prediction."
+    columns:
+      - name: rolling_avg_xg
+        description: "Average xG generated over the team's previous 5 matches."
+        tests:
+          - not_null:
+              config:
+                where: "match_date > (SELECT MIN(match_date) FROM {{ this }})" 
+      - name: rolling_avg_points
+        description: "Average points earned (Form) over the team's previous 5 matches."
+
+  - name: int_match_features
+    description: "The finalized feature matrix for the match outcome prediction model, combining rolling form and historical H2H data."
+    columns:
+      - name: match_id
+        tests:
+          - unique
+          - not_null
+      - name: h2h_home_win_pct
+        description: "The percentage of previous encounters won by the current home team."
