@@ -12,3 +12,16 @@ models:
         description: "Proxy for possession based on pass volume relative to opponent."
         tests:
           - not_null
+
+  - name: int_player_match_stats
+    description: "Player-level match statistics used for archetype clustering and performance analysis."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: match_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('stg_statsbomb__matches')
+              field: match_id
