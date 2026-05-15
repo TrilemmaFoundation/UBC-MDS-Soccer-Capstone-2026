@@ -1,0 +1,20 @@
+models:
+  - name: mart_match_analysis
+    description: "Comprehensive match-level analytics including scores, xG, and team performance metrics. Primary source for the Match Overview dashboard."
+    columns:
+      - name: match_id
+        tests:
+          - unique
+          - not_null
+
+  - name: mart_player_performance
+    description: "Detailed player-level seasonal and match statistics. Used for analyzing individual contributions and player scouting."
+
+  - name: mart_player_clusters
+    description: "Player profiles combined with ML-generated tactical archetypes (e.g., 'Pressing Forward', 'Creative Playmaker')."
+
+  - name: mart_team_comparison
+    description: "Aggregated team metrics allowing for head-to-head tactical comparisons across leagues and seasons."
+
+  - name: mart_match_prediction_features
+    description: "The official feature matrix used for match outcome prediction. Includes rolling form, H2H stats, and target labels."

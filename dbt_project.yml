@@ -40,3 +40,8 @@ models:
     intermediate:
       +schema: intermediate
       +materialized: table
+
+    # Marts models: final 'Gold' layer for serving data
+    marts:
+      +schema: marts
+      +materialized: table
