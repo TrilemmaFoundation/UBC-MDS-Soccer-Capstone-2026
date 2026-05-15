@@ -40,3 +40,16 @@ models:
               min_value: 450
       - name: xg_per_90
         description: "Expected goals normalized per 90 minutes played."
+
+  - name: int_team_season_stats
+    description: "Seasonal aggregation of team performance including points, xG, and tactical proxies."
+    columns:
+      - name: team
+        tests:
+          - not_null
+      - name: matches_played
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 10
+      - name: total_points
+        description: "Calculated points (W=3, D=1, L=0)."
