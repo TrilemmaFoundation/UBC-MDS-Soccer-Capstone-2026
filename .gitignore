@@ -1,19 +1,61 @@
-# Parquet data files
-*.parquet
-
 # credentials
-service-account-key.json
 .env
-
-# data files (too large for git)
-data/
+service-account-key.json
+*.json.key
 
 # python
 __pycache__/
 *.pyc
 *.pyo
-.DS_Store
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+
+# data files (regenerable)
+data/
+
+# dbt generated
+target/
+logs/
+dbt.log
+manifest.json
+graph_summary.json
+graph.gpickle
+semantic_manifest.json
+run_results.json
+partial_parse.msgpack
+perf_info.json
+models/example/
+
+# jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
 
 # IDE
 .idea/
 *.iml
+.vscode/
+*.swp
+*.swo
+
+# mac
+.DS_Store
+
+# dagster
+$DAGSTER_HOME/
+dagster.yaml
+
+# environment
+*.env.local
+
+# dbt generated defaults
+football_analytics/README.md
+football_analytics/.gitignore
+
+# dagster temporary files
+.tmp_dagster_home*/
+*.db
