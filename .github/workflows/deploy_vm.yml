@@ -22,7 +22,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     # Only run if the publishing workflow actually succeeded
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout repository
@@ -56,6 +56,8 @@ jobs:
               --name ${{ env.CONTAINER_NAME }} \
               --restart unless-stopped \
               -p ${{ env.VM_PORT }}:${{ env.CONTAINER_PORT }} \
+              -p 8888:8888 \
+              --env-file \$HOME/.env \
               ${{ env.IMAGE_NAME }}:latest
             
             # Optional: Clean up old images to save disk space on the VM
