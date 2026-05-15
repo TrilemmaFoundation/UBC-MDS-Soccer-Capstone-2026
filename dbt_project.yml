@@ -31,5 +31,12 @@ clean-targets:         # directories to be removed by `dbt clean`
 # files using the `{{ config(...) }}` macro.
 models:
   football_analytics:
-    # Config indicated by + and applies to all files under models/example/
+    # Staging models go into [base_schema]_staging
+    staging:
+      +schema: staging
       +materialized: view
+    
+    # Intermediate models go into [base_schema]_intermediate
+    intermediate:
+      +schema: intermediate
+      +materialized: table
