@@ -53,3 +53,15 @@ models:
               min_value: 10
       - name: total_points
         description: "Calculated points (W=3, D=1, L=0)."
+
+  - name: int_team_rolling_form
+    description: "5-match rolling averages of tactical and performance metrics to be used as features for match outcome prediction."
+    columns:
+      - name: rolling_avg_xg
+        description: "Average xG generated over the team's previous 5 matches."
+        tests:
+          - not_null:
+              config:
+                where: "match_date > (SELECT MIN(match_date) FROM {{ this }})" 
+      - name: rolling_avg_points
+        description: "Average points earned (Form) over the team's previous 5 matches."
