@@ -44,22 +44,22 @@ jobs:
             set -e
             
             # Pull the latest ARM64 image build
-            docker pull ${{ env.IMAGE_NAME }}:latest
+            sudo docker pull ${{ env.IMAGE_NAME }}:latest
 
             # Stop and remove existing container
-            docker stop ${{ env.CONTAINER_NAME }} || true
-            docker rm ${{ env.CONTAINER_NAME }} || true
+            sudo docker stop ${{ env.CONTAINER_NAME }} || true
+            sudo docker rm ${{ env.CONTAINER_NAME }} || true
 
             # Run the new container
             # Using :latest ensures we get the build just finished by the previous workflow
-            docker run -d \
+            sudo docker run -d \
               --name ${{ env.CONTAINER_NAME }} \
               --restart unless-stopped \
               -p ${{ env.VM_PORT }}:${{ env.CONTAINER_PORT }} \
               -p 8888:8888 \
-              --env-file \$HOME/.env \
+              --env-file /home/${{ secrets.GCE_VM_USER }}/.env \
               ${{ env.IMAGE_NAME }}:latest
             
             # Optional: Clean up old images to save disk space on the VM
-            docker image prune -f
+            sudo docker image prune -f
           EOF
