@@ -65,3 +65,13 @@ models:
                 where: "match_date > (SELECT MIN(match_date) FROM {{ this }})" 
       - name: rolling_avg_points
         description: "Average points earned (Form) over the team's previous 5 matches."
+
+  - name: int_match_features
+    description: "The finalized feature matrix for the match outcome prediction model, combining rolling form and historical H2H data."
+    columns:
+      - name: match_id
+        tests:
+          - unique
+          - not_null
+      - name: h2h_home_win_pct
+        description: "The percentage of previous encounters won by the current home team."
