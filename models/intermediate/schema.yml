@@ -25,3 +25,18 @@ models:
           - relationships:
               to: ref('stg_statsbomb__matches')
               field: match_id
+
+  - name: int_player_season_stats
+    description: "Aggregated player statistics per competition season, normalized per 90 minutes. Filters for players with at least 450 minutes."
+    columns:
+      - name: player_id
+        tests:
+          - not_null
+      - name: total_minutes
+        description: "Cumulative minutes played in the season."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 450
+      - name: xg_per_90
+        description: "Expected goals normalized per 90 minutes played."
