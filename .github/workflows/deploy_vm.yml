@@ -1,0 +1,65 @@
+name: Deploy docker image to GCE VM
+
+on:
+  workflow_run:
+    workflows: ["Publish Docker image"]
+    types: [completed]
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Using the image name defined in your publish workflow
+  IMAGE_NAME: mdssoccer2026/ubc-mds-soccer-capstone-2026
+  CONTAINER_NAME: soccer-capstone-app
+  VM_PORT: 80
+  CONTAINER_PORT: 8000 # Adjusted to common Django/Web port
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Only run if the publishing workflow actually succeeded
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.GCE_SSH_PRIVATE_KEY }}
+
+      - name: Add VM to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.GCE_VM_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy on GCE VM
+        run: |
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} << EOF
+            set -e
+            
+            # Pull the latest ARM64 image build
+            docker pull ${{ env.IMAGE_NAME }}:latest
+
+            # Stop and remove existing container
+            docker stop ${{ env.CONTAINER_NAME }} || true
+            docker rm ${{ env.CONTAINER_NAME }} || true
+
+            # Run the new container
+            # Using :latest ensures we get the build just finished by the previous workflow
+            docker run -d \
+              --name ${{ env.CONTAINER_NAME }} \
+              --restart unless-stopped \
+              -p ${{ env.VM_PORT }}:${{ env.CONTAINER_PORT }} \
+              -p 8888:8888 \
+              --env-file \$HOME/.env \
+              ${{ env.IMAGE_NAME }}:latest
+            
+            # Optional: Clean up old images to save disk space on the VM
+            docker image prune -f
+          EOF
