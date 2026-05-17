@@ -48,5 +48,7 @@ RUN pip install --no-cache-dir \
     xgboost \
     plotly
 
+COPY --chown=${NB_UID}:${NB_GID} app/ /home/${NB_USER}/work/app/
+
 # Final container execution setting
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
