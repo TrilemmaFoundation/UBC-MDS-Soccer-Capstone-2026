@@ -1,0 +1,78 @@
+name: dbt PR Testing & Verification
+
+on:
+  pull_request:
+    branches:
+      - main
+    # Triggers when files change in these directories to optimize action runner usage
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - '.github/workflows/dbt_test.yml'
+
+jobs:
+  dbt_test_and_verify:
+    name: Execute dbt Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # Speeds up consecutive builds
+
+      - name: Install dbt and Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install dbt-bigquery
+
+      - name: Set up Google Cloud SDK (Authentication)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up dbt Profiles Directory
+        run: |
+          mkdir -p ~/.dbt
+          cat << EOF > ~/.dbt/profiles.yml
+          football_analytics:
+            target: pr
+            outputs:
+              pr:
+                type: bigquery
+                method: service-account
+                keyfile: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+                project: football-capstone-mds-496219
+                dataset: pr_validation_${{ github.event.number }}
+                threads: 4
+                timeout_seconds: 300
+                location: US
+                priority: interactive
+                retries: 1
+          EOF
+
+      - name: Install dbt Packages
+        run: |
+          dbt deps
+
+      - name: Debug dbt Connection
+        run: |
+          dbt debug
+
+      # Compiles and validates staging & intermediate models on every PR
+      # without running the downstream placeholder marts
+      - name: Run dbt Test (Staging & Intermediate Models)
+        run: |
+          dbt test --select "path:models/staging path:models/intermediate"
+
+      # Automatically drop the temporary PR schema so BigQuery doesn't stay cluttered
+      - name: Clean Up PR Dataset (Always Runs)
+        if: always()
+        run: |
+          bq rm -r -f -d football-capstone-mds-496219:pr_validation_${{ github.event.number }}
