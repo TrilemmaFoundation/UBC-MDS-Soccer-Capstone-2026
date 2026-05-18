@@ -59,3 +59,4 @@ football_analytics/.gitignore
 # dagster temporary files
 .tmp_dagster_home*/
 *.db
+/create_issues.sh
