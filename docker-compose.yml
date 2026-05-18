@@ -1,10 +1,9 @@
 services:
-  project-env:
-    # This tag will be automatically updated by your revised GitHub Workflow
+  django-env:
     image: mdssoccer2026/ubc-mds-soccer-capstone-2026:53f105b
     ports:
-      - "8000:8000"  # the default Django port
-      - "8888:8888"  # JupyterLab
+      - "8000:8000"
+      - "8888:8888"
     volumes:
       - .:/home/jovyan
     working_dir: /home/jovyan
@@ -12,5 +11,19 @@ services:
       resources:
         limits:
           memory: 5G
-    # Revised from linux/amd64 to linux/arm64
+    platform: linux/arm64
+
+  dagster-env:
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:latest-dagster
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/opt/dagster/app
+    working_dir: /opt/dagster/app
+    environment:
+      - DAGSTER_HOME=/opt/dagster/dagster_home
+    deploy:
+      resources:
+        limits:
+          memory: 3G
     platform: linux/arm64

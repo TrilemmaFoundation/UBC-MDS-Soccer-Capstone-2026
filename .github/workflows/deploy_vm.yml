@@ -2,7 +2,7 @@ name: Deploy docker image to GCE VM
 
 on:
   workflow_run:
-    workflows: ["Publish Docker image"]
+    workflows: ["Publish Docker Images"]
     types: [completed]
     branches:
       - main
@@ -10,12 +10,6 @@ on:
 
 permissions:
   contents: read
-
-env:
-  IMAGE_NAME: mdssoccer2026/ubc-mds-soccer-capstone-2026
-  CONTAINER_NAME: soccer-capstone-app
-  VM_PORT: 80
-  CONTAINER_PORT: 8000
 
 jobs:
   deploy:
@@ -38,43 +32,27 @@ jobs:
 
       - name: Prepare and Copy Configuration Files
         run: |
-          # 1. Create a working copy from .env.example, naming it .env locally
           cp .env.example .env
-
-          # 2. Swap out the credentials path to point to the secure location inside the container
           sed -i 's|^GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json|' .env
-
-          # 3. Inject your secret GROQ API key into the .env file
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
-
-          # 4. Write the service account JSON out to its own file
           echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
 
-          # 5. Securely copy both files directly to your GCE VM's home directory as .env and service-account-key.json
-          scp .env service-account-key.json ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          # Copy configuration files AND the docker-compose.yml to the host filesystem
+          scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
 
-      - name: Deploy on GCE VM
+      - name: Deploy Cluster on GCE VM
         run: |
           ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} << 'EOF'
             set -e
             
-            # Stop and remove existing container first to maximize disk headroom
-            sudo docker stop soccer-capstone-app || true
-            sudo docker rm soccer-capstone-app || true
-            
-            # Clean up older images before pulling the massive new data science layer
+            # Spin down running stacks to protect resource memory allotments
+            sudo docker compose down || true
             sudo docker image prune -a -f
 
-            # Pull the latest ARM64 image build
-            sudo docker pull mdssoccer2026/ubc-mds-soccer-capstone-2026:latest
+            # Extract and source values from our secure local environment file
+            export $(cat $HOME/.env | xargs)
 
-            # Run the container using the newly pushed $HOME/.env file
-            sudo docker run -d \
-              --name soccer-capstone-app \
-              --restart unless-stopped \
-              -p 80:8000 \
-              -p 8888:8888 \
-              --env-file $HOME/.env \
-              -v $HOME/service-account-key.json:/app/service-account-key.json \
-              mdssoccer2026/ubc-mds-soccer-capstone-2026:latest
+            # Pull and deploy using the updated compose configuration file
+            sudo docker compose pull
+            sudo docker compose up -d
           EOF

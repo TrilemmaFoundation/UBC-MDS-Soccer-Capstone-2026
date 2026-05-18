@@ -1,0 +1,41 @@
+# Use a lightweight, official Python ARM64-compatible base image
+FROM python:3.11-slim
+
+USER root
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        curl \
+        netcat-openbsd \
+        git \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    DAGSTER_HOME=/opt/dagster/dagster_home
+
+RUN mkdir -p $DAGSTER_HOME /opt/dagster/app
+WORKDIR /opt/dagster/app
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+    dagster \
+    dagster-webserver \
+    dagster-dbt \
+    dagster-gcp \
+    dbt-core \
+    dbt-bigquery \
+    duckdb \
+    statsbombpy \
+    google-cloud-storage \
+    google-cloud-bigquery \
+    google-cloud-bigquery-storage \
+    python-dotenv \
+    xgboost \
+    plotly
+
+COPY . /opt/dagster/app
+
+EXPOSE 3000
+
+CMD ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000"]
