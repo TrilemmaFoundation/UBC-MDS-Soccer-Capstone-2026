@@ -39,8 +39,8 @@ jobs:
         with:
           images: mdssoccer2026/ubc-mds-soccer-capstone-2026
           tags: |
-            type=raw, value={{sha}},enable=${{github.ref_type != 'tag' }}
-            type=raw, value=latest
+            type=raw,value=${{github.sha}},enable=${{github.ref_type != 'tag'}}
+            type=raw,value=latest
 
       - name: Build and push Django Docker image
         uses: docker/build-push-action@v6
@@ -81,8 +81,8 @@ jobs:
           flavor: |
             suffix=-dagster,onlatest=true
           tags: |
-            type=raw, value={{sha}},enable=${{github.ref_type != 'tag' }}
-            type=raw, value=latest
+            type=raw,value=${{github.sha}},enable=${{github.ref_type != 'tag'}}
+            type=raw,value=latest
 
       - name: Build and push Dagster Docker image
         uses: docker/build-push-action@v6
@@ -98,7 +98,6 @@ jobs:
     name: Update Compose Tags
     runs-on: ubuntu-latest
     needs: [build_django, build_dagster]
-    if: success()
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4

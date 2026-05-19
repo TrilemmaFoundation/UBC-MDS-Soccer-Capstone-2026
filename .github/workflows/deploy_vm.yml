@@ -37,7 +37,7 @@ jobs:
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
           echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
 
-          # Copy configuration files AND the docker-compose.yml to the host filesystem
+          # File copy matches the path execution below (~/)
           scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
 
       - name: Deploy Cluster on GCE VM
@@ -45,14 +45,14 @@ jobs:
           ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} << 'EOF'
             set -e
             
-            # Spin down running stacks to protect resource memory allotments
+            # Safely source environmental variables even with comments or strings present
+            set -a
+            source $HOME/.env
+            set +a
+
+            # Execute cluster update using files located in $HOME
             sudo docker compose down || true
             sudo docker image prune -a -f
-
-            # Extract and source values from our secure local environment file
-            export $(cat $HOME/.env | xargs)
-
-            # Pull and deploy using the updated compose configuration file
             sudo docker compose pull
             sudo docker compose up -d
           EOF

@@ -11,11 +11,10 @@ RUN apt-get update \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONTONTWRITEBYTECODE=1 \
     DAGSTER_HOME=/opt/dagster/dagster_home
 
 RUN mkdir -p $DAGSTER_HOME /opt/dagster/app
-WORKDIR /opt/dagster/app
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
@@ -34,7 +33,15 @@ RUN pip install --no-cache-dir --upgrade pip && \
     xgboost \
     plotly
 
-COPY . /opt/dagster/app
+# Set up non-root execution permissions
+RUN useradd -m -U dagster \
+    && chown -R dagster:dagster $DAGSTER_HOME /opt/dagster/app
+
+USER dagster
+WORKDIR /opt/dagster/app
+
+# Copy application files under the non-root user context
+COPY --chown=dagster:dagster . /opt/dagster/app
 
 EXPOSE 3000
 

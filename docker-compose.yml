@@ -1,6 +1,7 @@
 services:
   django-env:
     image: mdssoccer2026/ubc-mds-soccer-capstone-2026:53f105b
+    restart: unless-stopped
     ports:
       - "8000:8000"
       - "8888:8888"
@@ -15,6 +16,7 @@ services:
 
   dagster-env:
     image: mdssoccer2026/ubc-mds-soccer-capstone-2026:latest-dagster
+    restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
