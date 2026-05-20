@@ -203,7 +203,44 @@ models:
         description: "Aerial duels won or contested normalized per 90 minutes played."
 
   - name: mart_team_comparison
-    description: "Aggregated team metrics allowing for head-to-head tactical comparisons across leagues and seasons."
+    description: "Aggregated team metrics allowing for head-to-head tactical comparisons across leagues and seasons. Combines historical season baseline metrics with final rolling performance proxies."
+    columns:
+      # Key Identifiers
+      - name: team
+        description: "The name of the football club."
+        tests:
+          - not_null
+      - name: competition_id
+        description: "Unique identifier matching the competition league."
+        tests:
+          - not_null
+      - name: season_id
+        description: "Unique identifier matching the active campaign year."
+        tests:
+          - not_null
+      - name: matches_played
+        description: "Total appearances logged inside the season timeline. Filtered for a minimum threshold of 10 matches."
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 10
+
+      # Long-Term Metrics Baselines
+      - name: seasonal_avg_xg
+        description: "The team's average expected goals generated per match over the course of the full season."
+      - name: seasonal_avg_possession
+        description: "The team's average estimated possession share across the full season timeline."
+
+      # Short-Term Momentum Figures
+      - name: latest_rolling_xg
+        description: "The average expected goals (xG) generated over the team's final 5 matches of the season."
+        tests:
+          - not_null
+      - name: latest_rolling_possession
+        description: "The average estimated possession share controlled over the team's final 5 matches of the season."
+        tests:
+          - not_null
 
   - name: mart_match_prediction_features
     description: "The official feature matrix used for match outcome prediction. Includes rolling form, H2H stats, and target labels."
