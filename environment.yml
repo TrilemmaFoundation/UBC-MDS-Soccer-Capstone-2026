@@ -40,3 +40,5 @@ dependencies:
     # ml
     - xgboost
     - plotly
+    # testing
+    - pytest
