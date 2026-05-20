@@ -39,32 +39,39 @@
               class="flex space-x-2 bg-gray-800 p-2 rounded-xl border border-gray-700">
             
             {% csrf_token %}
-            <input type="text" name="message" 
-                   placeholder="e.g., Which players share Rodri's tactical profile?" 
-                   class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-2 outline-none"
+            <input type="text" name="message" id="user-input" 
+                   placeholder="e.g., Which players match Rodri's tactical profile inside mart_player_clusters?" 
+                   class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-2 text-white outline-none placeholder-gray-500"
                    required>
             
-            <button type="submit" onclick="addUserMessage()" class="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg transition text-sm font-semibold">
+            <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-lg transition text-sm font-semibold shadow">
                 Ask AI
             </button>
         </form>
     </div>
 
     <script>
-        function addUserMessage() {
-            const input = document.getElementById('user-input');
+        // 1. Instantly scroll down the moment the user clicks submit (handles loading state shift)
+        document.body.addEventListener('htmx:configRequest', function(evt) {
             const chatWindow = document.getElementById('chat-window');
-            if (input.value.trim() !== "") {
-                const userHTML = `
-                    <div class="flex justify-end">
-                        <div class="bg-green-700 p-3 rounded-lg max-w-[80%]">
-                            <p class="text-sm">${input.value}</p>
-                        </div>
-                    </div>`;
-                chatWindow.insertAdjacentHTML('beforeend', userHTML);
-                chatWindow.scrollTop = chatWindow.scrollHeight;
+            if (chatWindow) {
+                // Use setTimeout to allow the DOM indicator to appear first, then snap scroll
+                setTimeout(() => {
+                    chatWindow.scrollTop = chatWindow.scrollHeight;
+                }, 10);
             }
-        }
+        });
+
+        // 2. Smoothly scroll down the absolute moment the live BigQuery data returns
+        document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+            const chatWindow = document.getElementById('chat-window');
+            if (chatWindow) {
+                chatWindow.scrollTo({
+                    top: chatWindow.scrollHeight,
+                    behavior: 'smooth'
+                });
+            }
+        });
     </script>
 </body>
 </html>
