@@ -41,7 +41,13 @@ aggregated AS (
         SUM(tackles) AS total_tackles,
         SUM(interceptions) AS total_interceptions,
         SUM(carries) AS total_carries,
-        SUM(aerial_duels) AS total_aerial_duels
+        SUM(aerial_duels) AS total_aerial_duels,
+        
+        -- Totals for features
+        SUM(dribbles) AS total_dribbles,
+        SUM(clearances) AS total_clearances,
+        SUM(carries_att_third) AS total_carries_att_third,
+        SUM(passes_att_third) AS total_passes_att_third
     FROM player_match_with_meta
     GROUP BY 1, 2, 3, 4, 5, 6
     HAVING SUM(minutes_played) >= 450
@@ -63,6 +69,12 @@ final AS (
         SAFE_DIVIDE(total_interceptions, total_minutes) * 90 AS interceptions_per_90,
         SAFE_DIVIDE(total_carries, total_minutes) * 90 AS carries_per_90,
         SAFE_DIVIDE(total_aerial_duels, total_minutes) * 90 AS aerial_duels_per_90,
+        
+        -- Calculated per-90 metrics for cluster mappings
+        SAFE_DIVIDE(total_dribbles, total_minutes) * 90 AS dribbles_per_90,
+        SAFE_DIVIDE(total_clearances, total_minutes) * 90 AS clearances_per_90,
+        SAFE_DIVIDE(total_carries_att_third, total_minutes) * 90 AS carries_att_third_per_90,
+        SAFE_DIVIDE(total_passes_att_third, total_minutes) * 90 AS passes_att_third_per_90,
         
         -- Seasonal efficiency metric
         SAFE_DIVIDE(total_passes_completed, total_passes_attempted) AS pass_completion_pct

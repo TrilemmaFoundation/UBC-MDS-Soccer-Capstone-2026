@@ -38,7 +38,9 @@ final AS (
     SELECT
         m.match_id,
         m.match_date,
+        m.competition_id,
         m.competition_name,
+        m.season_id,
         m.season_name,
         m.home_team,
         m.away_team,

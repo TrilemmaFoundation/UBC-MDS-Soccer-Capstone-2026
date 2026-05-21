@@ -2,7 +2,6 @@ version: 2
 
 sources:
   - name: statsbomb
-    database: football-capstone-mds-496219
     schema: raw_statsbomb
     config:
       freshness:
@@ -15,3 +14,8 @@ sources:
       - name: lineups
       - name: reference
       - name: three_sixty
+
+  - name: ml_models
+    schema: analytics
+    tables:
+      - name: cluster_assignments
