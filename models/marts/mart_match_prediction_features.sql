@@ -1,5 +1,10 @@
 {{ config(
-    materialized='table'
+    materialized='view',
+    partition_by={
+      "field": "match_date",
+      "data_type": "date"
+    },
+    cluster_by=["competition_id"]
 ) }}
 
 WITH match_features AS (
@@ -11,6 +16,7 @@ SELECT
     -- Identifiers & Core Metadata
     match_id,
     match_date,
+    competition_id,
     competition_name,
     season_name,
     home_team,

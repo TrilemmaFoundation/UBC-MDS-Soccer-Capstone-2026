@@ -4,6 +4,7 @@ WITH matches AS (
     SELECT 
         match_id,
         match_date,
+        CAST(competition_id AS INT64) AS competition_id, -- Added to fix the mart mismatch
         competition_name,
         season_name,
         home_team,
@@ -50,6 +51,7 @@ final AS (
     SELECT
         m.match_id,
         m.match_date,
+        m.competition_id,
         m.competition_name,
         m.season_name,
         m.home_team,

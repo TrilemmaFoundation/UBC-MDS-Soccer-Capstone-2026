@@ -12,8 +12,6 @@ matches AS (
 match_results AS (
     SELECT
         ms.*,
-        m.competition_id,
-        m.season_id,
         CASE
             WHEN ms.side = 'home' AND m.match_result = 'home_win' THEN 'win'
             WHEN ms.side = 'away' AND m.match_result = 'away_win' THEN 'win'

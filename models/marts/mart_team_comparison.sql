@@ -13,20 +13,32 @@ rolling_form_base AS (
 ),
 
 int_match_metadata AS (
-    -- Pull match stats to link rolling match dates to season/competition identifiers
+    -- Pull match stats to link rolling match dates to season/competition structural IDs
     SELECT 
         match_id,
         team,
+        competition_id,
         competition_name,
+        season_id,
         season_name
     FROM {{ ref('int_match_stats') }}
 ),
 
 rolling_with_metadata AS (
-    -- Associate competition/season context onto match-level rolling form rows
+    -- Explicitly select columns to remove column duplication or name ambiguity
     SELECT 
-        r.*,
+        r.match_id,
+        r.match_date,
+        r.team,
+        r.side,
+        r.rolling_avg_xg,
+        r.rolling_avg_points,
+        r.rolling_avg_possession_pct,
+        r.rolling_avg_pressures,
+        r.rolling_avg_pass_completion_pct,
+        m.competition_id,
         m.competition_name,
+        m.season_id,
         m.season_name
     FROM rolling_form_base r
     INNER JOIN int_match_metadata m
@@ -38,8 +50,8 @@ latest_rolling_form AS (
     -- Deduplicate and extract each team's most recent rolling form numbers per competition season
     SELECT
         team,
-        competition_name,
-        season_name,
+        competition_id,
+        season_id,
         rolling_avg_xg,
         rolling_avg_points,
         rolling_avg_possession_pct,
@@ -47,9 +59,16 @@ latest_rolling_form AS (
         rolling_avg_pass_completion_pct
     FROM (
         SELECT
-            *,
+            team,
+            competition_id,
+            season_id,
+            rolling_avg_xg,
+            rolling_avg_points,
+            rolling_avg_possession_pct,
+            rolling_avg_pressures,
+            rolling_avg_pass_completion_pct,
             ROW_NUMBER() OVER (
-                PARTITION BY team, competition_name, season_name 
+                PARTITION BY team, competition_id, season_id 
                 ORDER BY match_date DESC
             ) AS rn
         FROM rolling_with_metadata
@@ -87,5 +106,5 @@ SELECT
 FROM team_season_base s
 LEFT JOIN latest_rolling_form r
     ON s.team = r.team
-    AND s.competition_name = r.competition_name
-    AND s.season_name = r.season_name
+    AND s.competition_id = r.competition_id
+    AND s.season_id = r.season_id

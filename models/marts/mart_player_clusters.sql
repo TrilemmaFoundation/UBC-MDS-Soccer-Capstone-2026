@@ -29,7 +29,7 @@ final_mart AS (
         COALESCE(c.cluster_id, -1)          AS cluster_id,
         COALESCE(c.cluster_label, 'Unknown') AS cluster_label,
 
-        -- PCA Coordinates (Placeholders for 2D scatter plots)
+        -- # TODO: Populate from PCA output once cluster.py exports coordinates to render 2D scatter visualizations
         CAST(NULL AS FLOAT64) AS pc1,
         CAST(NULL AS FLOAT64) AS pc2,
 

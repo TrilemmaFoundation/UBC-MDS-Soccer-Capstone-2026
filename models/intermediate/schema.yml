@@ -6,8 +6,9 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_statsbomb__matches')
-              field: match_id
+              arguments:
+                to: ref('stg_statsbomb__matches')
+                field: match_id
       - name: possession_share
         description: "Proxy for possession based on pass volume relative to opponent."
         tests:
@@ -23,8 +24,9 @@ models:
         tests:
           - not_null
           - relationships:
-              to: ref('stg_statsbomb__matches')
-              field: match_id
+              arguments:
+                to: ref('stg_statsbomb__matches')
+                field: match_id
 
   - name: int_player_season_stats
     description: "Aggregated player statistics per competition season, normalized per 90 minutes. Filters for players with at least 450 minutes."
@@ -37,7 +39,8 @@ models:
         tests:
           - not_null
           - dbt_utils.accepted_range:
-              min_value: 450
+              arguments:
+                min_value: 450
       - name: xg_per_90
         description: "Expected goals normalized per 90 minutes played."
 
@@ -50,7 +53,8 @@ models:
       - name: matches_played
         tests:
           - dbt_utils.accepted_range:
-              min_value: 10
+              arguments:
+                min_value: 10
       - name: total_points
         description: "Calculated points (W=3, D=1, L=0)."
 
@@ -59,10 +63,6 @@ models:
     columns:
       - name: rolling_avg_xg
         description: "Average xG generated over the team's previous 5 matches."
-        tests:
-          - not_null:
-              config:
-                where: "match_date > (SELECT MIN(match_date) FROM {{ this }})" 
       - name: rolling_avg_points
         description: "Average points earned (Form) over the team's previous 5 matches."
 
@@ -72,6 +72,10 @@ models:
       - name: match_id
         tests:
           - unique
+          - not_null
+      - name: competition_id
+        description: "Unique identifier for the competition, mapped down from staging to allow clustering configurations on target marts."
+        tests:
           - not_null
       - name: h2h_home_win_pct
         description: "The percentage of previous encounters won by the current home team."

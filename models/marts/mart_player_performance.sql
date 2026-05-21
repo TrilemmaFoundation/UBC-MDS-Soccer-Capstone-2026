@@ -7,12 +7,12 @@ WITH player_season_stats AS (
 ),
 
 cluster_assignments AS (
-    -- Safely reference your updated player clusters presentation mart
+    -- Directly reference source upstream to ensure mart independence
     SELECT 
-        player_id,
-        cluster_id,
-        cluster_label
-    FROM {{ ref('mart_player_clusters') }}
+        CAST(player_id AS INT64)     AS player_id,
+        CAST(cluster AS INT64)       AS cluster_id,
+        CAST(archetype AS STRING)    AS cluster_label
+    FROM {{ source('ml_models', 'cluster_assignments') }}
 ),
 
 joined AS (
