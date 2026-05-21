@@ -1,3 +1,6 @@
 cluster_id,cluster_label,description
-0,placeholder,TBD
-1,placeholder,TBD
+0,Goalkeeper,Low activity across all metrics
+1,Creative Playmaker,High passes moderate carries
+2,Pressing Forward,High shots xG pressures duels
+3,Creative Winger,High dribbles carries
+4,Defensive Anchor,High interceptions clearances blocks
