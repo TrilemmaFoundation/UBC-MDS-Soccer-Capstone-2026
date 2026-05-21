@@ -1,10 +1,5 @@
 {{ config(
-    materialized='view',
-    partition_by={
-      "field": "match_date",
-      "data_type": "date"
-    },
-    cluster_by=["competition_id"]
+    materialized='view'
 ) }}
 
 WITH match_features AS (

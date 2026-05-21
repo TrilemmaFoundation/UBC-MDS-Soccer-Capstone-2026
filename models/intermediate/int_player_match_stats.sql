@@ -42,7 +42,13 @@ player_match_aggregates AS (
         COUNT(CASE WHEN event_type = 'Tackle' THEN 1 END) AS tackles,
         COUNT(CASE WHEN event_type = 'Interception' THEN 1 END) AS interceptions,
         COUNT(CASE WHEN event_type = 'Carry' THEN 1 END) AS carries,
-        COUNT(CASE WHEN event_type = 'Duel' AND play_pattern = 'Aerial' THEN 1 END) AS aerial_duels
+        COUNT(CASE WHEN event_type = 'Duel' AND play_pattern = 'Aerial' THEN 1 END) AS aerial_duels,
+
+        -- Notebook feature metrics expansions
+        COUNT(CASE WHEN event_type = 'Dribble' THEN 1 END) AS dribbles,
+        COUNT(CASE WHEN event_type = 'Clearance' THEN 1 END) AS clearances,
+        COUNT(CASE WHEN event_type = 'Carry' AND location_x > 80 THEN 1 END) AS carries_att_third,
+        COUNT(CASE WHEN event_type = 'Pass' AND location_x > 80 THEN 1 END) AS passes_att_third
 
     FROM events
     WHERE player IS NOT NULL
@@ -70,7 +76,13 @@ final AS (
         COALESCE(pma.tackles, 0) AS tackles,
         COALESCE(pma.interceptions, 0) AS interceptions,
         COALESCE(pma.carries, 0) AS carries,
-        COALESCE(pma.aerial_duels, 0) AS aerial_duels
+        COALESCE(pma.aerial_duels, 0) AS aerial_duels,
+        
+        -- Sourcing tracking metrics
+        COALESCE(pma.dribbles, 0) AS dribbles,
+        COALESCE(pma.clearances, 0) AS clearances,
+        COALESCE(pma.carries_att_third, 0) AS carries_att_third,
+        COALESCE(pma.passes_att_third, 0) AS passes_att_third
     FROM lineups l
     LEFT JOIN player_match_aggregates pma 
         ON l.match_id = pma.match_id 

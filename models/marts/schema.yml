@@ -252,7 +252,7 @@ models:
                 to: ref('stg_statsbomb__matches')
                 field: match_id
       - name: competition_id
-        description: "Unique corporate league key inherited from staging matches data to support analytical partitioning and clustering schemas."
+        description: "Competition identifier, cast from staging to support partitioning on mart tables."
         tests:
           - not_null
       - name: match_result

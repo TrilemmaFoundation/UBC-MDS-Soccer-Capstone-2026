@@ -27,6 +27,15 @@ models:
               arguments:
                 to: ref('stg_statsbomb__matches')
                 field: match_id
+      # Added Match-level Feature Documentations
+      - name: dribbles
+        description: "Total raw dribble events attempted by the player during the match."
+      - name: clearances
+        description: "Total raw clearance events executed by the player during the match."
+      - name: carries_att_third
+        description: "Total ball carries executed by the player where the event started in the attacking third (location_x > 80)."
+      - name: passes_att_third
+        description: "Total passes attempted by the player where the event originated in the attacking third (location_x > 80)."
 
   - name: int_player_season_stats
     description: "Aggregated player statistics per competition season, normalized per 90 minutes. Filters for players with at least 450 minutes."
@@ -43,6 +52,15 @@ models:
                 min_value: 450
       - name: xg_per_90
         description: "Expected goals normalized per 90 minutes played."
+      # Added Normalized Seasonal Feature Documentations for cluster.py
+      - name: dribbles_per_90
+        description: "Dribble events normalized per 90 minutes played. Required feature for the clustering model pipeline."
+      - name: clearances_per_90
+        description: "Clearance events normalized per 90 minutes played. Required feature for the clustering model pipeline."
+      - name: carries_att_third_per_90
+        description: "Attacking third ball carries normalized per 90 minutes played. Proxy vector for winger/forward line breaking progression."
+      - name: passes_att_third_per_90
+        description: "Attacking third passes normalized per 90 minutes played. Proxy vector for high-up territory possession retention."
 
   - name: int_team_season_stats
     description: "Seasonal aggregation of team performance including points, xG, and tactical proxies."
