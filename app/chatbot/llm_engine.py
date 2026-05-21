@@ -1,91 +1,122 @@
 # llm_engine.py
+import json
 import os
+import sys
+from pathlib import Path
+
 from groq import Groq
 from google.cloud import bigquery
+
 from .table_schema import TABLE_CONTEXT
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from src.chatbot.prompts import FOOTBALL_SYSTEM_PROMPT
 
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 # bq_client = bigquery.Client()
 
+
 def query_bigquery(sql):
     """Mocks BigQuery results based on the generated SQL for demo purposes."""
     sql_lower = sql.lower()
-    
-    # Mock Response 1: Player Archetypes/Clusters
+
     if "mart_player_clusters" in sql_lower:
         return [
-            {"player_name": "Rodri", "cluster": "Deep-Lying Playmaker", "similarity": 0.98},
-            {"player_name": "Declan Rice", "cluster": "Ball-Winning Midfielder", "similarity": 0.85},
-            {"player_name": "Joshua Kimmich", "cluster": "Deep-Lying Playmaker", "similarity": 0.92}
+            {"player_name": "Rodri", "cluster_label": "Deep-Lying Playmaker"},
+            {"player_name": "Declan Rice", "cluster_label": "Ball-Winning Midfielder"},
+            {"player_name": "Joshua Kimmich", "cluster_label": "Deep-Lying Playmaker"},
         ]
-    
-    # Mock Response 2: Performance Metrics
-    elif "mart_player_performance" in sql_lower:
+
+    if "mart_match_prediction_features" in sql_lower:
+        return [
+            {"feature": "home_rolling_xg_5", "description": "Home team rolling 5-match xG"},
+            {"feature": "away_rolling_xg_5", "description": "Away team rolling 5-match xG"},
+            {"feature": "home_rolling_points_5", "description": "Home team rolling 5-match form"},
+            {"feature": "home_adv", "description": "Home advantage indicator"},
+        ]
+
+    if "mart_player_performance" in sql_lower and (
+        "international" in sql_lower or "club" in sql_lower or "is_international" in sql_lower
+    ):
+        return [
+            {
+                "context": "club",
+                "avg_xg_per_90": 0.42,
+            },
+            {
+                "context": "international",
+                "avg_xg_per_90": 0.31,
+            },
+            {"avg_shift_club_minus_international": 0.11},
+        ]
+
+    if "mart_player_performance" in sql_lower:
         return [
             {"player_name": "Erling Haaland", "goals_per_90": 1.1, "xg_per_90": 0.95},
-            {"player_name": "Kylian Mbappé", "goals_per_90": 0.85, "xg_per_90": 0.82}
+            {"player_name": "Kylian Mbappé", "goals_per_90": 0.85, "xg_per_90": 0.82},
         ]
-    
-    # Default Fallback
-    return [{"status": "Success", "message": "Query executed, but no specific mock data found for this table."}]
 
-def ask_football_chatbot(user_query):
-    # Define the tool for the LLM
-    tools = [{
-        "type": "function",
-        "function": {
-            "name": "query_bigquery",
-            "description": "Query football analytics mart tables. " + TABLE_CONTEXT,
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "sql": {"type": "string", "description": "The BigQuery SQL query"}
-                },
-                "required": ["sql"]
-            }
-        }
-    }]
+    if "pressure" in sql_lower or "liga" in sql_lower or "premier" in sql_lower:
+        return [
+            {"competition": "Premier League", "avg_pressures_per_90": 42.55},
+            {"competition": "La Liga", "avg_pressures_per_90": 40.91},
+        ]
 
-    messages = [
+    return [
         {
-            "role": "system",
-            "content": (
-                "You are an Elite European Football AI assistant. "
-                "Use the 'query_bigquery' tool to fetch data for player performance, "
-                "tactical clusters, or match statistics. "
-                "Always generate valid BigQuery SQL based on the provided table schemas. "
-                "Do not explain your reasoning before calling the tool."
-            )
-        },
-        {"role": "user", "content": user_query}
+            "status": "Success",
+            "message": "Query executed, but no specific mock data found for this table.",
+        }
     ]
 
-    # 1. Ask LLM to generate SQL
+
+def ask_football_chatbot(user_query):
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "query_bigquery",
+                "description": "Query football analytics mart tables. " + TABLE_CONTEXT,
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "sql": {"type": "string", "description": "The BigQuery SQL query"}
+                    },
+                    "required": ["sql"],
+                },
+            },
+        }
+    ]
+
+    messages = [
+        {"role": "system", "content": FOOTBALL_SYSTEM_PROMPT},
+        {"role": "user", "content": user_query},
+    ]
+
     response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",  # Use Llama 3.1
+        model="llama-3.1-8b-instant",
         messages=messages,
         tools=tools,
         tool_choice="auto",
-        temperature=0  # Ensures consistent tool selection
+        temperature=0,
     )
 
-    # 2. Check if the LLM wants to call the tool
     tool_calls = response.choices[0].message.tool_calls
     if tool_calls:
-        import json
-        sql = json.loads(tool_calls[0].function.arguments)['sql']
-        
-        # 3. Get real data from BigQuery
+        sql = json.loads(tool_calls[0].function.arguments)["sql"]
         data = query_bigquery(sql)
-        
-        # 4. Return data to LLM for final natural language summary
+
         final_response = client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
+                {"role": "system", "content": FOOTBALL_SYSTEM_PROMPT},
                 {"role": "user", "content": user_query},
                 {"role": "assistant", "content": None, "tool_calls": tool_calls},
-                {"role": "tool", "tool_call_id": tool_calls[0].id, "content": str(data)}
-            ]
+                {"role": "tool", "tool_call_id": tool_calls[0].id, "content": str(data)},
+            ],
         )
         return final_response.choices[0].message.content
 
