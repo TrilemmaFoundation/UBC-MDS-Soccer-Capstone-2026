@@ -1,6 +1,6 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:a56fd47a5e456ae5bf0a6de842a4e24319ecbca5
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:ed0b500b71e9912bd94ec45f9a2a234bbdedf4d6
     restart: unless-stopped
     # Use the official Jupyter image startup mechanism to safely handle permissions
     user: root
@@ -23,7 +23,7 @@ services:
     platform: linux/arm64
 
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:a56fd47a5e456ae5bf0a6de842a4e24319ecbca5-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:ed0b500b71e9912bd94ec45f9a2a234bbdedf4d6-dagster
     restart: unless-stopped
     ports:
       - "3000:3000"
