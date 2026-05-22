@@ -1,13 +1,12 @@
 # app/chatbot/views.py
 from django.shortcuts import render
-from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
 from .llm_engine import ask_football_chatbot
 
 def chat_view(request):
     """Renders the main chat workspace framework layout."""
     return render(request, "chat.html")
 
-@csrf_protect
 def get_response(request):
     """Processes message requests and injects the corresponding response block back to HTMX."""
     if request.method == "POST":

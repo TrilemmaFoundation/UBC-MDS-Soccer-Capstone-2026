@@ -8,7 +8,7 @@ dotenv.load_dotenv()
 # Safely catch the filename from .env and expand it to a full absolute path
 cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 if cred_path and not os.path.isabs(cred_path):
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(cred_path)
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str((BASE_DIR / cred_path).resolve())
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
