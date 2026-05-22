@@ -21,9 +21,9 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 USER $NB_UID
 WORKDIR /home/${NB_USER}/work
 
-# Update Conda environment using the ARM lock file
-RUN conda update --quiet --file /tmp/conda-linux-aarch64.lock \
-    && conda clean --all -y -f \
+# Update Conda environment using the ARM lock file (Fixed line continuation syntax)
+RUN conda update --quiet --file /tmp/conda-linux-aarch64.lock -y \
+    && conda clean --all -y \
     && fix-permissions "${CONDA_DIR}" \
     && fix-permissions "/home/${NB_USER}"
 

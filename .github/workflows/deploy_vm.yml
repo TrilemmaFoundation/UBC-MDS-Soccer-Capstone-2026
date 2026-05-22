@@ -37,8 +37,14 @@ jobs:
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
           echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
 
-          # File copy matches the path execution below (~/)
+          # 1. Create the matching directory structure on the remote VM via SSH
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/src/dagster"
+
+          # 2. Copy root files to ~/
           scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          
+          # 3. Copy the definitions file explicitly into its matching subfolder
+          scp src/dagster/definitions.py ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/src/dagster/
 
       - name: Deploy Cluster on GCE VM
         run: |

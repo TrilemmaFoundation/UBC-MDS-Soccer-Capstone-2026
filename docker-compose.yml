@@ -2,12 +2,16 @@ services:
   django-env:
     image: mdssoccer2026/ubc-mds-soccer-capstone-2026:574964695520740c6819e38ba8a4c54658ad0175
     restart: unless-stopped
+    user: "root"
+    environment:
+      - CHOWN_HOME=yes
+      - CHOWN_HOME_OPTS=-R
     ports:
-      - "8000:8000"
+      - "80:8000"
       - "8888:8888"
     volumes:
-      - .:/home/jovyan
-    working_dir: /home/jovyan
+      - .:/home/jovyan/work
+    working_dir: /home/jovyan/work
     deploy:
       resources:
         limits:
@@ -24,6 +28,7 @@ services:
     working_dir: /opt/dagster/app
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home
+    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-f", "src/dagster/definitions.py"]
     deploy:
       resources:
         limits:
