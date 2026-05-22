@@ -1,11 +1,15 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:4e4eced6e84e5966022f97d36cd36bff9d606694
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:a56fd47a5e456ae5bf0a6de842a4e24319ecbca5
     restart: unless-stopped
-    user: "root"
+    # Use the official Jupyter image startup mechanism to safely handle permissions
+    user: root
     environment:
+      - NB_UID=1000
+      - NB_GID=1000
       - CHOWN_HOME=yes
       - CHOWN_HOME_OPTS=-R
+      - GRANT_SUDO=yes
     ports:
       - "80:8000"
       - "8888:8888"
@@ -19,7 +23,7 @@ services:
     platform: linux/arm64
 
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:4e4eced6e84e5966022f97d36cd36bff9d606694-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:a56fd47a5e456ae5bf0a6de842a4e24319ecbca5-dagster
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -28,7 +32,7 @@ services:
     working_dir: /opt/dagster/app
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home
-    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-f", "src/dagster/definitions.py"]
+    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-f", "definitions.py"]
     deploy:
       resources:
         limits:

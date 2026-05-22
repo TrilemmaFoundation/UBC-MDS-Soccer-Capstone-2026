@@ -22,7 +22,7 @@ USER $NB_UID
 WORKDIR /home/${NB_USER}/work
 
 # Update Conda environment using the ARM lock file (Fixed line continuation syntax)
-RUN conda update --quiet --file /tmp/conda-linux-aarch64.lock -y \
+RUN conda env update --name base --file /tmp/conda-linux-aarch64.lock --quiet \
     && conda clean --all -y \
     && fix-permissions "${CONDA_DIR}" \
     && fix-permissions "/home/${NB_USER}"
