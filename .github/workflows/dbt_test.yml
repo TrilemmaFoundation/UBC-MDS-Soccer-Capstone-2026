@@ -32,10 +32,17 @@ jobs:
           pip install --upgrade pip
           pip install dbt-bigquery
 
+      # NOTE: Ensure GCE_SERVICE_ACCOUNT_KEY exists in Settings > Secrets and Variables > Actions
+      # If this secret is missing or misnamed, the authentication below will fail.
+       Aurora:
       - name: Set up Google Cloud SDK (Authentication)
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Create PR BigQuery Dataset
+        run: |
+          bq mk --dataset football-capstone-mds-496219:pr_validation_${{ github.event.number }}
 
       - name: Set up dbt Profiles Directory
         run: |
@@ -46,8 +53,7 @@ jobs:
             outputs:
               pr:
                 type: bigquery
-                method: service-account
-                keyfile: ${{ env.GOOGLE_APPLICATION_CREDENTIALS }}
+                method: oauth
                 project: football-capstone-mds-496219
                 dataset: pr_validation_${{ github.event.number }}
                 threads: 4
@@ -59,15 +65,19 @@ jobs:
 
       - name: Install dbt Packages
         run: |
-          dbt deps
+          if [ -f packages.yml ]; then dbt deps; fi
 
       - name: Debug dbt Connection
         run: |
           dbt debug
 
+      # Build staging & intermediate models first so the tables/views actually exist
+      - name: Run dbt Models
+        run: |
+          dbt run --select "path:models/staging path:models/intermediate"
+
       # Compiles and validates staging & intermediate models on every PR
-      # without running the downstream placeholder marts
-      - name: Run dbt Test (Staging & Intermediate Models)
+      - name: Run dbt Tests
         run: |
           dbt test --select "path:models/staging path:models/intermediate"
 
