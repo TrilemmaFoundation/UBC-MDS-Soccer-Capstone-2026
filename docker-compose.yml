@@ -1,6 +1,6 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:574964695520740c6819e38ba8a4c54658ad0175
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:4e4eced6e84e5966022f97d36cd36bff9d606694
     restart: unless-stopped
     user: "root"
     environment:
@@ -19,7 +19,7 @@ services:
     platform: linux/arm64
 
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:574964695520740c6819e38ba8a4c54658ad0175-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:4e4eced6e84e5966022f97d36cd36bff9d606694-dagster
     restart: unless-stopped
     ports:
       - "3000:3000"
