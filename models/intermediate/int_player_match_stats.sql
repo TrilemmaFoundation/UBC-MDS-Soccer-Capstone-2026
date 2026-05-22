@@ -42,13 +42,19 @@ player_match_aggregates AS (
         COUNT(CASE WHEN event_type = 'Tackle' THEN 1 END) AS tackles,
         COUNT(CASE WHEN event_type = 'Interception' THEN 1 END) AS interceptions,
         COUNT(CASE WHEN event_type = 'Carry' THEN 1 END) AS carries,
+        COUNT(CASE WHEN event_type = 'Duel' THEN 1 END) AS duels,
         COUNT(CASE WHEN event_type = 'Duel' AND play_pattern = 'Aerial' THEN 1 END) AS aerial_duels,
 
-        -- Notebook feature metrics expansions
+        -- Sourcing tracking metrics (Clustering requirements)
         COUNT(CASE WHEN event_type = 'Dribble' THEN 1 END) AS dribbles,
         COUNT(CASE WHEN event_type = 'Clearance' THEN 1 END) AS clearances,
         COUNT(CASE WHEN event_type = 'Carry' AND location_x > 80 THEN 1 END) AS carries_att_third,
-        COUNT(CASE WHEN event_type = 'Pass' AND location_x > 80 THEN 1 END) AS passes_att_third
+        COUNT(CASE WHEN event_type = 'Pass' AND location_x > 80 THEN 1 END) AS passes_att_third,
+
+        -- Sourcing consistency metrics (Rabin Notebook 03 requirements)
+        COUNT(CASE WHEN event_type = 'Block' THEN 1 END) AS blocks,
+        COUNT(CASE WHEN event_type = 'Ball Recovery' THEN 1 END) AS ball_recoveries,
+        COUNT(CASE WHEN event_type = 'Foul Committed' THEN 1 END) AS fouls
 
     FROM events
     WHERE player IS NOT NULL
@@ -76,13 +82,17 @@ final AS (
         COALESCE(pma.tackles, 0) AS tackles,
         COALESCE(pma.interceptions, 0) AS interceptions,
         COALESCE(pma.carries, 0) AS carries,
+        COALESCE(pma.duels, 0) AS duels,
         COALESCE(pma.aerial_duels, 0) AS aerial_duels,
         
-        -- Sourcing tracking metrics
+        -- Sourcing tracking & consistency raw aggregates forward
         COALESCE(pma.dribbles, 0) AS dribbles,
         COALESCE(pma.clearances, 0) AS clearances,
         COALESCE(pma.carries_att_third, 0) AS carries_att_third,
-        COALESCE(pma.passes_att_third, 0) AS passes_att_third
+        COALESCE(pma.passes_att_third, 0) AS passes_att_third,
+        COALESCE(pma.blocks, 0) AS blocks,
+        COALESCE(pma.ball_recoveries, 0) AS ball_recoveries,
+        COALESCE(pma.fouls, 0) AS fouls
     FROM lineups l
     LEFT JOIN player_match_aggregates pma 
         ON l.match_id = pma.match_id 

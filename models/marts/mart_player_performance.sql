@@ -7,7 +7,6 @@ WITH player_season_stats AS (
 ),
 
 cluster_assignments AS (
-    -- Directly reference source upstream to ensure mart independence
     SELECT 
         CAST(player_id AS INT64)     AS player_id,
         CAST(cluster AS INT64)       AS cluster_id,
@@ -42,19 +41,20 @@ joined AS (
         p.total_tackles,
         p.total_interceptions,
         p.total_carries,
+        p.total_duels,
         p.total_aerial_duels,
 
-        -- Per-90 Performance Metrics
+        -- Performance Metrics (Notebook Aligned)
         p.goals_per_90,
         p.assists_per_90,
         p.shots_per_90,
         p.xg_per_90,
-        p.passes_attempted_per_90,
-        p.passes_completed_per_90,
+        p.xg_per_shot,
         p.pressures_per_90,
         p.tackles_per_90,
         p.interceptions_per_90,
         p.carries_per_90,
+        p.duels_per_90,
         p.aerial_duels_per_90,
 
         -- PLACEHOLDERS: Waiting for Rabin's formula to calculate these fields
