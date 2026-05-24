@@ -179,27 +179,40 @@ models:
       - name: pc2
         description: "Vertical coordinate matching Principal Component 2. Supports plotting positions inside the 2D cluster scatter view component."
 
-      # Performance Metrics for Profile Heatmaps
-      - name: goals_per_90
-        description: "Goals scored normalized per 90 minutes played."
-      - name: assists_per_90
-        description: "Assists registered normalized per 90 minutes played."
+      # Exact 11 Features for Clustering Parity & Radar Chart Heatmaps (Aligned to _per_90)
       - name: shots_per_90
         description: "Shots taken normalized per 90 minutes played."
       - name: xg_per_90
         description: "Expected Goals (xG) generated normalized per 90 minutes played."
+      - name: xg_per_shot
+        description: "Expected goals per individual shot attempt. Seasonal scoring quality metric."
+        tests:
+          - dbt_utils.accepted_range:
+              arguments:
+                min_value: 0
+                max_value: 1
+      - name: dribbles_per_90
+        description: "Dribbles attempted normalized per 90 minutes played."
+      - name: carries_att_third_per_90
+        description: "Ball carries starting in the attacking third normalized per 90 minutes played."
+      - name: passes_att_third_per_90
+        description: "Passes originating in the attacking third normalized per 90 minutes played."
       - name: pass_completion_pct
         description: "Seasonal pass completion accuracy ratio (completed passes divided by attempted passes)."
       - name: pressures_per_90
         description: "Defensive pressure instances executed normalized per 90 minutes played."
-      - name: tackles_per_90
-        description: "Successful tackles completed normalized per 90 minutes played."
       - name: interceptions_per_90
         description: "Interceptions completed normalized per 90 minutes played."
-      - name: carries_per_90
-        description: "Ball carries completed normalized per 90 minutes played."
-      - name: aerial_duels_per_90
-        description: "Aerial duels won or contested normalized per 90 minutes played."
+      - name: clearances_per_90
+        description: "Clearance events normalized per 90 minutes played."
+      - name: duels_per_90
+        description: "All contested ground and aerial duels normalized per 90 minutes played."
+
+      # Supplementary Traditional Metrics
+      - name: goals_per_90
+        description: "Goals scored normalized per 90 minutes played."
+      - name: assists_per_90
+        description: "Assists registered normalized per 90 minutes played."
 
   - name: mart_team_comparison
     description: "Aggregated team metrics allowing for head-to-head tactical comparisons across leagues and seasons. Combines historical season baseline metrics with final rolling performance proxies."
@@ -233,10 +246,10 @@ models:
 
       # Short-Term Momentum Figures
       - name: latest_rolling_xg
-        description: "The average expected goals (xG) generated over the team's final 5 matches of the season. Note: This will be NULL for the first 5 matches of every team-season due to rolling window constraints."
+        description: "The average expected goals (xG) generated over the team's final 5 matches of the season."
 
       - name: latest_rolling_possession
-        description: "The average estimated possession share controlled over the team's final 5 matches of the season. Note: This will be NULL for the first 5 matches of every team-season due to rolling window constraints."
+        description: "The average estimated possession share controlled over the team's final 5 matches of the season."
 
   - name: mart_match_prediction_features
     description: "The official feature matrix used for match outcome prediction models (e.g., XGBoost training and scoring). Combines 5-match team rolling tactical form with historical head-to-head records."
@@ -256,7 +269,7 @@ models:
         tests:
           - not_null
       - name: match_result
-        description: "The categorical target outcome variable ('home_win', 'away_win', or 'draw'). used as classification labels."
+        description: "The categorical target outcome variable ('home_win', 'away_win', or 'draw') used as classification labels."
         tests:
           - not_null
           - accepted_values:
