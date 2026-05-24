@@ -38,7 +38,11 @@ aggregated AS (
         SUM(tackles)               AS total_tackles,
         SUM(interceptions)         AS total_interceptions,
         SUM(carries)               AS total_carries,
-        SUM(aerial_duels)          AS total_aerial_duels
+        SUM(aerial_duels)          AS total_aerial_duels,
+        SUM(dribbles)              AS total_dribbles,
+        SUM(clearances)            AS total_clearances,
+        SUM(carries_att_third)     AS total_carries_att_third,
+        SUM(passes_att_third)      AS total_passes_att_third
     FROM player_match_with_meta
     GROUP BY 1, 2, 3
     HAVING SUM(minutes_played) >= 270
@@ -48,17 +52,22 @@ aggregated AS (
 per90 AS (
     SELECT
         *,
-        SAFE_DIVIDE(total_goals, total_minutes) * 90            AS goals_per_90,
-        SAFE_DIVIDE(total_assists, total_minutes) * 90          AS assists_per_90,
-        SAFE_DIVIDE(total_shots, total_minutes) * 90            AS shots_per_90,
-        SAFE_DIVIDE(total_xg, total_minutes) * 90               AS xg_per_90,
-        SAFE_DIVIDE(total_passes_attempted, total_minutes) * 90 AS passes_attempted_per_90,
-        SAFE_DIVIDE(total_passes_completed, total_minutes) * 90 AS passes_completed_per_90,
-        SAFE_DIVIDE(total_pressures, total_minutes) * 90        AS pressures_per_90,
-        SAFE_DIVIDE(total_tackles, total_minutes) * 90          AS tackles_per_90,
-        SAFE_DIVIDE(total_interceptions, total_minutes) * 90    AS interceptions_per_90,
-        SAFE_DIVIDE(total_carries, total_minutes) * 90          AS carries_per_90,
-        SAFE_DIVIDE(total_aerial_duels, total_minutes) * 90     AS aerial_duels_per_90,
+        SAFE_DIVIDE(total_goals, total_minutes) * 90             AS goals_per_90,
+        SAFE_DIVIDE(total_assists, total_minutes) * 90           AS assists_per_90,
+        SAFE_DIVIDE(total_shots, total_minutes) * 90             AS shots_per_90,
+        SAFE_DIVIDE(total_xg, total_minutes) * 90                AS xg_per_90,
+        SAFE_DIVIDE(total_xg, total_shots)                       AS xg_per_shot,
+        SAFE_DIVIDE(total_passes_attempted, total_minutes) * 90  AS passes_attempted_per_90,
+        SAFE_DIVIDE(total_passes_completed, total_minutes) * 90  AS passes_completed_per_90,
+        SAFE_DIVIDE(total_pressures, total_minutes) * 90         AS pressures_per_90,
+        SAFE_DIVIDE(total_tackles, total_minutes) * 90           AS tackles_per_90,
+        SAFE_DIVIDE(total_interceptions, total_minutes) * 90     AS interceptions_per_90,
+        SAFE_DIVIDE(total_carries, total_minutes) * 90           AS carries_per_90,
+        SAFE_DIVIDE(total_aerial_duels, total_minutes) * 90      AS aerial_duels_per_90,
+        SAFE_DIVIDE(total_dribbles, total_minutes) * 90          AS dribbles_per_90,
+        SAFE_DIVIDE(total_clearances, total_minutes) * 90        AS clearances_per_90,
+        SAFE_DIVIDE(total_carries_att_third, total_minutes) * 90 AS carries_att_third_per_90,
+        SAFE_DIVIDE(total_passes_att_third, total_minutes) * 90  AS passes_att_third_per_90,
         SAFE_DIVIDE(total_passes_completed, total_passes_attempted) AS pass_completion_pct
     FROM aggregated
 ),
@@ -73,24 +82,32 @@ z_scored AS (
         total_minutes,
         matches_played,
 
-        -- raw per-90
-        goals_per_90,
-        assists_per_90,
+        -- raw per-90 (PCA features)
         shots_per_90,
         xg_per_90,
-        passes_attempted_per_90,
+        xg_per_shot,
+        dribbles_per_90,
+        carries_att_third_per_90,
+        passes_att_third_per_90,
         pass_completion_pct,
         pressures_per_90,
-        tackles_per_90,
         interceptions_per_90,
-        carries_per_90,
+        clearances_per_90,
         aerial_duels_per_90,
 
-        -- z-scored per-90 (partitioned by context)
+        -- additional raw per-90 (non-PCA)
+        goals_per_90,
+        assists_per_90,
+        passes_attempted_per_90,
+        passes_completed_per_90,
+        tackles_per_90,
+        carries_per_90,
+
+        -- z-scored per-90 for PCA features (partitioned by context)
         SAFE_DIVIDE(
-            goals_per_90 - AVG(goals_per_90) OVER (PARTITION BY is_international),
-            NULLIF(STDDEV(goals_per_90) OVER (PARTITION BY is_international), 0)
-        ) AS z_goals_per_90,
+            shots_per_90 - AVG(shots_per_90) OVER (PARTITION BY is_international),
+            NULLIF(STDDEV(shots_per_90) OVER (PARTITION BY is_international), 0)
+        ) AS z_shots_per_90,
 
         SAFE_DIVIDE(
             xg_per_90 - AVG(xg_per_90) OVER (PARTITION BY is_international),
@@ -98,14 +115,24 @@ z_scored AS (
         ) AS z_xg_per_90,
 
         SAFE_DIVIDE(
-            shots_per_90 - AVG(shots_per_90) OVER (PARTITION BY is_international),
-            NULLIF(STDDEV(shots_per_90) OVER (PARTITION BY is_international), 0)
-        ) AS z_shots_per_90,
+            xg_per_shot - AVG(xg_per_shot) OVER (PARTITION BY is_international),
+            NULLIF(STDDEV(xg_per_shot) OVER (PARTITION BY is_international), 0)
+        ) AS z_xg_per_shot,
 
         SAFE_DIVIDE(
-            passes_attempted_per_90 - AVG(passes_attempted_per_90) OVER (PARTITION BY is_international),
-            NULLIF(STDDEV(passes_attempted_per_90) OVER (PARTITION BY is_international), 0)
-        ) AS z_passes_attempted_per_90,
+            dribbles_per_90 - AVG(dribbles_per_90) OVER (PARTITION BY is_international),
+            NULLIF(STDDEV(dribbles_per_90) OVER (PARTITION BY is_international), 0)
+        ) AS z_dribbles_per_90,
+
+        SAFE_DIVIDE(
+            carries_att_third_per_90 - AVG(carries_att_third_per_90) OVER (PARTITION BY is_international),
+            NULLIF(STDDEV(carries_att_third_per_90) OVER (PARTITION BY is_international), 0)
+        ) AS z_carries_att_third_per_90,
+
+        SAFE_DIVIDE(
+            passes_att_third_per_90 - AVG(passes_att_third_per_90) OVER (PARTITION BY is_international),
+            NULLIF(STDDEV(passes_att_third_per_90) OVER (PARTITION BY is_international), 0)
+        ) AS z_passes_att_third_per_90,
 
         SAFE_DIVIDE(
             pass_completion_pct - AVG(pass_completion_pct) OVER (PARTITION BY is_international),
@@ -118,19 +145,14 @@ z_scored AS (
         ) AS z_pressures_per_90,
 
         SAFE_DIVIDE(
-            tackles_per_90 - AVG(tackles_per_90) OVER (PARTITION BY is_international),
-            NULLIF(STDDEV(tackles_per_90) OVER (PARTITION BY is_international), 0)
-        ) AS z_tackles_per_90,
-
-        SAFE_DIVIDE(
             interceptions_per_90 - AVG(interceptions_per_90) OVER (PARTITION BY is_international),
             NULLIF(STDDEV(interceptions_per_90) OVER (PARTITION BY is_international), 0)
         ) AS z_interceptions_per_90,
 
         SAFE_DIVIDE(
-            carries_per_90 - AVG(carries_per_90) OVER (PARTITION BY is_international),
-            NULLIF(STDDEV(carries_per_90) OVER (PARTITION BY is_international), 0)
-        ) AS z_carries_per_90,
+            clearances_per_90 - AVG(clearances_per_90) OVER (PARTITION BY is_international),
+            NULLIF(STDDEV(clearances_per_90) OVER (PARTITION BY is_international), 0)
+        ) AS z_clearances_per_90,
 
         SAFE_DIVIDE(
             aerial_duels_per_90 - AVG(aerial_duels_per_90) OVER (PARTITION BY is_international),
