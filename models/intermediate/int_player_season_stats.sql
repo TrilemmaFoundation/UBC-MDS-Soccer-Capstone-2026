@@ -20,7 +20,7 @@ player_match_with_meta AS (
     INNER JOIN matches m ON pms.match_id = m.match_id
 ),
 
--- Aggregate to the season level and apply the 450-minute threshold
+-- Aggregate to the season level and apply the 270-minute threshold
 aggregated AS (
     SELECT
         player_id,
@@ -50,7 +50,7 @@ aggregated AS (
         SUM(passes_att_third) AS total_passes_att_third
     FROM player_match_with_meta
     GROUP BY 1, 2, 3, 4, 5, 6
-    HAVING SUM(minutes_played) >= 450
+    HAVING SUM(minutes_played) >= 270
 ),
 
 -- Calculate normalized per-90 metrics
