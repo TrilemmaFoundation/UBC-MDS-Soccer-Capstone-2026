@@ -34,7 +34,6 @@ jobs:
 
       # NOTE: Ensure GCE_SERVICE_ACCOUNT_KEY exists in Settings > Secrets and Variables > Actions
       # If this secret is missing or misnamed, the authentication below will fail.
-       Aurora:
       - name: Set up Google Cloud SDK (Authentication)
         uses: google-github-actions/auth@v2
         with:
