@@ -98,6 +98,7 @@ final AS (
         SAFE_DIVIDE(total_duels, total_minutes) * 90 AS duels_per_90,
 
         -- Standard Per-90 View Metrics
+        SAFE_DIVIDE(total_passes_attempted, total_minutes) * 90 AS passes_per_90,
         SAFE_DIVIDE(total_shots, total_minutes) * 90 AS shots_per_90,
         SAFE_DIVIDE(total_xg, total_minutes) * 90 AS xg_per_90,
         SAFE_DIVIDE(total_goals, total_minutes) * 90 AS goals_per_90,
