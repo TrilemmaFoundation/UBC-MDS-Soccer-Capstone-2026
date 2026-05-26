@@ -51,4 +51,4 @@ RUN pip install --no-cache-dir \
 COPY --chown=${NB_UID}:${NB_GID} app/ /home/${NB_USER}/work/app/
 
 # Final container execution setting
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+# ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -62,6 +62,7 @@ jobs:
 
             # Ensure credentials and configs are readable by the non-root container user (UID 1000)
             sudo chown 1000:1000 $HOME/.env $HOME/service-account-key.json
+            sudo chmod 600 $HOME/.env $HOME/service-account-key.json
 
             sudo docker compose pull
             sudo docker compose up -d

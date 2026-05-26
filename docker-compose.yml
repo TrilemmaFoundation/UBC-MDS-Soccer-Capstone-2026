@@ -5,16 +5,30 @@ services:
     environment:
       - NB_UID=1000
       - NB_GID=1000
+    env_file:
+      - .env
     ports:
       - "80:8000"
-      - "8888:8888"
     volumes:
-      - .:/home/jovyan/work
+      - ./service-account-key.json:/app/service-account-key.json:ro
     working_dir: /home/jovyan/work
+    command: ["python", "app/manage.py", "runserver", "0.0.0.0:8000"]
     deploy:
       resources:
         limits:
           memory: 5G
+    platform: linux/arm64
+
+  jupyter-env:
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:7a8d447d868cfdd9f7e29609fda2a3ec57d2bde4
+    restart: unless-stopped
+    environment:
+      - NB_UID=1000
+      - NB_GID=1000
+    ports:
+      - "8888:8888"
+    working_dir: /home/jovyan/work
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
     platform: linux/arm64
 
   dagster-env:
@@ -23,7 +37,7 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/opt/dagster/app
+      - ./src/dagster/definitions.py:/opt/dagster/app/definitions.py:ro
     working_dir: /opt/dagster/app
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home
