@@ -37,8 +37,14 @@ jobs:
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
           echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
 
-          # File copy matches the path execution below (~/)
+          # 1. Create directory structure and clean up previously locked files to avoid scp permission denied
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/src/dagster && sudo rm -f ~/.env ~/service-account-key.json"
+
+          # 2. Copy root files to ~/
           scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          
+          # 3. Copy the definitions file explicitly into its matching subfolder
+          scp src/dagster/definitions.py ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/src/dagster/
 
       - name: Deploy Cluster on GCE VM
         run: |
@@ -53,6 +59,10 @@ jobs:
             # Execute cluster update using files located in $HOME
             sudo docker compose down || true
             sudo docker image prune -a -f
+
+            # Lock down credentials so only the deployment user and Docker can read them
+            chmod 600 $HOME/.env $HOME/service-account-key.json
+
             sudo docker compose pull
             sudo docker compose up -d
           EOF

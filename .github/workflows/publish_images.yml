@@ -38,6 +38,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: mdssoccer2026/ubc-mds-soccer-capstone-2026
+          flavor: |
+            suffix=-django,onlatest=true
           tags: |
             type=raw,value=${{github.sha}},enable=${{github.ref_type != 'tag'}}
             type=raw,value=latest
@@ -46,7 +48,49 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile.django
+          push: true
+          platforms: linux/arm64
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  build_jupyter:
+    name: Push Jupyter Image to Docker Hub
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata for Jupyter
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: mdssoccer2026/ubc-mds-soccer-capstone-2026
+          flavor: |
+            suffix=-jupyter,onlatest=true
+          tags: |
+            type=raw,value=${{github.sha}},enable=${{github.ref_type != 'tag'}}
+            type=raw,value=latest
+
+      - name: Build and push Jupyter Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile.jupyter
           push: true
           platforms: linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -97,7 +141,7 @@ jobs:
   update_manifest:
     name: Update Compose Tags
     runs-on: ubuntu-latest
-    needs: [build_django, build_dagster]
+    needs: [build_django, build_jupyter, build_dagster]
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -107,9 +151,12 @@ jobs:
       - name: Safely Update Compose Image Mappings
         run: |
           # 1. Update the image ONLY within the django-env service block
-          sed -i '/django-env:/,/dagster-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_django.outputs.version }}|}' docker-compose.yml
+          sed -i '/django-env:/,/jupyter-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_django.outputs.version }}|}' docker-compose.yml
           
-          # 2. Update the image ONLY within the dagster-env service block onwards
+          # 2. Update the image ONLY within the jupyter-env service block
+          sed -i '/jupyter-env:/,/dagster-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_jupyter.outputs.version }}|}' docker-compose.yml
+          
+          # 3. Update the image ONLY within the dagster-env service block onwards
           sed -i '/dagster-env:/,$ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_dagster.outputs.version }}|}' docker-compose.yml
 
       - name: Commit and push updated docker-compose.yml
@@ -117,5 +164,5 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add docker-compose.yml
-          git commit -m "Update Django & Dagster image tags (ARM64)" || exit 0
+          git commit -m "Update Django, Jupyter, & Dagster image tags (ARM64)" || exit 0
           git push

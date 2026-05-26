@@ -1,0 +1,20 @@
+# Use a lightweight Python base image
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install Python packages required for the Django web application and chatbot
+RUN pip install --no-cache-dir \
+    django \
+    djangorestframework \
+    django-htmx \
+    groq \
+    google-cloud-bigquery \
+    google-cloud-bigquery-storage \
+    python-dotenv
+
+# Copy the application code
+COPY app/ /app/app/
+
+# Default command for the container
+CMD ["python", "app/manage.py", "runserver", "0.0.0.0:8000"]

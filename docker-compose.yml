@@ -1,29 +1,44 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:a56fd47a5e456ae5bf0a6de842a4e24319ecbca5
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:74bfd4e46c6a8a1c7f2aa975447ee79996d0bdf9-django
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
-      - "8000:8000"
-      - "8888:8888"
+      - "80:8000"
     volumes:
-      - .:/home/jovyan
-    working_dir: /home/jovyan
+      - ./service-account-key.json:/app/service-account-key.json:ro
+    working_dir: /app
+    command: ["python", "app/manage.py", "runserver", "0.0.0.0:8000"]
     deploy:
       resources:
         limits:
           memory: 5G
     platform: linux/arm64
 
+  jupyter-env:
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:74bfd4e46c6a8a1c7f2aa975447ee79996d0bdf9-jupyter
+    restart: unless-stopped
+    environment:
+      - NB_UID=1000
+      - NB_GID=1000
+    ports:
+      - "8888:8888"
+    working_dir: /home/jovyan/work
+    command: ["jupyter", "lab", "--ip=0.0.0.0", "--port=8888", "--no-browser"]
+    platform: linux/arm64
+
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:a56fd47a5e456ae5bf0a6de842a4e24319ecbca5-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:74bfd4e46c6a8a1c7f2aa975447ee79996d0bdf9-dagster
     restart: unless-stopped
     ports:
       - "3000:3000"
     volumes:
-      - .:/opt/dagster/app
+      - ./src/dagster/definitions.py:/opt/dagster/app/definitions.py:ro
     working_dir: /opt/dagster/app
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home
+    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-f", "definitions.py"]
     deploy:
       resources:
         limits:

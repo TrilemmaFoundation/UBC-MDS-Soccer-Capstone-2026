@@ -1,16 +1,24 @@
-# views.py
+# app/chatbot/views.py
 from django.shortcuts import render
 from django.http import JsonResponse
 from .llm_engine import ask_football_chatbot
 
 def chat_view(request):
-    """Renders the main chat interface."""
+    """Renders the main chat workspace framework layout."""
     return render(request, "chat.html")
 
 def get_response(request):
+    """Processes message requests and injects the corresponding response block back to HTMX."""
     if request.method == "POST":
-        user_text = request.POST.get("message")
+        user_text = request.POST.get("message", "").strip()
+        if not user_text:
+            return JsonResponse({"error": "Empty message"}, status=400)
+            
         answer = ask_football_chatbot(user_text)
         
-        # Return a simple HTML fragment instead of JSON
-        return render(request, "chat_message.html", {"message": answer})
+        # Send both user input context and output back to the target canvas window element
+        context = {
+            "user_message": user_text,
+            "ai_message": answer
+        }
+        return render(request, "chat_message.html", context)
