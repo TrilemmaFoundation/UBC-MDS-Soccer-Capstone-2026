@@ -11,23 +11,19 @@ RUN apt-get update \
 
 # Copy configuration and script files
 COPY conda-linux-aarch64.lock /tmp/conda-linux-aarch64.lock
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-
-# Set execution permissions for the entrypoint script
-RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # 2. USER ACTIONS: Python environment management
 # Switch to the default notebook user for all package installations
 USER $NB_UID
 WORKDIR /home/${NB_USER}/work
 
-# Update Conda environment using the ARM lock file (Fixed line continuation syntax)
+# Update Conda environment using the ARM lock file
 RUN conda update --quiet --file /tmp/conda-linux-aarch64.lock \
     && conda clean --all -y -f \
     && fix-permissions "${CONDA_DIR}" \
     && fix-permissions "/home/${NB_USER}"
 
-# Install pip packages
+# Install pip packages for Analytics and Pipeline Engineering
 RUN pip install --no-cache-dir \
     duckdb \
     statsbombpy \
@@ -41,14 +37,5 @@ RUN pip install --no-cache-dir \
     dagster-webserver \
     dagster-dbt \
     dagster-gcp \
-    django \
-    djangorestframework \
-    django-htmx \
-    groq \
     xgboost \
     plotly
-
-COPY --chown=${NB_UID}:${NB_GID} app/ /home/${NB_USER}/work/app/
-
-# Final container execution setting
-# ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

@@ -1,17 +1,14 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:c65e1308687eb531c258eeb9f8ef3729c19be8cc
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:latest-django
     restart: unless-stopped
-    environment:
-      - NB_UID=1000
-      - NB_GID=1000
     env_file:
       - .env
     ports:
       - "80:8000"
     volumes:
       - ./service-account-key.json:/app/service-account-key.json:ro
-    working_dir: /home/jovyan/work
+    working_dir: /app
     command: ["python", "app/manage.py", "runserver", "0.0.0.0:8000"]
     deploy:
       resources:
@@ -20,7 +17,7 @@ services:
     platform: linux/arm64
 
   jupyter-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:c65e1308687eb531c258eeb9f8ef3729c19be8cc
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:latest-jupyter
     restart: unless-stopped
     environment:
       - NB_UID=1000
