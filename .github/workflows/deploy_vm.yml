@@ -37,8 +37,8 @@ jobs:
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
           echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
 
-          # 1. Create the matching directory structure on the remote VM via SSH
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/src/dagster"
+          # 1. Create directory structure and clean up previously locked files to avoid scp permission denied
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/src/dagster && sudo rm -f ~/.env ~/service-account-key.json"
 
           # 2. Copy root files to ~/
           scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
@@ -60,9 +60,8 @@ jobs:
             sudo docker compose down || true
             sudo docker image prune -a -f
 
-            # Ensure credentials and configs are readable by the non-root container user (UID 1000)
-            sudo chown 1000:1000 $HOME/.env $HOME/service-account-key.json
-            sudo chmod 600 $HOME/.env $HOME/service-account-key.json
+            # Lock down credentials so only the deployment user and Docker can read them
+            chmod 600 $HOME/.env $HOME/service-account-key.json
 
             sudo docker compose pull
             sudo docker compose up -d
