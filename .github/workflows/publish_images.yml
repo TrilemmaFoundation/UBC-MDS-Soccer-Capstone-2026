@@ -151,13 +151,13 @@ jobs:
       - name: Safely Update Compose Image Mappings
         run: |
           # 1. Update the image ONLY within the django-env service block
-          sed -i '/django-env:/,/jupyter-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_django.outputs.version }}-django|}' docker-compose.yml
+          sed -i '/django-env:/,/jupyter-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_django.outputs.version }}|}' docker-compose.yml
           
           # 2. Update the image ONLY within the jupyter-env service block
-          sed -i '/jupyter-env:/,/dagster-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_jupyter.outputs.version }}-jupyter|}' docker-compose.yml
+          sed -i '/jupyter-env:/,/dagster-env:/ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_jupyter.outputs.version }}|}' docker-compose.yml
           
           # 3. Update the image ONLY within the dagster-env service block onwards
-          sed -i '/dagster-env:/,$ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_dagster.outputs.version }}-dagster|}' docker-compose.yml
+          sed -i '/dagster-env:/,$ {s|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:.*|image: mdssoccer2026/ubc-mds-soccer-capstone-2026:${{ needs.build_dagster.outputs.version }}|}' docker-compose.yml
 
       - name: Commit and push updated docker-compose.yml
         run: |
