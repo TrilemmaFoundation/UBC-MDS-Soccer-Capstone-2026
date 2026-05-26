@@ -1,6 +1,6 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:7a8d447d868cfdd9f7e29609fda2a3ec57d2bde4
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:dc2a97c44b9b4973af16610009fb99206d68c638
     restart: unless-stopped
     environment:
       - NB_UID=1000
@@ -18,7 +18,7 @@ services:
     platform: linux/arm64
 
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:7a8d447d868cfdd9f7e29609fda2a3ec57d2bde4-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:dc2a97c44b9b4973af16610009fb99206d68c638-dagster
     restart: unless-stopped
     ports:
       - "3000:3000"
