@@ -1,6 +1,11 @@
 models:
   - name: int_match_stats
     description: "Team-level match statistics including xG, passing accuracy, and possession share."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - match_id
+            - team
     columns:
       - name: match_id
         tests:
@@ -16,6 +21,11 @@ models:
 
   - name: int_player_match_stats
     description: "Player-level match statistics used for archetype clustering and performance analysis."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - player_id
+            - match_id
     columns:
       - name: player_id
         tests:
@@ -46,7 +56,13 @@ models:
         description: "Total raw fouls committed by the player during the match."
 
   - name: int_player_season_stats
-    description: "Aggregated player statistics per competition season, normalized per 90 minutes. Filters for players with at least 450 minutes."
+    description: "Aggregated player statistics per competition season, normalized per 90 minutes. Filters for players with at least 270 minutes."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - player_id
+            - competition_id
+            - season_id
     columns:
       - name: player_id
         tests:
@@ -57,7 +73,7 @@ models:
           - not_null
           - dbt_utils.accepted_range:
               arguments:
-                min_value: 450
+                min_value: 270
       - name: xg_per_shot
         description: "Expected goals per individual shot attempt. Seasonal scoring efficiency metric."
         tests:
@@ -88,6 +104,12 @@ models:
 
   - name: int_team_season_stats
     description: "Seasonal aggregation of team performance including points, xG, and tactical proxies."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - team
+            - competition_id
+            - season_id
     columns:
       - name: team
         tests:
@@ -102,6 +124,11 @@ models:
 
   - name: int_team_rolling_form
     description: "5-match rolling averages of tactical and performance metrics to be used as features for match outcome prediction."
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - match_id
+            - team
     columns:
       - name: rolling_avg_xg
         description: "Average xG generated over the team's previous 5 matches."
