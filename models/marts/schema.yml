@@ -172,9 +172,9 @@ models:
 
       # Dimensional Visual Layout Coordinates
       - name: pc1
-        description: "Horizontal coordinate matching Principal Component 1. Supports plotting positions inside the 2D cluster scatter view component."
+        description: "Derived Principal Component 1 score (horizontal coordinate) calculated via dot product of z-scored player features against BigQuery PCA loadings."
       - name: pc2
-        description: "Vertical coordinate matching Principal Component 2. Supports plotting positions inside the 2D cluster scatter view component."
+        description: "Derived Principal Component 2 score (vertical coordinate) calculated via dot product of z-scored player features against BigQuery PCA loadings."
 
       # Exact 11 Features for Clustering Parity & Radar Chart Heatmaps (Aligned to _per_90)
       - name: shots_per_90

@@ -14,6 +14,76 @@ cluster_assignments AS (
     FROM {{ source('ml_models', 'cluster_assignments') }}
 ),
 
+pca_loadings AS (
+    SELECT 
+        CAST(component AS STRING) AS component,
+        CAST(feature AS STRING)   AS feature,
+        CAST(loading AS FLOAT64)  AS loading
+    FROM {{ source('ml_models', 'pca_loadings') }}
+),
+
+unpivoted_features AS (
+    SELECT 
+        player_id, 
+        competition_id, 
+        season_id, 
+        feature, 
+        value
+    FROM (
+        SELECT 
+            player_id, competition_id, season_id,
+            CAST(xg_per_90 AS FLOAT64) AS xg_per_90,
+            CAST(shots_per_90 AS FLOAT64) AS shots_per_90,
+            CAST(passes_per_90 AS FLOAT64) AS passes_per_90,
+            CAST(passes_att_third_per_90 AS FLOAT64) AS passes_att_third_per_90,
+            CAST(pressures_per_90 AS FLOAT64) AS pressures_per_90,
+            CAST(carries_per_90 AS FLOAT64) AS carries_per_90,
+            CAST(dribbles_per_90 AS FLOAT64) AS dribbles_per_90,
+            CAST(interceptions_per_90 AS FLOAT64) AS interceptions_per_90,
+            CAST(blocks_per_90 AS FLOAT64) AS blocks_per_90,
+            CAST(clearances_per_90 AS FLOAT64) AS clearances_per_90,
+            CAST(duels_per_90 AS FLOAT64) AS duels_per_90,
+            CAST(xg_per_shot AS FLOAT64) AS xg_per_shot,
+            CAST(pass_completion_pct AS FLOAT64) AS pass_completion_pct
+        FROM player_season_stats
+    )
+    UNPIVOT (
+        value FOR feature IN (
+            xg_per_90, shots_per_90, passes_per_90, passes_att_third_per_90,
+            pressures_per_90, carries_per_90, dribbles_per_90, interceptions_per_90,
+            blocks_per_90, clearances_per_90, duels_per_90, xg_per_shot, pass_completion_pct
+        )
+    )
+),
+
+standardized_features AS (
+    SELECT
+        player_id,
+        competition_id,
+        season_id,
+        feature,
+        -- PCA requires standardized features to prevent magnitude bias and extreme outliers
+        SAFE_DIVIDE(
+            value - AVG(value) OVER (PARTITION BY feature),
+            NULLIF(STDDEV(value) OVER (PARTITION BY feature), 0)
+        ) AS z_value
+    FROM unpivoted_features
+),
+
+pca_scores AS (
+    SELECT
+        f.player_id,
+        f.competition_id,
+        f.season_id,
+        -- Compute the dot product against component loadings
+        SUM(CASE WHEN l.component = 'PC1' THEN f.z_value * l.loading ELSE 0 END) AS pc1,
+        SUM(CASE WHEN l.component = 'PC2' THEN f.z_value * l.loading ELSE 0 END) AS pc2
+    FROM standardized_features f
+    INNER JOIN pca_loadings l 
+        ON f.feature = l.feature
+    GROUP BY 1, 2, 3
+),
+
 final_mart AS (
     SELECT
         p.player_id,
@@ -28,9 +98,9 @@ final_mart AS (
         COALESCE(c.cluster_id, -1)          AS cluster_id,
         COALESCE(c.cluster_label, 'Unknown') AS cluster_label,
 
-        -- PCA Coordinates (Placeholders for cluster.py coordinate exports)
-        CAST(NULL AS FLOAT64) AS pc1,
-        CAST(NULL AS FLOAT64) AS pc2,
+        -- Derived PCA Coordinates from component loadings
+        pca.pc1,
+        pca.pc2,
 
         -- All 11 Clustering features exposed for radar charts / heatmaps
         p.shots_per_90,
@@ -52,6 +122,10 @@ final_mart AS (
     FROM player_season_stats p
     LEFT JOIN cluster_assignments c
         ON p.player_id = c.player_id
+    LEFT JOIN pca_scores pca
+        ON p.player_id = pca.player_id
+        AND p.competition_id = pca.competition_id
+        AND p.season_id = pca.season_id
 )
 
 SELECT * FROM final_mart
