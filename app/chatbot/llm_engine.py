@@ -9,6 +9,10 @@ from .table_schema import TABLE_CONTEXT
 # Initialize Groq client using environment variable
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
+# Initialize BigQuery client once at the module level
+project_id = os.environ.get("GCP_PROJECT_ID", "football-capstone-mds-496219")
+bq_client = bigquery.Client(project=project_id)
+
 def is_safe_sql(sql_query: str) -> bool:
     """Validates that the generated query is strictly a single, read-only SELECT statement."""
     clean_sql = sql_query.strip().upper()
@@ -20,12 +24,16 @@ def is_safe_sql(sql_query: str) -> bool:
     # Block destructive DML/DDL or data modification keywords
     forbidden_keywords = [
         "DROP", "DELETE", "UPDATE", "INSERT", "MERGE", "CREATE", 
-        "ALTER", "GRANT", "CALL", "EXPORT", "TRUNCATE", "REPLACE"
+        "ALTER", "GRANT", "CALL", "EXPORT", "TRUNCATE"
     ]
     for keyword in forbidden_keywords:
         if re.search(r'\b' + keyword + r'\b', clean_sql):
             return False
             
+    # Block REPLACE only if it is not followed by an opening parenthesis
+    if re.search(r'\bREPLACE\b(?!\s*\()', clean_sql):
+        return False
+
     # Ensure it starts with safe read-only commands
     if not (clean_sql.startswith("SELECT") or clean_sql.startswith("WITH")):
         return False
@@ -39,9 +47,6 @@ def query_bigquery(sql):
         return [{"status": "Error", "message": "Database query rejected: Unauthorized SQL statement structure."}]
 
     try:
-        # Parameterize project ID to support multi-environment configurations
-        project_id = os.environ.get("GCP_PROJECT_ID", "football-capstone-mds-496219")
-        bq_client = bigquery.Client(project=project_id)
         
         # Guardrail: Limit maximum bytes billed (e.g., 50 MB) and enforce cache usage
         job_config = bigquery.QueryJobConfig(
