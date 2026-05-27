@@ -1,8 +1,8 @@
 """Compute club-vs-national consistency scores and export to GCS + BigQuery.
 
 Pipeline:
-- Read player-context rows from int_player_club_vs_national (has is_international;
-  int_player_season_stats does not — same source as notebooks/03_consistency_score.ipynb).
+- Read player-context rows from dbt_intermediate.int_player_club_vs_national (has
+  is_international; 13 PCA-aligned z_* columns — same source as notebooks/03/08).
 - Keep players with >=270 minutes in both contexts (club and national).
 - Derive PCA feature weights from analytics.pca_loadings.
 - Weighted performance scores from dbt per-context z-scores (z_*).
@@ -24,25 +24,29 @@ load_dotenv()
 PROJECT_ID = os.getenv("GCP_PROJECT_ID", "football-capstone-mds-496219")
 BUCKET_NAME = os.getenv("ML_GCS_BUCKET", "football-analytics-mds496219")
 TARGET_DATASET = os.getenv("ML_BQ_DATASET", "analytics")
-SOURCE_DATASET = os.getenv("CONSISTENCY_SOURCE_DATASET", "raw_statsbomb_intermediate")
+INTERMEDIATE_DATASET = os.getenv("DBT_INTERMEDIATE_DATASET", "dbt_intermediate")
+SOURCE_DATASET = os.getenv("CONSISTENCY_SOURCE_DATASET", INTERMEDIATE_DATASET)
 SOURCE_TABLE = f"{PROJECT_ID}.{SOURCE_DATASET}.int_player_club_vs_national"
 PCA_LOADINGS_TABLE = f"{PROJECT_ID}.{TARGET_DATASET}.pca_loadings"
 MIN_MINUTES = 270
 GCS_OBJECT = "models/consistency/consistency_scores.parquet"
 
-# Keep in sync with clustering feature space / pca_loadings.
+# Keep in sync with src/ml/cluster.py and int_player_club_vs_national.sql (13 features).
+# cluster.py writes these long names to analytics.pca_loadings; dbt z-columns are z_{feature}.
 FEATURES = [
-    "shots_per_90",
     "xg_per_90",
-    "xg_per_shot",
-    "dribbles_per_90",
-    "carries_att_third_per_90",
+    "shots_per_90",
+    "passes_per_90",
     "passes_att_third_per_90",
-    "pass_completion_pct",
     "pressures_per_90",
+    "carries_per_90",
+    "dribbles_per_90",
     "interceptions_per_90",
+    "blocks_per_90",
     "clearances_per_90",
-    "aerial_duels_per_90",
+    "duels_per_90",
+    "xg_per_shot",
+    "pass_completion_pct",
 ]
 
 Z_COLS = [f"z_{f}" for f in FEATURES]
@@ -107,7 +111,10 @@ def fetch_feature_weights(bq_client: bigquery.Client) -> pd.Series:
         loadings.loc[loadings["feature"].isin(FEATURES)]
         .groupby("feature")["loading"]
         .apply(lambda s: s.abs().sum())
+        .reindex(FEATURES)
     )
+    if weights.isna().any():
+        raise ValueError("pca_loadings missing weights for one or more required features.")
     denom = float(weights.sum())
     if denom == 0:
         raise ValueError("All feature loading weights are zero.")
@@ -222,6 +229,8 @@ def main():
         raise ValueError("No dual-context players found after filtering.")
 
     weights = fetch_feature_weights(bq_client)
+    print(f"Using {len(FEATURES)} PCA features from {PCA_LOADINGS_TABLE}")
+    print(f"Z-score columns from {SOURCE_TABLE}")
     print("Feature weights:")
     print(weights.sort_values(ascending=False))
 
