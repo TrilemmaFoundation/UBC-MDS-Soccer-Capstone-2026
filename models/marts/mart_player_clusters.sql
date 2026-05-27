@@ -12,6 +12,7 @@ cluster_assignments AS (
         CAST(cluster AS INT64)       AS cluster_id,
         CAST(archetype AS STRING)    AS cluster_label
     FROM {{ source('ml_models', 'cluster_assignments') }}
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY cluster_id) = 1
 ),
 
 pca_loadings AS (
