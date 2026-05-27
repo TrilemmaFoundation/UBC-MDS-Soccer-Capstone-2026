@@ -1,7 +1,7 @@
 """Cluster players with PCA + KMeans on per-90 stats from int_player_season_stats.
 
-Features and preprocessing match player_clustering.ipynb exactly:
-- 11 per-90 features
+Features and preprocessing match Li's pca_loadings.parquet exactly:
+- 13 per-90 features (aligned to int_player_season_stats after PR #124)
 - Median imputation for nulls
 - 99th percentile outlier clipping
 - StandardScaler -> PCA (80% variance threshold) -> KMeans k=6
@@ -28,26 +28,34 @@ TARGET_DATASET       = os.getenv("ML_BQ_DATASET", "analytics")
 SOURCE_TABLE         = f"{PROJECT_ID}.{INTERMEDIATE_DATASET}.int_player_season_stats"
 GCS_PREFIX           = "models/clustering"
 
-# Matches player_clustering.ipynb CLUSTER_FEATURES exactly
+# 13 features aligned to Li's pca_loadings.parquet and int_player_season_stats
 FEATURES = [
-    "shots_per_90",
     "xg_per_90",
-    "xg_per_shot",
-    "dribbles_per_90",
-    "carries_att_third_per_90",
+    "shots_per_90",
+    "passes_per_90",
     "passes_att_third_per_90",
-    "pass_completion_pct",
     "pressures_per_90",
+    "carries_per_90",
+    "dribbles_per_90",
     "interceptions_per_90",
+    "blocks_per_90",
     "clearances_per_90",
-    "aerial_duels_per_90",
+    "duels_per_90",
+    "xg_per_shot",
+    "pass_completion_pct",
 ]
 
-N_CLUSTERS   = 6
+N_CLUSTERS   = 5
 RANDOM_STATE = 42
 
-# Update once Li reviews the cluster profile heatmap
-CLUSTER_LABELS = {k: f"Cluster {k}" for k in range(N_CLUSTERS)}
+# Archetypes aligned to Li's notebook archetype_map (outfield only; GK handled separately)
+CLUSTER_LABELS = {
+    0: "Low Activity",
+    1: "Creative Winger",
+    2: "Creative Playmaker",
+    3: "Defensive Anchor",
+    4: "Pressing Forward",
+}
 
 
 def fetch_player_features(bq_client: bigquery.Client) -> pd.DataFrame:
@@ -58,17 +66,19 @@ def fetch_player_features(bq_client: bigquery.Client) -> pd.DataFrame:
             competition_id,
             season_id,
             total_minutes,
-            shots_per_90,
             xg_per_90,
-            SAFE_DIVIDE(total_xg, total_shots)  AS xg_per_shot,
-            dribbles_per_90,
-            carries_att_third_per_90,
+            shots_per_90,
+            passes_per_90,
             passes_att_third_per_90,
-            pass_completion_pct,
             pressures_per_90,
+            carries_per_90,
+            dribbles_per_90,
             interceptions_per_90,
+            blocks_per_90,
             clearances_per_90,
-            aerial_duels_per_90
+            duels_per_90,
+            xg_per_shot,
+            pass_completion_pct
         FROM `{SOURCE_TABLE}`
     """
     print(f"Querying {SOURCE_TABLE}")
