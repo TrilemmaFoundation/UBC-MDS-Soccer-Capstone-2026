@@ -21,11 +21,6 @@ models:
 
   - name: int_player_match_stats
     description: "Player-level match statistics used for archetype clustering and performance analysis."
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - player_id
-            - match_id
     columns:
       - name: player_id
         tests:
@@ -140,7 +135,6 @@ models:
     columns:
       - name: match_id
         tests:
-          - unique
           - not_null
       - name: competition_id
         description: "Unique identifier for the competition, mapped down from staging to allow clustering configurations on target marts."

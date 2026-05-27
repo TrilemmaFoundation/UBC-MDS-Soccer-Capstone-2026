@@ -21,6 +21,7 @@ data/
 # dbt generated
 target/
 logs/
+dbt_packages/
 dbt.log
 manifest.json
 graph_summary.json

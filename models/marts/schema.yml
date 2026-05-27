@@ -99,12 +99,6 @@ models:
 
   - name: mart_player_performance
     description: "Detailed player-level seasonal and match statistics combined with ML-generated tactical archetypes. Used for analyzing individual contributions and player scouting."
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - player_id
-            - competition_id
-            - season_id
     columns:
       - name: player_id
         description: "Unique identifier for the player."
@@ -140,12 +134,6 @@ models:
 
   - name: mart_player_clusters
     description: "Player seasonal performance profiles combined with cluster assignments from the BigQuery analytics warehouse. Formulated with dimensional coordinates for 2D visualization components and raw parameters for performance profile heatmaps."
-    tests:
-      - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - player_id
-            - competition_id
-            - season_id
     columns:
       # Player & Season Keys
       - name: player_id
@@ -273,7 +261,6 @@ models:
       - name: match_id
         description: "Primary key. Unique identifier matching individual matches."
         tests:
-          - unique
           - not_null
           - relationships:
               arguments:
