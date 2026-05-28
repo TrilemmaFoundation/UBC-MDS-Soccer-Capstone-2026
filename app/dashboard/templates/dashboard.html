@@ -2,21 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
     <title>Football Analytics Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: #f4f4f9; }
-        .iframe-container { width: 100%; height: 100vh; display: flex; justify-content: center; }
-        iframe { border: 0; width: 100%; height: 100%; }
+        /* Custom styles for the iframe container to ensure it fills available space */
+        body { margin: 0; padding: 0; }
+        .iframe-container { flex-grow: 1; display: flex; }
+        iframe { border: 0; width: 100%; height: 100%; } /* iframe fills its container */
     </style>
 </head>
-<body>
-    <div class="iframe-container">
+<body class="bg-gray-900 text-white font-sans flex flex-col h-screen">
+    <!-- Header section - constrained width -->
+    <div class="max-w-4xl mx-auto w-full p-4">
+        <header class="py-4 border-b border-gray-700 flex justify-between items-center flex-wrap gap-2">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-green-400">Football Analytics Dashboard</h1>
+                <nav class="flex space-x-3 text-sm">
+                    <a href="/" class="text-gray-400 hover:text-white transition">Chatbot</a>
+                    <a href="/dashboard/" class="text-white font-semibold underline decoration-green-400 underline-offset-4">Dashboard</a>
+                </nav>
+            </div>
+            <span class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400 whitespace-nowrap">Powered by StatsBomb & Looker Studio</span>
+        </header>
+    </div>
+    <!-- Dashboard iframe section - full width -->
+    <div class="iframe-container flex-1">
         <iframe 
-            src="https://datastudio.google.com/reporting/8b381c51-1e61-42c6-8a5e-0aa91f7f5a47/page/vzQxF/edit" 
+            src="https://datastudio.google.com/embed/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53/page/If9xF" 
             allowfullscreen 
             sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox">
         </iframe>
+    </div>
+</body>
+</html>
+        </div>
     </div>
 </body>
 </html>
