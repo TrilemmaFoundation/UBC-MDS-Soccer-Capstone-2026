@@ -11,8 +11,14 @@ cluster_assignments AS (
         CAST(player_id AS INT64)     AS player_id,
         CAST(cluster AS INT64)       AS cluster_id,
         CAST(archetype AS STRING)    AS cluster_label
-    FROM {{ source('ml_models', 'cluster_assignments') }}
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY cluster_id) = 1
+    FROM {{ source('ml_models', 'cluster_assignments') }} ca
+    -- Join to int_player_season_stats to get total_minutes for ordering
+    INNER JOIN {{ ref('int_player_season_stats') }} pss
+        ON ca.player_id = pss.player_id
+        -- Assuming cluster_assignments also contains competition_id and season_id for a proper join
+        AND ca.competition_id = pss.competition_id
+        AND ca.season_id = pss.season_id
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY ca.player_id ORDER BY pss.total_minutes DESC) = 1
 ),
 
 pca_loadings AS (
@@ -103,7 +109,7 @@ final_mart AS (
         pca.pc1,
         pca.pc2,
 
-        -- All 11 Clustering features exposed for radar charts / heatmaps
+        -- All 13 Clustering features exposed for radar charts / heatmaps
         p.shots_per_90,
         p.xg_per_90,
         p.xg_per_shot,
