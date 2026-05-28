@@ -7,11 +7,13 @@ WITH player_season_stats AS (
 ),
 
 cluster_assignments AS (
-    SELECT 
+    SELECT
         CAST(player_id AS INT64)     AS player_id,
         CAST(cluster AS INT64)       AS cluster_id,
         CAST(archetype AS STRING)    AS cluster_label
     FROM {{ source('ml_models', 'cluster_assignments') }}
+    -- Deduplicate to one row per player (players can have multiple season entries)
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY total_minutes DESC) = 1
 ),
 
 joined AS (
