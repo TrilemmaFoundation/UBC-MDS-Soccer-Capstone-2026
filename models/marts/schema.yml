@@ -132,6 +132,26 @@ models:
         tests:
           - not_null
 
+      - name: club_performance_score
+        description: "The aggregated performance score calculated based on PCA feature weights for club matches."
+
+      - name: national_performance_score
+        description: "The aggregated performance score calculated based on PCA feature weights for national team matches."
+
+      - name: consistency_score
+        description: "The consistency score representing the gap between club and national match performances (1 - mean absolute difference)."
+
+      - name: performance_quadrant
+        description: "Categorical quadrant indicating the player's performance alignment across club and international contexts."
+        tests:
+          - accepted_values:
+              arguments:
+                values: 
+                  - 'Elite'
+                  - 'Club Specialist'
+                  - 'International Specialist'
+                  - 'Underperformer'
+
   - name: mart_player_clusters
     description: "Player seasonal performance profiles combined with cluster assignments from the BigQuery analytics warehouse. Formulated with dimensional coordinates for 2D visualization components and raw parameters for performance profile heatmaps."
     columns:

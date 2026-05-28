@@ -14,6 +14,16 @@ cluster_assignments AS (
     FROM {{ source('ml_models', 'cluster_assignments') }}
 ),
 
+consistency_scores AS (
+    SELECT 
+        CAST(player_id AS INT64)                    AS player_id,
+        CAST(club_performance_score AS FLOAT64)     AS club_performance_score,
+        CAST(national_performance_score AS FLOAT64) AS national_performance_score,
+        CAST(consistency_score AS FLOAT64)          AS consistency_score,
+        CAST(performance_quadrant AS STRING)        AS performance_quadrant
+    FROM {{ source('ml_models', 'consistency_scores') }}
+),
+
 joined AS (
     SELECT
         -- Player & Season Metadata
@@ -57,15 +67,17 @@ joined AS (
         p.duels_per_90,
         p.aerial_duels_per_90,
 
-        -- PLACEHOLDERS: Waiting for Rabin's formula to calculate these fields
-        CAST(NULL AS FLOAT64) AS club_performance_score,
-        CAST(NULL AS FLOAT64) AS national_performance_score,
-        CAST(NULL AS FLOAT64) AS consistency_score,
-        CAST(NULL AS STRING)  AS performance_quadrant
+        -- Consistency Metrics (from Rabin's ML pipeline)
+        cs.club_performance_score,
+        cs.national_performance_score,
+        cs.consistency_score,
+        cs.performance_quadrant
 
     FROM player_season_stats p
     LEFT JOIN cluster_assignments c
         ON p.player_id = c.player_id
+    LEFT JOIN consistency_scores cs
+        ON p.player_id = cs.player_id
 )
 
 SELECT * FROM joined
