@@ -1,0 +1,145 @@
+---
+title: "Final Report: Delivering Elite European Football Analytics"
+subtitle: "DSCI 591 Capstone: Trilemma Foundation"
+author:
+  - Ngoc Minh Quan Hoang
+  - Teem Kwong
+  - Rabindranath Duran Pons
+  - Li Pu
+date: "June 2026"
+format:
+  pdf:
+    documentclass: article
+    geometry: margin=1in
+    fontsize: 11pt
+    linestretch: 1.15
+    toc: false
+    number-sections: true
+    colorlinks: true
+    include-in-header:
+      text: |
+        \usepackage{placeins}
+---
+
+# Executive Summary
+
+<!-- TODO: Team to complete -->
+
+# Introduction
+
+<!-- TODO: Team to complete — refine from proposal report based on actual project outcomes -->
+
+# Data
+
+<!-- TODO: Team to complete — can reuse and expand EDA section from proposal report -->
+
+# Data Science Methods
+
+<!-- TODO: Team to complete — clustering, consistency scoring, chatbot, dashboard methods -->
+
+# Data Engineering
+
+## Overview
+
+The data product is underpinned by a fully automated ELT pipeline that moves raw StatsBomb event data from a public API through cloud storage, transformation, machine learning, and finally into end-user analytics interfaces. The pipeline has five layers: ingestion, cloud storage, transformation (dbt), machine learning (Python scripts), and orchestration (Dagster). @fig-architecture illustrates the full architecture.
+
+::: {#fig-architecture fig-pos="H"}
+
+<!-- TODO: Insert architecture diagram (draw.io export) -->
+*[Architecture diagram: GCS → BigQuery → dbt → ML scripts → Dagster → Looker / Chatbot]*
+
+Pipeline architecture: StatsBomb open data flows through GCS and BigQuery, is transformed by dbt into analytics-ready marts, enriched by ML scripts, and served to end-users via Looker Studio and the Django chatbot.
+:::
+
+## Ingestion Layer
+
+Raw data is sourced from the StatsBomb open dataset via the `statsbombpy` Python library. The ingestion script (`src/ingestion/statsbomb.py`) serializes three tables—`matches`, `events`, and `lineups`—as Parquet files and uploads them to a Google Cloud Storage (GCS) bucket under a structured prefix hierarchy (`raw/statsbomb/{table}/`). A BigQuery load job then materializes each Parquet file into the `raw_statsbomb` dataset.
+
+Two design decisions were made to keep ingestion reliable and idempotent. First, each load job uses `WRITE_TRUNCATE` disposition, so re-running the script on the same data does not produce duplicates. Second, deduplication on `match_id` is pushed downstream to the dbt staging layer rather than being enforced at ingest time; this keeps the ingestion script simple and allows the transformation layer to own data quality.
+
+The ingestion asset is registered in Dagster (`raw_statsbomb`) and triggered by a weekly schedule (Mondays at 06:00) as well as a GCS sensor that fires when new match files appear in the bucket, enabling near-real-time refreshes when StatsBomb releases new competitions.
+
+## Transformation Layer (dbt)
+
+All transformation logic lives in a dbt project targeting BigQuery. The project is organized into three layers, each with a distinct responsibility.
+
+### Staging
+
+Staging models (`models/staging/`) perform a one-to-one mapping from raw source tables to clean, typed, and renamed columns. No business logic or aggregation is applied at this layer. Key decisions include:
+
+- Casting all numeric columns to explicit BigQuery types (`INT64`, `FLOAT64`) to prevent implicit coercion downstream.
+- Deriving the `is_international` boolean flag from the competition type field in `stg_statsbomb__matches`. This flag is critical for RQ3 (club vs. national context analysis) and is propagated through the entire intermediate layer.
+- Parsing substitution timestamps from the `HH:MM` string format in `stg_statsbomb__lineups` into float minutes, with a ceiling at 120 minutes to handle extra time correctly.
+
+### Intermediate
+
+Intermediate models (`models/intermediate/`) join, aggregate, and enrich the staged data. Six models form the core of the analytical layer:
+
+**`int_player_match_stats`** aggregates all on-ball events from `stg_statsbomb__events` to the player–match grain using conditional `COUNT` expressions. It computes 22 metrics including shots, xG, assists, passes, pressures, tackles, carries, dribbles, clearances, blocks, and ball recoveries. Minutes played are derived from `stg_statsbomb__lineups` by subtracting substitution-in time from substitution-out time.
+
+**`int_player_season_stats`** joins player-match stats to match metadata and aggregates to the player–competition–season grain. A `HAVING SUM(minutes_played) >= 270` clause filters out players with fewer than three full matches of exposure. The 270-minute threshold is the project-wide standard for minimum statistical reliability: below this threshold, per-90 rates become volatile and unrepresentative of true ability. This model also computes all per-90 normalized metrics (13 features aligned to the PCA clustering pipeline) and two efficiency ratios: `xg_per_shot` and `pass_completion_pct`.
+
+**`int_player_club_vs_national`** is the primary input for RQ3. Rather than aggregating by competition and season, it aggregates by player and context (`is_international`: club or national team). The same 270-minute threshold is applied per context, and only players who appear in both contexts are retained via a `HAVING COUNT(DISTINCT is_international) = 2` filter in the `dual_context` CTE. Within each context, z-scores are computed for all 13 PCA features using window functions partitioned by `is_international`, so club players are standardized against other club players and national players against other national players. This produces 13 `z_*` columns that serve as the direct inputs to the consistency scoring pipeline.
+
+**`int_match_stats`**, **`int_team_season_stats`**, and **`int_team_rolling_form`** support RQ4 (match outcome prediction) and the Looker team comparison dashboard. `int_team_rolling_form` computes 5-match rolling averages of xG, possession, pressures, pass accuracy, and points using BigQuery window functions with a `ROWS BETWEEN 5 PRECEDING AND 1 PRECEDING` frame, ensuring no data leakage (the current match is excluded from its own rolling average).
+
+### Marts
+
+Mart models (`models/marts/`) are the final analytics-ready tables consumed by Looker Studio and the LLM chatbot. Each mart joins intermediate models with ML outputs from the `analytics` BigQuery dataset.
+
+**`mart_player_clusters`** joins `int_player_season_stats` with `analytics.cluster_assignments` (K-Means outputs) and derives PCA coordinates (pc1, pc2) in-database by computing the dot product of z-scored player features against `analytics.pca_loadings`. A `QUALIFY ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY total_minutes DESC) = 1` clause on the cluster assignments CTE prevents fan-out when a player has cluster entries across multiple seasons.
+
+**`mart_player_performance`** enriches the same player-season base with cluster labels and consistency scores from `analytics.consistency_scores`. The same deduplication pattern is applied to the cluster assignments join.
+
+**`mart_match_analysis`** and **`mart_team_comparison`** expose match-level and team-level metrics including xG, possession proxies, pass accuracy, pressures, rolling form, and win/loss records for the Looker dashboards.
+
+All mart models are materialized as BigQuery tables (not views), enabling fast dashboard queries without repeated computation. Schema tests (`not_null`, `unique_combination_of_columns`, `accepted_range`, `accepted_values`) are defined in `models/marts/schema.yml` and run in CI via GitHub Actions on every pull request that touches a dbt model.
+
+## Machine Learning Layer
+
+Two Python scripts sit between the dbt transformation layer and the mart layer, reading from `dbt_intermediate` and writing to the `analytics` BigQuery dataset.
+
+**`src/ml/cluster.py`** implements the player archetype clustering pipeline. It reads 13 per-90 features for all player-seasons in `int_player_season_stats`, applies median imputation and 99th-percentile clipping, standardizes with `StandardScaler`, runs PCA to explain 80% of variance, and fits K-Means with k=5 on the outfield player subset. Goalkeepers are excluded from K-Means and assigned a fixed `cluster_id = -1` and archetype label `"Goalkeeper"`. The five outfield archetypes are mapped from cluster indices: `Low Activity` (0), `Creative Winger` (1), `Creative Playmaker` (2), `Defensive Anchor` (3), and `Pressing Forward` (4). Outputs—`cluster_assignments` and `pca_loadings`—are written as Parquet to GCS and loaded into BigQuery with `WRITE_TRUNCATE`.
+
+**`src/ml/consistency.py`** implements the club-vs-national consistency scoring pipeline. It reads the 13 `z_*` columns from `int_player_club_vs_national` and PCA feature weights from `analytics.pca_loadings`. For each dual-context player it computes a weighted `performance_score` (dot product of z-scores and normalized PCA loadings) separately for club and national contexts, then derives a `consistency_score = 1 - mean(|z_club - z_national|)` across all 13 features. Players are assigned to one of four performance quadrants by median-splitting the club and national performance scores: `Elite`, `Club Specialist`, `International Specialist`, and `Underperformer`. Output is written to `analytics.consistency_scores`.
+
+## Orchestration (Dagster)
+
+All pipeline assets are wired together in a Dagster OSS instance (`src/dagster/`). The asset graph has four layers:
+
+1. **Ingestion**: `raw_statsbomb` — runs `src/ingestion/statsbomb.py`.
+2. **Transformation**: `football_analytics_dbt_assets` — executes `dbt run` then `dbt test` across all staging and intermediate models via the native `dagster-dbt` integration.
+3. **Clustering**: `cluster_assignments` — runs `src/ml/cluster.py`; no explicit upstream dependency on dbt assets since it reads directly from BigQuery.
+4. **Consistency scoring**: `consistency_score` — depends on `cluster_assignments` (for `pca_loadings`) and `int_player_club_vs_national` (dbt intermediate model); runs `src/ml/consistency.py`.
+
+Two triggering mechanisms are configured. A weekly `ScheduleDefinition` (Mondays at 06:00 UTC) runs the full pipeline. A `SensorDefinition` polls GCS for new match files every hour and triggers a targeted dbt refresh job when new data is detected, keeping dashboards current without re-running ingestion unnecessarily.
+
+## Pipeline Validation
+
+End-to-end validation was performed by running all assets in sequence and verifying row counts across layers (@tbl-rowcounts).
+
+| Layer | Table | Rows |
+|-------|-------|------|
+| Intermediate | `int_player_season_stats` | 7,889 |
+| Intermediate | `int_player_club_vs_national` | 1,341 |
+| ML output | `analytics.cluster_assignments` | 7,890 |
+| ML output | `analytics.pca_loadings` | 52 (13 features × 4 PCs) |
+| ML output | `analytics.consistency_scores` | 670 |
+| Mart | `mart_player_clusters` | 7,889 |
+| Mart | `mart_player_performance` | 7,889 |
+
+: End-to-end pipeline row counts after full pipeline run. {#tbl-rowcounts}
+
+Row counts are consistent across the intermediate and mart layers. The `analytics.consistency_scores` table contains 670 rows, corresponding to 335 unique players who meet the 270-minute threshold in both club and national contexts. The `analytics.pca_loadings` table has 52 rows (13 features × 4 principal components retained to explain ≥ 80% of variance).
+
+# Data Product and Results
+
+<!-- TODO: Team to complete — Looker dashboard, chatbot, clustering results, RQ answers -->
+
+# Conclusions and Recommendations
+
+<!-- TODO: Team to complete -->
+
+# References
+
+<!-- TODO: Add references as needed -->
