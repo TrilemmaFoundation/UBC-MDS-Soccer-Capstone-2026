@@ -15,7 +15,7 @@ from google.cloud import storage
 
 from src.dagster.assets.ingestion import raw_statsbomb, raw_polymarket
 from src.dagster.assets.dbt_assets import football_analytics_dbt_assets
-from src.dagster.assets.ml_assets import cluster_assignments
+from src.dagster.assets.ml_assets import cluster_assignments, consistency_score
 
 DBT_PROJECT_DIR = Path(__file__).parent.parent.parent
 
@@ -73,6 +73,7 @@ defs = Definitions(
         raw_polymarket,
         football_analytics_dbt_assets,
         cluster_assignments,
+        consistency_score,
     ],
     jobs=[full_pipeline_job, dbt_refresh_job],
     schedules=[ingestion_schedule],
