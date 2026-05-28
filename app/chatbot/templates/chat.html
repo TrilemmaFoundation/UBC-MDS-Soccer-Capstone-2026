@@ -10,9 +10,15 @@
 <body class="bg-gray-900 text-white font-sans">
 
     <div class="max-w-4xl mx-auto h-screen flex flex-col p-4">
-        <header class="py-4 border-b border-gray-700 flex justify-between items-center">
-            <h1 class="text-xl font-bold text-green-400">Elite European Football AI</h1>
-            <span class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400">Powered by Groq & BigQuery</span>
+        <header class="py-4 border-b border-gray-700 flex justify-between items-center flex-wrap gap-2">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-green-400">Elite European Football AI</h1>
+                <nav class="flex space-x-3 text-sm">
+                    <a href="/" class="text-white font-semibold underline decoration-green-400 underline-offset-4">Chatbot</a>
+                    <a href="/dashboard/" class="text-gray-400 hover:text-white transition">Dashboard</a>
+                </nav>
+            </div>
+            <span class="text-xs bg-gray-800 px-2 py-1 rounded text-gray-400 whitespace-nowrap">Powered by Groq & BigQuery</span>
         </header>
 
         <div id="chat-window" class="flex-1 overflow-y-auto my-4 space-y-4 pr-2">

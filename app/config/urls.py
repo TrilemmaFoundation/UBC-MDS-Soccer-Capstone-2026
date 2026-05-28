@@ -5,7 +5,7 @@ urlpatterns = [
     # path("admin/", admin.site.urls),
     
     # Product 1: Looker Studio Dashboard (Embedded via iframe)
-    # path("", include("dashboard.urls")),
+    path("dashboard/", include("dashboard.urls")),
     
     # Product 2: LLM Chatbot (Groq + Tool Calling)
     path("", include("chatbot.urls")),
