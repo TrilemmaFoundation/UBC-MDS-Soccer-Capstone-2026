@@ -36,17 +36,23 @@
               hx-swap="beforeend"
               hx-indicator="#loading-indicator"
               hx-on::after-request="this.reset()"
-              class="flex space-x-2 bg-gray-800 p-2 rounded-xl border border-gray-700">
+              class="flex flex-col bg-gray-800 p-2 rounded-xl border border-gray-700">
             
             {% csrf_token %}
-            <input type="text" name="message" id="user-input" 
-                   placeholder="e.g., Which players match Rodri's tactical profile inside mart_player_clusters?" 
-                   class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-2 text-white outline-none placeholder-gray-500"
-                   required>
-            
-            <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-lg transition text-sm font-semibold shadow">
-                Ask AI
-            </button>
+            <div class="flex space-x-2">
+                <input type="text" name="message" id="user-input" 
+                       placeholder="e.g., Which players match Rodri's tactical profile inside mart_player_clusters?" 
+                       class="flex-1 bg-transparent border-none focus:ring-0 text-sm p-2 text-white outline-none placeholder-gray-500"
+                       required>
+                
+                <button type="submit" class="bg-green-600 hover:bg-green-500 text-white px-5 py-2 rounded-lg transition text-sm font-semibold shadow">
+                    Ask AI
+                </button>
+            </div>
+            <div class="flex items-center mt-2 px-2 pb-1">
+                <input type="checkbox" id="advanced_mode" name="advanced_mode" class="w-3.5 h-3.5 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500 cursor-pointer">
+                <label for="advanced_mode" class="ml-2 text-xs text-gray-400 cursor-pointer">Advanced Mode (Show SQL query & raw data)</label>
+            </div>
         </form>
     </div>
 

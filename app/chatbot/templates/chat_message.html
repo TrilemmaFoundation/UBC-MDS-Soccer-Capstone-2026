@@ -8,5 +8,19 @@
     <div class="bg-gray-800 p-4 rounded-xl max-w-[80%] border border-gray-700 shadow-md">
         <p class="text-xs font-bold text-green-400 mb-1 tracking-wide">Elite AI Assistant</p>
         <div class="text-sm leading-relaxed text-gray-200 whitespace-pre-wrap">{{ ai_message }}</div>
+        
+        {% if advanced_mode and sql_query %}
+        <div class="mt-4 p-3 bg-gray-900 rounded-lg border border-gray-700">
+            <p class="text-xs font-semibold text-blue-400 mb-2">Executed SQL Query:</p>
+            <pre class="text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap"><code>{{ sql_query }}</code></pre>
+        </div>
+        {% endif %}
+        
+        {% if advanced_mode and query_data %}
+        <div class="mt-2 p-3 bg-gray-900 rounded-lg border border-gray-700">
+            <p class="text-xs font-semibold text-yellow-400 mb-2">Raw BigQuery Data:</p>
+            <pre class="text-xs text-gray-300 overflow-x-auto whitespace-pre-wrap max-h-60"><code>{{ query_data }}</code></pre>
+        </div>
+        {% endif %}
     </div>
 </div>
