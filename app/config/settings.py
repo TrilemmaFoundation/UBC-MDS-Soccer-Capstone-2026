@@ -75,3 +75,4 @@ DATABASES = {
 STATIC_URL = "static/"
 
 # BigQuery & Groq Config (For Li's Chatbot Logic)
+LOOKER_STUDIO_URL = os.environ.get("LOOKER_STUDIO_URL", "https://lookerstudio.google.com/embed/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53/page/If9xF")

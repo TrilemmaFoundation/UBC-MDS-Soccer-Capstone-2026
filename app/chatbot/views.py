@@ -21,7 +21,13 @@ def get_response(request):
         
         # Format query data as a readable JSON string if it exists
         query_data_raw = response_data.get("query_data")
-        formatted_data = json.dumps(query_data_raw, indent=2, default=str) if query_data_raw else None
+        formatted_data = None
+        
+        if query_data_raw:
+            if isinstance(query_data_raw, list) and len(query_data_raw) > 50:
+                query_data_raw = query_data_raw[:50]
+                query_data_raw.append({"_note": "Data truncated to 50 rows for display purposes."})
+            formatted_data = json.dumps(query_data_raw, indent=2, default=str)
         
         # Send both user input context and output back to the target canvas window element
         context = {

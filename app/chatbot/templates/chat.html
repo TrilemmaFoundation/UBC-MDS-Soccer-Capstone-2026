@@ -41,7 +41,7 @@
               hx-target="#chat-window" 
               hx-swap="beforeend"
               hx-indicator="#loading-indicator"
-              hx-on::after-request="this.reset()"
+              hx-on::after-request="document.getElementById('user-input').value = ''"
               class="flex flex-col bg-gray-800 p-2 rounded-xl border border-gray-700">
             
             {% csrf_token %}
