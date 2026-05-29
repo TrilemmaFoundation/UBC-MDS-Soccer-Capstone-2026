@@ -131,6 +131,9 @@ models:
         description: "The tactical text archetype string matching the cluster ID assignment (e.g., 'Pressing Forward', 'Creative Playmaker')."
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['Goalkeeper', 'Low Activity', 'Creative Winger', 'Creative Playmaker', 'Defensive Anchor', 'Pressing Forward', 'Unknown']
 
       - name: club_performance_score
         description: "The aggregated performance score calculated based on PCA feature weights for club matches."
@@ -189,6 +192,9 @@ models:
         description: "The descriptive tactical archetype assignment text label mapped directly from the K-Means groupings."
         tests:
           - not_null
+          - accepted_values:
+              arguments:
+                values: ['Goalkeeper', 'Low Activity', 'Creative Winger', 'Creative Playmaker', 'Defensive Anchor', 'Pressing Forward', 'Unknown']
 
       # Dimensional Visual Layout Coordinates
       - name: pc1

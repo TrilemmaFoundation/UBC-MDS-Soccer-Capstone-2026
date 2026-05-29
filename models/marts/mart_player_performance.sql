@@ -8,10 +8,15 @@ WITH player_season_stats AS (
 
 cluster_assignments AS (
     SELECT 
-        CAST(player_id AS INT64)     AS player_id,
-        CAST(cluster AS INT64)       AS cluster_id,
-        CAST(archetype AS STRING)    AS cluster_label
-    FROM {{ source('ml_models', 'cluster_assignments') }}
+        CAST(ca.player_id AS INT64)     AS player_id,
+        CAST(ca.cluster AS INT64)       AS cluster_id,
+        CAST(ca.archetype AS STRING)    AS cluster_label
+    FROM {{ source('ml_models', 'cluster_assignments') }} ca
+    INNER JOIN {{ ref('int_player_season_stats') }} pss
+        ON ca.player_id = pss.player_id
+        AND ca.competition_id = pss.competition_id
+        AND ca.season_id = pss.season_id
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY ca.player_id ORDER BY pss.total_minutes DESC) = 1
 ),
 
 consistency_scores AS (
