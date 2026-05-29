@@ -9,6 +9,7 @@ matches AS (
 ),
 
 -- Join match metadata to player stats to get competition and season IDs
+-- Default scope: male competitions only (filter women's at intermediate, not staging)
 player_match_with_meta AS (
     SELECT
         pms.*,
@@ -18,6 +19,7 @@ player_match_with_meta AS (
         m.season_name
     FROM player_match_stats pms
     INNER JOIN matches m ON pms.match_id = m.match_id
+    WHERE m.gender = 'male'
 ),
 
 -- Aggregate to the season level and apply the 270-minute threshold
