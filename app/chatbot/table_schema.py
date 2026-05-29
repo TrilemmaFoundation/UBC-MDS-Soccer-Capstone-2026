@@ -34,7 +34,7 @@ Available BigQuery Tables:
      * `season_id` (INT64), `season_name` (STRING)
      * `total_minutes` (FLOAT64) - Total minutes played in the season
      * `cluster_id` (INT64) - Cluster index (Defaults to -1 if unassigned)
-     * `cluster_label` (STRING) - Archetypes: 'Goalkeeper', 'Creative Playmaker', 'Pressing Forward', 'Creative Winger', 'Defensive Anchor', 'Unknown'
+     * `cluster_label` (STRING) - Archetypes: 'Goalkeeper', 'Low Activity', 'Creative Winger', 'Creative Playmaker', 'Defensive Anchor', 'Pressing Forward', 'Unknown'
      * `pc1` (FLOAT64), `pc2` (FLOAT64) - Principal component dimensions for 2D visualization scatter plots
      * PCA Input Metrics (per-90): `xg_per_90`, `shots_per_90`, `passes_per_90`, `passes_att_third_per_90`, `pressures_per_90`, `carries_per_90`, `dribbles_per_90`, `interceptions_per_90`, `blocks_per_90`, `clearances_per_90`, `duels_per_90`, `xg_per_shot`, `pass_completion_pct`
      * Traditional Rates: `goals_per_90`, `assists_per_90`
