@@ -124,6 +124,14 @@ def ask_football_chatbot(user_query):
                 }
             ]
         )
-        return final_response.choices[0].message.content
+        return {
+            "answer": final_response.choices[0].message.content,
+            "sql_query": sql_query,
+            "query_data": query_data
+        }
 
-    return assistant_message.content
+    return {
+        "answer": assistant_message.content,
+        "sql_query": None,
+        "query_data": None
+    }
