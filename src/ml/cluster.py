@@ -4,7 +4,7 @@ Features and preprocessing match Li's pca_loadings.parquet exactly:
 - 13 per-90 features (aligned to int_player_season_stats after PR #124)
 - Median imputation for nulls
 - 99th percentile outlier clipping
-- StandardScaler -> PCA (80% variance threshold) -> KMeans k=6
+- StandardScaler -> PCA (80% variance threshold) -> KMeans k=5
 
 Writes cluster_assignments and pca_loadings to GCS and BigQuery analytics dataset.
 """

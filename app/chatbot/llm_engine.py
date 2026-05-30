@@ -87,7 +87,12 @@ def ask_football_chatbot(user_query):
             "content": (
                 f"You are an Elite European Football AI assistant. Use the 'query_bigquery' tool to fetch data. "
                 f"Always generate valid BigQuery SQL using the strict rules and column schemas specified below:\n{TABLE_CONTEXT}\n"
-                f"Important: Do not summarize or provide empty placeholders if data is present. Return precise configurations."
+                f"CRITICAL RULES:\n"
+                f"1. ALWAYS call the 'query_bigquery' tool before answering any question about players, teams, or matches.\n"
+                f"2. After receiving the tool result, you MUST present ALL the data rows as a formatted list or table. Never skip or omit any row.\n"
+                f"3. Format each player/result on its own line with their stats clearly labeled (e.g., '1. Philip Foden — xG/90: 0.96').\n"
+                f"4. Do NOT write introductory sentences without the data. Present the data immediately.\n"
+                f"5. If the result is empty, say 'No results found' and explain why."
             )
         },
         {"role": "user", "content": user_query}
@@ -117,9 +122,9 @@ def ask_football_chatbot(user_query):
                 {"role": "user", "content": user_query},
                 assistant_message,
                 {
-                    "role": "tool", 
-                    "tool_call_id": tool_calls[0].id, 
-                    "name": "query_bigquery", 
+                    "role": "tool",
+                    "tool_call_id": tool_calls[0].id,
+                    "name": "query_bigquery",
                     "content": json.dumps(query_data, default=str)
                 }
             ]
@@ -127,11 +132,11 @@ def ask_football_chatbot(user_query):
         return {
             "answer": final_response.choices[0].message.content,
             "sql_query": sql_query,
-            "query_data": query_data
+            "query_data": query_data,
         }
 
     return {
         "answer": assistant_message.content,
         "sql_query": None,
-        "query_data": None
+        "query_data": None,
     }
