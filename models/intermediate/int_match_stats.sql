@@ -62,6 +62,8 @@ final AS (
     FROM team_match_aggregates tma
     INNER JOIN matches m ON tma.match_id = m.match_id
     INNER JOIN match_totals mt ON tma.match_id = mt.match_id
+    -- Default scope: male competitions only (filter women's at intermediate, not staging)
+    WHERE m.gender = 'male'
 )
 
 SELECT * FROM final
