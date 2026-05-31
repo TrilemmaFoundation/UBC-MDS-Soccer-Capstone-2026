@@ -52,10 +52,10 @@ RANDOM_STATE = 42
 # Archetypes aligned to Li's notebook archetype_map (outfield only; GK handled separately)
 CLUSTER_LABELS = {
     0: "Low Activity",
-    1: "Creative Winger",
-    2: "Creative Playmaker",
-    3: "Defensive Anchor",
-    4: "Pressing Forward",
+    1: "Creative Playmaker",
+    2: "Creative Winger",
+    3: "Pressing Forward",
+    4: "Defensive Anchor",
 }
 
 
