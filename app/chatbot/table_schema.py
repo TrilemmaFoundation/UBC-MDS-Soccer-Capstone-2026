@@ -5,6 +5,10 @@ TABLE_CONTEXT = """
 You are querying the 'football-capstone-mds-496219' BigQuery project under the 'dbt_marts' dataset.
 Always use the full path: `football-capstone-mds-496219.dbt_marts.table_name` when writing SQL.
 
+IMPORTANT GRAIN RULE: All player tables have one row per (player, competition, season). The same player will appear multiple times across different seasons or competitions.
+- When ranking or comparing players (e.g. "top 5 by xG"), ALWAYS use GROUP BY player_name with AVG() or SUM() to collapse rows: SELECT player_name, AVG(xg_per_90) AS avg_xg_per_90 ... GROUP BY player_name ORDER BY avg_xg_per_90 DESC LIMIT 5
+- Only skip GROUP BY when the user explicitly asks for a specific season or competition.
+
 Available BigQuery Tables:
 
 1. `football-capstone-mds-496219.dbt_marts.mart_match_analysis`
