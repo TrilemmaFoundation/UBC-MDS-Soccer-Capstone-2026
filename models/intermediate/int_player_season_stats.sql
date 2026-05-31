@@ -55,7 +55,10 @@ aggregated AS (
         -- Consistency metrics totals
         SUM(blocks) AS total_blocks,
         SUM(ball_recoveries) AS total_ball_recoveries,
-        SUM(fouls) AS total_fouls
+        SUM(fouls) AS total_fouls,
+
+        -- Most common position across all matches in the season
+        APPROX_TOP_COUNT(position_name, 1)[SAFE_OFFSET(0)].value AS position_name
     FROM player_match_with_meta
     GROUP BY 1, 2, 3, 4, 5, 6
     HAVING SUM(minutes_played) >= 270
@@ -69,6 +72,7 @@ final AS (
         competition_name,
         season_id,
         season_name,
+        position_name,
         total_minutes,
         total_goals,
         total_assists,
