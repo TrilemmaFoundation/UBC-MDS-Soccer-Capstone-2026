@@ -1,7 +1,7 @@
 cluster_id,cluster_label,description
 -1,Goalkeeper,Labeled directly from position data
 0,Low Activity,Low stats across all outfield metrics
-1,Creative Winger,High carries dribbles and attacking involvement
-2,Creative Playmaker,High passes carries and progressive play
-3,Defensive Anchor,High interceptions clearances blocks
-4,Pressing Forward,High shots xG pressures duels
+1,Creative Playmaker,High passes carries and progressive play
+2,Creative Winger,High dribbles carries and attacking xG
+3,Pressing Forward,High shots xG and pressing activity
+4,Defensive Anchor,High clearances interceptions and defensive duels
