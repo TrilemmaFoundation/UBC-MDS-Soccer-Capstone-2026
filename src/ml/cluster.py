@@ -1,10 +1,11 @@
 """Cluster players with PCA + KMeans on per-90 stats from int_player_season_stats.
 
 Features and preprocessing match Li's pca_loadings.parquet exactly:
+- Goalkeepers are excluded from clustering and labelled 'Goalkeeper' afterwards
 - 13 per-90 features (aligned to int_player_season_stats after PR #124)
 - Median imputation for nulls
 - 99th percentile outlier clipping
-- StandardScaler -> PCA (80% variance threshold) -> KMeans k=6
+- StandardScaler -> PCA (80% variance threshold) -> KMeans k=5
 
 Writes cluster_assignments and pca_loadings to GCS and BigQuery analytics dataset.
 """
@@ -51,10 +52,10 @@ RANDOM_STATE = 42
 # Archetypes aligned to Li's notebook archetype_map (outfield only; GK handled separately)
 CLUSTER_LABELS = {
     0: "Low Activity",
-    1: "Creative Winger",
-    2: "Creative Playmaker",
-    3: "Defensive Anchor",
-    4: "Pressing Forward",
+    1: "Creative Playmaker",
+    2: "Creative Winger",
+    3: "Pressing Forward",
+    4: "Defensive Anchor",
 }
 
 
@@ -65,6 +66,7 @@ def fetch_player_features(bq_client: bigquery.Client) -> pd.DataFrame:
             player_name,
             competition_id,
             season_id,
+            position_name,
             total_minutes,
             xg_per_90,
             shots_per_90,
@@ -123,7 +125,7 @@ def run_clustering(df: pd.DataFrame, X_scaled: np.ndarray):
     kmeans = KMeans(n_clusters=N_CLUSTERS, random_state=RANDOM_STATE, n_init=10)
     cluster_ids = kmeans.fit_predict(X_pca)
 
-    # Build cluster_assignments
+    # Build cluster_assignments for outfield players
     assignments = df[
         ["player_id", "player_name", "competition_id", "season_id", "total_minutes"]
     ].copy()
@@ -132,7 +134,7 @@ def run_clustering(df: pd.DataFrame, X_scaled: np.ndarray):
     assignments["pc1"]       = X_2d[:, 0]
     assignments["pc2"]       = X_2d[:, 1]
 
-    print(f"\nCluster sizes:\n{assignments['cluster'].value_counts().sort_index()}")
+    print(f"\nCluster sizes (outfield):\n{assignments['cluster'].value_counts().sort_index()}")
 
     # Build pca_loadings (long format for BigQuery)
     loadings_wide = pd.DataFrame(
@@ -145,6 +147,24 @@ def run_clustering(df: pd.DataFrame, X_scaled: np.ndarray):
     )
 
     return assignments, loadings
+
+
+def build_gk_assignments(df_gk: pd.DataFrame) -> pd.DataFrame:
+    """Return a cluster_assignments-shaped DataFrame for goalkeepers.
+
+    GKs are excluded from PCA + KMeans clustering.  They receive:
+      cluster   = -1   (sentinel — not a real KMeans cluster)
+      archetype = 'Goalkeeper'
+      pc1/pc2   = NaN  (no projection into the outfield PCA space)
+    """
+    gk = df_gk[
+        ["player_id", "player_name", "competition_id", "season_id", "total_minutes"]
+    ].copy()
+    gk["cluster"]   = int(-1)
+    gk["archetype"] = "Goalkeeper"
+    gk["pc1"]       = float("nan")
+    gk["pc2"]       = float("nan")
+    return gk
 
 
 def upload_to_gcs(storage_client: storage.Client, local_path: str, gcs_path: str):
@@ -175,8 +195,21 @@ def main():
     df = fetch_player_features(bq_client)
     print(f"Fetched {len(df)} player-season rows")
 
-    X_scaled = preprocess(df)
-    assignments, loadings = run_clustering(df, X_scaled)
+    # Split goalkeepers out before clustering (matches Li's notebook logic)
+    is_gk = df["position_name"] == "Goalkeeper"
+    df_gk      = df[is_gk].copy()
+    df_outfield = df[~is_gk].copy()
+    print(f"  Outfield: {len(df_outfield)}  |  Goalkeepers: {len(df_gk)}")
+
+    X_scaled = preprocess(df_outfield)
+    assignments_outfield, loadings = run_clustering(df_outfield, X_scaled)
+
+    # Re-attach goalkeepers with their own archetype label
+    assignments_gk = build_gk_assignments(df_gk)
+    assignments = pd.concat(
+        [assignments_outfield, assignments_gk], ignore_index=True
+    )
+    print(f"\nTotal rows in cluster_assignments: {len(assignments)}")
 
     with tempfile.TemporaryDirectory() as tmp:
         assignments_local = os.path.join(tmp, "cluster_assignments.parquet")

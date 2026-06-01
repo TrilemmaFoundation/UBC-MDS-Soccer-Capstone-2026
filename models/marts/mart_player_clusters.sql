@@ -101,25 +101,27 @@ final_mart AS (
         p.total_minutes,
 
         -- Tactical Cluster Properties
-        COALESCE(c.cluster_id, -1)          AS cluster_id,
+        COALESCE(c.cluster_id, -1)           AS cluster_id,
         COALESCE(c.cluster_label, 'Unknown') AS cluster_label,
 
-        -- Derived PCA Coordinates from component loadings
-        pca.pc1,
-        pca.pc2,
+        -- PCA Coordinates (from cluster.py output)
+        c.pc1,
+        c.pc2,
 
-        -- All 13 Clustering features exposed for radar charts / heatmaps
-        p.shots_per_90,
+        -- All 13 PCA clustering features (aligned to Li's pca_loadings.parquet)
         p.xg_per_90,
-        p.xg_per_shot,
-        p.dribbles_per_90,
-        p.carries_att_third_per_90,
+        p.shots_per_90,
+        p.passes_per_90,
         p.passes_att_third_per_90,
-        p.pass_completion_pct,
         p.pressures_per_90,
+        p.carries_per_90,
+        p.dribbles_per_90,
         p.interceptions_per_90,
+        p.blocks_per_90,
         p.clearances_per_90,
         p.duels_per_90,
+        p.xg_per_shot,
+        p.pass_completion_pct,
 
         -- Supplementary Traditional Metrics
         p.goals_per_90,

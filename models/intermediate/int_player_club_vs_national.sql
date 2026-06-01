@@ -8,6 +8,7 @@ matches AS (
     SELECT * FROM {{ ref('stg_statsbomb__matches') }}
 ),
 
+-- Default scope: male competitions only (filter women's at intermediate, not staging)
 player_match_with_meta AS (
     SELECT
         pms.*,
@@ -18,6 +19,7 @@ player_match_with_meta AS (
         m.is_international
     FROM player_match_stats pms
     INNER JOIN matches m ON pms.match_id = m.match_id
+    WHERE m.gender = 'male'
 ),
 
 -- Aggregate by player + context (club vs national), apply 270-minute threshold
