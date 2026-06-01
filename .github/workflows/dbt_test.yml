@@ -1,0 +1,87 @@
+name: dbt PR Testing & Verification
+
+on:
+  pull_request:
+    branches:
+      - main
+    # Triggers when files change in these directories to optimize action runner usage
+    paths:
+      - 'models/**'
+      - 'macros/**'
+      - 'dbt_project.yml'
+      - 'packages.yml'
+      - '.github/workflows/dbt_test.yml'
+  workflow_dispatch:
+
+jobs:
+  dbt_test_and_verify:
+    name: Execute dbt Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dbt and Dependencies
+        run: |
+          pip install --upgrade pip
+          pip install dbt-bigquery
+
+      # NOTE: Ensure GCE_SERVICE_ACCOUNT_KEY exists in Settings > Secrets and Variables > Actions
+      # If this secret is missing or misnamed, the authentication below will fail.
+      - name: Set up Google Cloud SDK (Authentication)
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}
+
+      - name: Create PR BigQuery Dataset
+        run: |
+          bq mk --dataset football-capstone-mds-496219:pr_validation_${{ github.event.number }}
+
+      - name: Set up dbt Profiles Directory
+        run: |
+          mkdir -p ~/.dbt
+          cat << EOF > ~/.dbt/profiles.yml
+          football_analytics:
+            target: pr
+            outputs:
+              pr:
+                type: bigquery
+                method: oauth
+                project: football-capstone-mds-496219
+                dataset: pr_validation_${{ github.event.number }}
+                threads: 4
+                timeout_seconds: 300
+                location: US
+                priority: interactive
+                retries: 1
+          EOF
+
+      - name: Install dbt Packages
+        run: |
+          if [ -f packages.yml ]; then dbt deps; fi
+
+      - name: Debug dbt Connection
+        run: |
+          dbt debug
+
+      # Build staging & intermediate models first so the tables/views actually exist
+      - name: Run dbt Models
+        run: |
+          dbt run --select "path:models/staging path:models/intermediate"
+
+      # Compiles and validates staging & intermediate models on every PR
+      - name: Run dbt Tests
+        run: |
+          dbt test --select "path:models/staging path:models/intermediate"
+
+      # Automatically drop the temporary PR schema so BigQuery doesn't stay cluttered
+      - name: Clean Up PR Dataset (Always Runs)
+        if: always()
+        run: |
+          bq rm -r -f -d football-capstone-mds-496219:pr_validation_${{ github.event.number }}

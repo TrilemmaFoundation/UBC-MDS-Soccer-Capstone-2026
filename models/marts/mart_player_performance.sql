@@ -7,13 +7,26 @@ WITH player_season_stats AS (
 ),
 
 cluster_assignments AS (
-    SELECT
-        CAST(player_id AS INT64)     AS player_id,
-        CAST(cluster AS INT64)       AS cluster_id,
-        CAST(archetype AS STRING)    AS cluster_label
-    FROM {{ source('ml_models', 'cluster_assignments') }}
-    -- Deduplicate to one row per player (players can have multiple season entries)
-    QUALIFY ROW_NUMBER() OVER (PARTITION BY player_id ORDER BY total_minutes DESC) = 1
+    SELECT 
+        CAST(ca.player_id AS INT64)     AS player_id,
+        CAST(ca.cluster AS INT64)       AS cluster_id,
+        CAST(ca.archetype AS STRING)    AS cluster_label
+    FROM {{ source('ml_models', 'cluster_assignments') }} ca
+    INNER JOIN {{ ref('int_player_season_stats') }} pss
+        ON ca.player_id = pss.player_id
+        AND ca.competition_id = pss.competition_id
+        AND ca.season_id = pss.season_id
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY ca.player_id ORDER BY pss.total_minutes DESC) = 1
+),
+
+consistency_scores AS (
+    SELECT 
+        CAST(player_id AS INT64)                    AS player_id,
+        CAST(club_performance_score AS FLOAT64)     AS club_performance_score,
+        CAST(national_performance_score AS FLOAT64) AS national_performance_score,
+        CAST(consistency_score AS FLOAT64)          AS consistency_score,
+        CAST(performance_quadrant AS STRING)        AS performance_quadrant
+    FROM {{ source('ml_models', 'consistency_scores') }}
 ),
 
 joined AS (
@@ -59,15 +72,17 @@ joined AS (
         p.duels_per_90,
         p.aerial_duels_per_90,
 
-        -- PLACEHOLDERS: Waiting for Rabin's formula to calculate these fields
-        CAST(NULL AS FLOAT64) AS club_performance_score,
-        CAST(NULL AS FLOAT64) AS national_performance_score,
-        CAST(NULL AS FLOAT64) AS consistency_score,
-        CAST(NULL AS STRING)  AS performance_quadrant
+        -- Consistency Metrics (from Rabin's ML pipeline)
+        cs.club_performance_score,
+        cs.national_performance_score,
+        cs.consistency_score,
+        cs.performance_quadrant
 
     FROM player_season_stats p
     LEFT JOIN cluster_assignments c
         ON p.player_id = c.player_id
+    LEFT JOIN consistency_scores cs
+        ON p.player_id = cs.player_id
 )
 
 SELECT * FROM joined

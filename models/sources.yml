@@ -19,3 +19,5 @@ sources:
     schema: analytics
     tables:
       - name: cluster_assignments
+      - name: pca_loadings
+      - name: consistency_scores
