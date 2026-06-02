@@ -99,7 +99,7 @@ All mart models are materialized as BigQuery tables (not views), enabling fast d
 
 Two Python scripts sit between the dbt transformation layer and the mart layer, reading from `dbt_intermediate` and writing to the `analytics` BigQuery dataset.
 
-**`src/ml/cluster.py`** implements the player archetype clustering pipeline. It reads 13 per-90 features for all player-seasons in `int_player_season_stats`, applies median imputation and 99th-percentile clipping, standardizes with `StandardScaler`, runs PCA to explain 80% of variance, and fits K-Means with k=5 on the outfield player subset. Goalkeepers are excluded from K-Means and assigned a fixed `cluster_id = -1` and archetype label `"Goalkeeper"`. The five outfield archetypes are mapped from cluster indices: `Low Activity` (0), `Creative Winger` (1), `Creative Playmaker` (2), `Defensive Anchor` (3), and `Pressing Forward` (4). Outputs—`cluster_assignments` and `pca_loadings`—are written as Parquet to GCS and loaded into BigQuery with `WRITE_TRUNCATE`.
+**`src/ml/cluster.py`** implements the player archetype clustering pipeline. It reads 13 per-90 features for all player-seasons in `int_player_season_stats`, applies median imputation and 99th-percentile clipping, standardizes with `StandardScaler`, runs PCA to explain 80% of variance, and fits K-Means with k=5 on the outfield player subset. Goalkeepers are excluded from K-Means and assigned a fixed `cluster_id = -1` and archetype label `"Goalkeeper"`. The five outfield archetypes are mapped from cluster indices: `Low Activity` (0), `Creative Playmaker` (1), `Creative Winger` (2), `Pressing Forward` (3), and `Defensive Anchor` (4). Outputs—`cluster_assignments` and `pca_loadings`—are written as Parquet to GCS and loaded into BigQuery with `WRITE_TRUNCATE`.
 
 **`src/ml/consistency.py`** implements the club-vs-national consistency scoring pipeline. It reads the 13 `z_*` columns from `int_player_club_vs_national` and PCA feature weights from `analytics.pca_loadings`. For each dual-context player it computes a weighted `performance_score` (dot product of z-scores and normalized PCA loadings) separately for club and national contexts, then derives a `consistency_score = 1 - mean(|z_club - z_national|)` across all 13 features. Players are assigned to one of four performance quadrants by median-splitting the club and national performance scores: `Elite`, `Club Specialist`, `International Specialist`, and `Underperformer`. Output is written to `analytics.consistency_scores`.
 
@@ -130,15 +130,198 @@ End-to-end validation was performed by running all assets in sequence and verify
 
 : End-to-end pipeline row counts after full pipeline run. {#tbl-rowcounts}
 
-Row counts are consistent across the intermediate and mart layers. The `analytics.consistency_scores` table contains 670 rows, corresponding to 335 unique players who meet the 270-minute threshold in both club and national contexts. The `analytics.pca_loadings` table has 52 rows (13 features × 4 principal components retained to explain ≥ 80% of variance).
+Row counts are consistent across the intermediate and mart layers. The `analytics.consistency_scores` table contains 670 rows—one per dual-context player who meets the 270-minute threshold in both club and national contexts (`int_player_club_vs_national` holds two context rows per player, 1,341 rows total). The `analytics.pca_loadings` table has 52 rows (13 features × 4 principal components retained to explain ≥ 80% of variance).
+
+# Analysis
+
+This section answers the core research questions using pipeline outputs (`mart_player_clusters`, `analytics.consistency_scores`) and exploratory notebooks `07_rq1_role_distribution.py` and `08_rq3_four_quadrant_consistency.py`. All player-level analyses apply the project-wide **270-minute minimum** per context or player-season unless noted otherwise.
+
+## RQ1: Player Role Distribution Across Competitions
+
+**Question:** How does player role distribution differ across competitions and positions?
+
+We assign each player-season in the top-five European leagues (La Liga, Premier League, Bundesliga, Serie A, Ligue 1) to one of five outfield **tactical archetypes** from PCA + K-Means on 13 per-90 features, plus a separate **Goalkeeper** label (`cluster_id = -1`). Archetypes are defined in @tbl-archetypes.
+
+| Cluster ID | Archetype | Tactical profile |
+|------------|-----------|------------------|
+| 0 | Low Activity | Low volume across attacking and defensive per-90 metrics |
+| 1 | Creative Playmaker | High passes, carries, and progressive play |
+| 2 | Creative Winger | High dribbles, carries, and attacking xG |
+| 3 | Pressing Forward | High shots, xG, and pressing activity |
+| 4 | Defensive Anchor | High clearances, interceptions, and duels |
+| −1 | Goalkeeper | Assigned from position, excluded from K-Means |
+
+: Outfield archetype labels from `src/ml/cluster.py` and `seeds/cluster_labels.csv`. {#tbl-archetypes}
+
+### Position drives role assignment
+
+Chi-square tests on **position group × cluster** (groups: GK, CB, FB, CM, AM, FW) show that **tactical role is strongly associated with position** (Notebook 07). Cramér's V for this association is materially larger than for competition-level effects. In row-normalized heatmaps:
+
+- **Center backs** concentrate in **Defensive Anchor** and **Low Activity** clusters. Attacking clusters are rare.
+- **Forwards and attacking mids** skew toward **Pressing Forward** and **Creative Winger**, reflecting shot volume, xG, and dribble-heavy profiles.
+- **Central mids** spread across **Creative Playmaker**, **Pressing Forward**, and **Low Activity**. That pattern fits box-to-box and pivot roles with overlapping event mixes.
+- **Full backs** often land in **Creative Winger** or **Creative Playmaker** when their per-90 profiles emphasize carries and passes into the final third.
+
+Position is therefore the primary lens for interpreting cluster membership: archetypes describe *how* a player plays within a position's event mix, not a replacement for position labels.
+
+### Competition effects are secondary but visible
+
+When cluster mix is compared **across leagues** (competition × cluster), the overall association is **weaker than position × cluster** (Notebook 07, KQ2a). Top-five leagues share broadly similar archetype proportions. Most player-seasons fall into mid-to-high activity clusters. Even so, **position × cluster heatmaps faceted by league** reveal localized shifts:
+
+- The same position (e.g., full back or wide forward) can show **±5 to 15 percentage-point** differences in archetype share between leagues versus the pooled top-five profile (Notebook 07, KQ2b delta tables).
+- Leagues with the highest within-competition Cramér's V for position × cluster indicate **tactical style varies more by role within that competition** (e.g., wider spread between defensive anchors and creative profiles for the same coarse position group).
+
+**Takeaway for RQ1:** Role distribution is **position-first**. Competition adjusts the *mix* of archetypes within positions rather than redefining global cluster structure. Dashboard users should filter by position before comparing leagues.
+
+## RQ3: Four-Quadrant Club vs International Consistency
+
+**Question:** Do players maintain similar tactical performance profiles between club and national contexts?
+
+The dual-context cohort comprises **670 players** with ≥270 minutes in **both** club and national matches (`analytics.consistency_scores`). For each player we compute context-specific **performance scores** (PCA-weighted sums of within-context z-scores) and assign a **performance quadrant** by median splits on club and national scores (@tbl-quadrants).
+
+| Club vs median | National vs median | Quadrant | Interpretation |
+|----------------|-------------------|----------|----------------|
+| ≥ median | ≥ median | Elite | Strong vs peers in both contexts |
+| ≥ median | < median | Club Specialist | Club profile stronger than national |
+| < median | ≥ median | International Specialist | National profile stronger than club |
+| < median | < median | Underperformer | Below median vs peers in both contexts |
+
+: Quadrant logic from `src/ml/consistency.py` (median thresholds on cohort performance scores). {#tbl-quadrants}
+
+### Quadrant distribution
+
+Quadrants are defined by **independent median splits** on `club_performance_score` and `national_performance_score`, so each quadrant targets roughly **one quarter of the cohort** (~167 players per quadrant at *n* = 670), with small deviations when many players sit exactly at the median.
+
+| Quadrant | Typical share | Meaning |
+|----------|---------------|---------|
+| Elite | ~25% | Top half vs club peers **and** top half vs national peers |
+| Club Specialist | ~25% | Top half at club only |
+| International Specialist | ~25% | Top half for country only |
+| Underperformer | ~25% | Below median in both contexts |
+
+**How many perform better at club vs international?** Counting players above their cohort median in **only one** context, **Club Specialist** and **International Specialist** together comprise **roughly half** of the dual-context cohort (~50% combined). The other half splits between **Elite** (strong in both) and **Underperformer** (weak in both). This answers RQ3 directly. **Specialization is common**: peer-relative strength often does not transfer symmetrically across contexts.
+
+### What separates specialists?
+
+Contrasting Club Specialist vs International Specialist cohorts (Notebook 04, `04_feature_importance.ipynb`), the largest mean z-score gaps (national − club) are:
+
+1. **Passes into attacking third per 90.** Club specialists rank higher on progressive passing vs **club** baselines. International specialists rank higher vs **national** baselines.
+2. **Interceptions per 90.** National-team specialists align with systems that reward more ball-winning in z-score terms.
+3. **Carries into final third per 90.** Same directional pattern as progressive passes.
+
+**Club Specialists** in the dashboard often map to winger/full-back/progressive profiles (e.g., high carry and pass volume at club level). **International Specialists** include players who peak for their country in work-rate or system-dependent roles (e.g., Kanté-style profiles in exploratory rankings).
+
+### Consistency vs performance
+
+The **consistency score** (1 − mean absolute z-gap across 13 features) measures **profile similarity**, not overall quality. A player can be consistently below average in both contexts. Defenders tend to show **slightly higher mean consistency** than forwards in cohort summaries (Notebook 08), suggesting attacking players' roles shift more between club tactics and national setups.
+
+## Key Insights and Surprising Findings
+
+1. **Position explains roles more than league.** Archetypes align with coarse position groups. Cross-league cluster mixes differ modestly compared with position × cluster separation.
+2. **Half the dual-context cohort are single-context “specialists.”** Median-based quadrants show that peer-relative excellence often concentrates in club *or* national football, not both.
+3. **Progressive passing into the final third is the top discriminator** between club-leaning and national-leaning specialists. It separates cohorts more than raw goals or xG in z-score space.
+4. **Consistency ≠ quality.** High consistency can reflect a stable but limited role. Low consistency can reflect tactical adaptation (e.g., club winger vs national wide forward).
+5. **Context shift score and consistency score answer different questions.** Raw per-90 gaps (Looker context shift) highlight the size of stat changes. Z-profile consistency highlights tactical similarity relative to peers (Appendix).
+6. **K-Means uses *k* = 5 for interpretability.** Silhouette analysis on PCA space favors fewer clusters (Notebook 05). We accepted that trade-off to keep coach-facing archetype labels readable.
 
 # Data Product and Results
 
-<!-- TODO: Team to complete — Looker dashboard, chatbot, clustering results, RQ answers -->
+<!-- TODO: Team to complete - screenshots, chatbot examples, optional RQ4 match prediction -->
 
 # Conclusions and Recommendations
 
 <!-- TODO: Team to complete -->
+
+# Appendix: Data Dictionary
+
+This appendix closes [#123](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/issues/123). Metric definitions match `int_player_match_stats`, `int_player_season_stats`, `int_player_club_vs_national`, `src/ml/cluster.py`, and `src/ml/consistency.py`. Extended methodology for dashboard calculated fields is in [`docs/appendix/`](../docs/appendix/).
+
+## Eligibility and grains
+
+| Rule | Value | Applied in |
+|------|-------|------------|
+| Minimum minutes (player-season / per context) | 270 | `int_player_season_stats`, `int_player_club_vs_national`, consistency pipeline |
+| Dual-context filter | ≥270 min club **and** ≥270 min national | `int_player_club_vs_national`, `analytics.consistency_scores` |
+| Gender scope | Male competitions only | Intermediate models (`gender = 'male'`) |
+| Attacking third proxy | Event `location_x > 80` (StatsBomb 0 to 120 pitch) | `int_player_match_stats` |
+
+## PCA features (13)
+
+All clustering and consistency z-scores use the same 13 features. Per-90 rates use **`(total_event_count / total_minutes) × 90`** at the aggregation grain (player-season or player-context). Event counts come from StatsBomb `events` joined to `lineups` at player-match grain.
+
+| Feature | Formula | Event / source definition |
+|---------|---------|---------------------------|
+| `xg_per_90` | `(SUM(shot_statsbomb_xg) / minutes) × 90` | Sum of StatsBomb xG on `Shot` events |
+| `shots_per_90` | `(COUNT(Shot) / minutes) × 90` | Shot attempts |
+| `passes_per_90` | `(COUNT(Pass) / minutes) × 90` | Pass attempts |
+| `passes_att_third_per_90` | `(COUNT(Pass WHERE location_x > 80) / minutes) × 90` | Passes originating in attacking third |
+| `pressures_per_90` | `(COUNT(Pressure) / minutes) × 90` | Pressure events |
+| `carries_per_90` | `(COUNT(Carry) / minutes) × 90` | Carry events |
+| `dribbles_per_90` | `(COUNT(Dribble) / minutes) × 90` | Dribble events |
+| `interceptions_per_90` | `(COUNT(Interception) / minutes) × 90` | Interceptions |
+| `blocks_per_90` | `(COUNT(Block) / minutes) × 90` | Blocks |
+| `clearances_per_90` | `(COUNT(Clearance) / minutes) × 90` | Clearances |
+| `duels_per_90` | `(COUNT(Duel) / minutes) × 90` | All duels (incl. aerial) |
+| `xg_per_shot` | `SUM(xG) / NULLIF(SUM(shots), 0)` | Shot quality. Zero if no shots |
+| `pass_completion_pct` | `SUM(passes_completed) / NULLIF(SUM(passes_attempted), 0)` | Share of passes with no failed outcome |
+
+**Minutes played** per match: `to_min − from_min` from lineup substitution times (capped at 120 for extra time).
+
+**Z-scores** (club vs national analysis): for each feature *f* and context *c* ∈ {club, national},
+
+$$z_{f,c} = \frac{x_{f,\text{player}} - \mu_{f,c}}{\sigma_{f,c}}$$
+
+where \(\mu_{f,c}\) and \(\sigma_{f,c}\) are the mean and standard deviation of feature *f* among all players in context *c* only.
+
+## Derived metrics
+
+| Metric | Formula | Notes |
+|--------|---------|-------|
+| `pass_completion_pct` | `passes_completed / passes_attempted` | Also a PCA feature. Pass “completed” = `Pass` with null `pass_outcome` |
+| `xg_per_shot` | `total_xg / total_shots` | Efficiency ratio, not per-90 |
+| `possession_share` | `team_passes_attempted / match_total_passes` | Team-match proxy in `int_match_stats`. Not used in player PCA |
+| `consistency_score` | \(1 - \frac{1}{13}\sum_f \|z_{f,\text{club}} - z_{f,\text{national}}\|\) | Similarity of tactical profile. **Not** a quality index |
+| `club_performance_score` | \(\sum_f z_{f,\text{club}} \cdot w_f\) | Weighted by PCA loadings (below) |
+| `national_performance_score` | \(\sum_f z_{f,\text{national}} \cdot w_f\) | Same weights as club score |
+| `context_shift_score` | See `docs/appendix/context-shift-score.md` | Looker calculated field. Raw per-90 gap index, not z-based |
+
+**PCA feature weights** \(w_f\) (from `analytics.pca_loadings`):
+
+$$w_f = \frac{\sum_i |\text{loading}_{i,f}|}{\sum_{f'}\sum_i |\text{loading}_{i,f'}|}$$
+
+Weights sum to 1 across the 13 features.
+
+## Performance quadrants
+
+Quadrants are assigned in `src/ml/consistency.py` after computing performance scores for each dual-context player:
+
+1. `club_med` = median of `club_performance_score` over the cohort  
+2. `nat_med` = median of `national_performance_score` over the cohort  
+3. Assign quadrant:
+
+| Condition | Label |
+|-----------|-------|
+| `club_performance_score ≥ club_med` AND `national_performance_score ≥ nat_med` | Elite |
+| `club_performance_score ≥ club_med` AND `national_performance_score < nat_med` | Club Specialist |
+| `club_performance_score < club_med` AND `national_performance_score ≥ nat_med` | International Specialist |
+| Otherwise | Underperformer |
+
+Thresholds are **data-dependent** (recomputed each pipeline run). Scatter plots and Looker reference lines use these cohort medians.
+
+## Data sources: StatsBomb open data
+
+| Item | Coverage |
+|------|----------|
+| **Provider** | StatsBomb Open Data via `statsbombpy` (`src/ingestion/statsbomb.py`) |
+| **Competitions ingested** | La Liga, Ligue 1, Premier League, Serie A, 1. Bundesliga, Indian Super League, UEFA Champions League, MLS, Copa del Rey, UEFA Europa League, Liga Profesional, North American League, FIFA World Cup, UEFA Euro, African Cup of Nations, Copa América |
+| **Gender** | Men's senior (`competition_gender = 'male'`) |
+| **Season filter (ingest)** | Seasons with start year ≥ 1970 (catalog filter) |
+| **Season filter (dbt staging)** | `season_name >= '2000'` on `stg_statsbomb__matches` |
+| **Tables** | `matches`, `events`, `lineups` → GCS Parquet → BigQuery `raw_statsbomb` |
+| **International flag** | `is_international` derived from competition type in `stg_statsbomb__matches` |
+| **Refresh** | Dagster weekly schedule (Monday 06:00 UTC) + GCS sensor for new files |
+
+Competition availability follows StatsBomb Open releases. Not every competition-season in the catalog has complete event coverage. Analysts should treat early-season or low-minute players as excluded by the 270-minute rule.
 
 # References
 
