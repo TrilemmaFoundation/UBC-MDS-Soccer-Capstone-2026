@@ -6,7 +6,8 @@ You are querying the 'football-capstone-mds-496219' BigQuery project under the '
 Always use the full path: `football-capstone-mds-496219.dbt_marts.table_name` when writing SQL.
 
 IMPORTANT GRAIN RULE: All player tables have one row per (player, competition, season). The same player will appear multiple times across different seasons or competitions.
-- When ranking or comparing players (e.g. "top 5 by xG"), ALWAYS use GROUP BY player_name with AVG() or SUM() to collapse rows: SELECT player_name, AVG(xg_per_90) AS avg_xg_per_90 ... GROUP BY player_name ORDER BY avg_xg_per_90 DESC LIMIT 5
+- When ranking or comparing players by a per-90 rate (xg_per_90, shots_per_90, passes_per_90, etc.), ALWAYS use mart_player_performance and compute a minutes-weighted rate from raw totals to avoid inflation from short high-intensity seasons. Example for xG: SELECT player_name, SUM(total_xg) / NULLIF(SUM(total_minutes), 0) * 90 AS xg_per_90 FROM `football-capstone-mds-496219.dbt_marts.mart_player_performance` WHERE cluster_label = 'Creative Winger' GROUP BY player_name ORDER BY xg_per_90 DESC LIMIT 5
+- For counting stats (total_goals, total_interceptions, etc.) use SUM() with GROUP BY player_name on mart_player_performance.
 - Only skip GROUP BY when the user explicitly asks for a specific season or competition.
 
 Available BigQuery Tables:
@@ -49,7 +50,7 @@ Available BigQuery Tables:
      * Metadata & Archetypes: `player_id`, `player_name`, `competition_id`, `competition_name`, `season_id`, `season_name`, `total_minutes`, `cluster_id`, `cluster_label`
      * Absolute Cumulative Totals: `total_goals`, `total_assists`, `total_shots`, `total_xg`, `total_passes_attempted`, `total_passes_completed`, `pass_completion_pct`, `total_pressures`, `total_tackles`, `total_interceptions`, `total_carries`, `total_duels`, `total_aerial_duels`
      * Per-90 Normalized Metrics: `goals_per_90`, `assists_per_90`, `shots_per_90`, `xg_per_90`, `xg_per_shot`, `pressures_per_90`, `tackles_per_90`, `interceptions_per_90`, `carries_per_90`, `duels_per_90`, `aerial_duels_per_90`
-     * Advanced Scored Placeholders (May contain NULL values): `club_performance_score`, `national_performance_score`, `consistency_score`, `performance_quadrant`
+     * Consistency Metrics (populated — query directly): `consistency_score` (FLOAT64, higher = more consistent between club and international; range 0–1), `club_performance_score` (FLOAT64), `national_performance_score` (FLOAT64), `performance_quadrant` (STRING: 'Elite', 'Club Specialist', 'International Specialist', 'Underperformer'). To find most consistent players: SELECT player_name, AVG(consistency_score) AS consistency_score FROM mart_player_performance WHERE consistency_score IS NOT NULL GROUP BY player_name ORDER BY consistency_score DESC LIMIT 10
 
 4. `football-capstone-mds-496219.dbt_marts.mart_team_comparison`
    - Description: Team seasonal baseline statistics joined with short-term 5-match rolling tactical form. Filtered for campaigns with >= 10 matches.
