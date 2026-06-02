@@ -75,9 +75,9 @@ Staging models (`models/staging/`) perform a one-to-one mapping from raw source 
 
 Intermediate models (`models/intermediate/`) join, aggregate, and enrich the staged data. Six models form the core of the analytical layer:
 
-**`int_player_match_stats`** aggregates all on-ball events from `stg_statsbomb__events` to the player–match grain using conditional `COUNT` expressions. It computes 22 metrics including shots, xG, assists, passes, pressures, tackles, carries, dribbles, clearances, blocks, and ball recoveries. Minutes played are derived from `stg_statsbomb__lineups` by subtracting substitution-in time from substitution-out time.
+**`int_player_match_stats`** aggregates all on-ball events from `stg_statsbomb__events` to **one row per player per match** using conditional `COUNT` expressions. It computes 22 metrics including shots, xG, assists, passes, pressures, tackles, carries, dribbles, clearances, blocks, and ball recoveries. Minutes played are derived from `stg_statsbomb__lineups` by subtracting substitution-in time from substitution-out time.
 
-**`int_player_season_stats`** joins player-match stats to match metadata and aggregates to the player–competition–season grain. A `HAVING SUM(minutes_played) >= 270` clause filters out players with fewer than three full matches of exposure. The 270-minute threshold is the project-wide standard for minimum statistical reliability: below this threshold, per-90 rates become volatile and unrepresentative of true ability. This model also computes all per-90 normalized metrics (13 features aligned to the PCA clustering pipeline) and two efficiency ratios: `xg_per_shot` and `pass_completion_pct`.
+**`int_player_season_stats`** joins player-match stats to match metadata and aggregates to **one row per player, competition, and season**. A `HAVING SUM(minutes_played) >= 270` clause filters out players with fewer than three full matches of exposure. The 270-minute threshold is the project-wide standard for minimum statistical reliability: below this threshold, per-90 rates become volatile and unrepresentative of true ability. This model also computes all per-90 normalized metrics (13 features aligned to the PCA clustering pipeline) and two efficiency ratios: `xg_per_shot` and `pass_completion_pct`.
 
 **`int_player_club_vs_national`** is the primary input for RQ3. Rather than aggregating by competition and season, it aggregates by player and context (`is_international`: club or national team). The same 270-minute threshold is applied per context, and only players who appear in both contexts are retained via a `HAVING COUNT(DISTINCT is_international) = 2` filter in the `dual_context` CTE. Within each context, z-scores are computed for all 13 PCA features using window functions partitioned by `is_international`, so club players are standardized against other club players and national players against other national players. This produces 13 `z_*` columns that serve as the direct inputs to the consistency scoring pipeline.
 
@@ -120,17 +120,17 @@ End-to-end validation was performed by running all assets in sequence and verify
 
 | Layer | Table | Rows |
 |-------|-------|------|
-| Intermediate | `int_player_season_stats` | 7,889 |
-| Intermediate | `int_player_club_vs_national` | 1,341 |
-| ML output | `analytics.cluster_assignments` | 7,890 |
+| Intermediate | `int_player_season_stats` | 5,759 |
+| Intermediate | `int_player_club_vs_national` | 979 |
+| ML output | `analytics.cluster_assignments` | 5,759 |
 | ML output | `analytics.pca_loadings` | 52 (13 features × 4 PCs) |
-| ML output | `analytics.consistency_scores` | 670 |
-| Mart | `mart_player_clusters` | 7,889 |
-| Mart | `mart_player_performance` | 7,889 |
+| ML output | `analytics.consistency_scores` | 489 |
+| Mart | `mart_player_clusters` | 5,759 |
+| Mart | `mart_player_performance` | 5,759 |
 
-: End-to-end pipeline row counts after full pipeline run. {#tbl-rowcounts}
+: End-to-end pipeline row counts verified in BigQuery (`football-capstone-mds-496219`). {#tbl-rowcounts}
 
-Row counts are consistent across the intermediate and mart layers. The `analytics.consistency_scores` table contains 670 rows—one per dual-context player who meets the 270-minute threshold in both club and national contexts (`int_player_club_vs_national` holds two context rows per player, 1,341 rows total). The `analytics.pca_loadings` table has 52 rows (13 features × 4 principal components retained to explain ≥ 80% of variance).
+Row counts are consistent across the player-season and mart layers (5,759 each). The `int_player_club_vs_national` table has 979 context rows for 489 players (489 club rows and 490 national rows in the dbt model). The `analytics.consistency_scores` table has 489 rows, one per dual-context player who meets the 270-minute threshold in both contexts. The `analytics.pca_loadings` table has 52 rows (13 features, 4 principal components, 52 loading rows). Consistency fields in `mart_player_performance` appear on **1,309** of 5,759 player-season rows (join on `player_id` only), covering **4,421** distinct players in the mart with **489** in the dual-context scoring cohort.
 
 # Analysis
 
@@ -166,10 +166,19 @@ Position is therefore the primary lens for interpreting cluster membership: arch
 
 ### Competition effects are secondary but visible
 
-When cluster mix is compared **across leagues** (competition × cluster), the overall association is **weaker than position × cluster** (Notebook 07, KQ2a). Top-five leagues share broadly similar archetype proportions. Most player-seasons fall into mid-to-high activity clusters. Even so, **position × cluster heatmaps faceted by league** reveal localized shifts:
+When cluster mix is compared **across leagues** (competition × cluster), the overall association is **weaker than position × cluster** (Notebook 07, KQ2a). Outfield player-season counts in `mart_player_clusters` still show recognizable league fingerprints (@tbl-rq1-competition).
 
-- The same position (e.g., full back or wide forward) can show **±5 to 15 percentage-point** differences in archetype share between leagues versus the pooled top-five profile (Notebook 07, KQ2b delta tables).
-- Leagues with the highest within-competition Cramér's V for position × cluster indicate **tactical style varies more by role within that competition** (e.g., wider spread between defensive anchors and creative profiles for the same coarse position group).
+| Competition | Largest archetype (player-seasons) | Second largest | Notable pattern |
+|-------------|-----------------------------------|----------------|-----------------|
+| La Liga | Defensive Anchor (304) | Low Activity (167) | Highest volume; anchors lead |
+| Serie A | Low Activity (240) | Defensive Anchor (138) | Most Low Activity share among top five |
+| Ligue 1 | Defensive Anchor (175) | Low Activity (148) | Similar anchor vs low-activity mix |
+| Premier League | Defensive Anchor (169) | Low Activity (163) | Near-even top two clusters |
+| Bundesliga | Defensive Anchor (145) | Low Activity (121) | Smallest top-five sample; more Pressing Forward (83) |
+
+: Outfield cluster counts by competition in `mart_player_clusters` (BigQuery). Goalkeepers excluded. {#tbl-rq1-competition}
+
+Pressing Forward and Creative Winger shares are highest in Bundesliga and La Liga relative to Serie A, where **Low Activity** is the single largest bucket (240 player-seasons). That supports competition-level tactical differences on top of position effects. **Position × cluster heatmaps by league** (Notebook 07, KQ2b) still matter: the same position can shift **±5 to 15 percentage points** in archetype share between leagues.
 
 **Takeaway for RQ1:** Role distribution is **position-first**. Competition adjusts the *mix* of archetypes within positions rather than redefining global cluster structure. Dashboard users should filter by position before comparing leagues.
 
@@ -177,7 +186,7 @@ When cluster mix is compared **across leagues** (competition × cluster), the ov
 
 **Question:** Do players maintain similar tactical performance profiles between club and national contexts?
 
-The dual-context cohort comprises **670 players** with ≥270 minutes in **both** club and national matches (`analytics.consistency_scores`). For each player we compute context-specific **performance scores** (PCA-weighted sums of within-context z-scores) and assign a **performance quadrant** by median splits on club and national scores (@tbl-quadrants).
+The dual-context cohort comprises **489 players** with ≥270 minutes in **both** club and national matches (`analytics.consistency_scores`). For each player we compute context-specific **performance scores** (PCA-weighted sums of within-context z-scores) and assign a **performance quadrant** by median splits on club and national scores (@tbl-quadrants).
 
 | Club vs median | National vs median | Quadrant | Interpretation |
 |----------------|-------------------|----------|----------------|
@@ -190,16 +199,20 @@ The dual-context cohort comprises **670 players** with ≥270 minutes in **both*
 
 ### Quadrant distribution
 
-Quadrants are defined by **independent median splits** on `club_performance_score` and `national_performance_score`, so each quadrant targets roughly **one quarter of the cohort** (~167 players per quadrant at *n* = 670), with small deviations when many players sit exactly at the median.
+Quadrants use **median splits** on `club_performance_score` and `national_performance_score`. In theory that can yield four equal groups. In our cohort (*n* = 489), counts are uneven because many players sit on the same side of both medians (@tbl-quadrant-dist).
 
-| Quadrant | Typical share | Meaning |
-|----------|---------------|---------|
-| Elite | ~25% | Top half vs club peers **and** top half vs national peers |
-| Club Specialist | ~25% | Top half at club only |
-| International Specialist | ~25% | Top half for country only |
-| Underperformer | ~25% | Below median in both contexts |
+| Quadrant | Players | Share | Meaning |
+|----------|---------|-------|---------|
+| Elite | 157 | 32.1% | Top half vs club peers **and** top half vs national peers |
+| Underperformer | 156 | 31.9% | Below median vs peers in both contexts |
+| Club Specialist | 88 | 18.0% | Top half at club only |
+| International Specialist | 88 | 18.0% | Top half for country only |
 
-**How many perform better at club vs international?** Counting players above their cohort median in **only one** context, **Club Specialist** and **International Specialist** together comprise **roughly half** of the dual-context cohort (~50% combined). The other half splits between **Elite** (strong in both) and **Underperformer** (weak in both). This answers RQ3 directly. **Specialization is common**: peer-relative strength often does not transfer symmetrically across contexts.
+: Observed quadrant counts in `analytics.consistency_scores` (BigQuery, verified pipeline run). {#tbl-quadrant-dist}
+
+Cohort median thresholds for that run: `club_performance_score` = **0.298**, `national_performance_score` = **0.175**. Club and national medians differ, which helps explain why Elite and Underperformer groups are larger than the two specialist groups.
+
+**How many perform better at club vs international?** **176 players (36.0%)** are single-context specialists: **88** rank above the cohort median at club only (Club Specialist) and **88** at national only (International Specialist), split evenly between the two. The larger groups are **Elite** (157, 32.1%) and **Underperformer** (156, 31.9%). So **about two thirds** of dual-context players are either above median in **both** settings or below median in **both**, not in only one. Single-context strength is still common (more than one in three players), but less than an even four-way split would suggest.
 
 ### What separates specialists?
 
@@ -217,8 +230,8 @@ The **consistency score** (1 − mean absolute z-gap across 13 features) measure
 
 ## Key Insights and Surprising Findings
 
-1. **Where you play matters more than which league you play in.** Strikers, defenders, and midfielders tend to land in different archetypes. League-to-league differences in cluster mix are smaller than differences across positions.
-2. **Many players are stronger in one setting only.** About half of players with enough club and national minutes score above average in just one of those two settings, not both.
+1. **Where you play matters more than which league you play in.** Strikers, defenders, and midfielders tend to land in different archetypes. League mixes still differ (e.g., Serie A has the most Low Activity player-seasons among the top five).
+2. **Single-context strength is common but not the majority.** In our cohort, 36% of dual-context players score above the median in only club or only national football (18% each). The rest are mostly Elite (32%) or Underperformer (32%) across both settings.
 3. **Passes into the attacking third best separate club-focused from national-focused players.** That gap shows up more clearly in our z-scores than goals or xG alone.
 4. **A stable profile is not the same as a good profile.** A player can look very similar club vs country while still performing below average in both. Big shifts between contexts can also mean the national team uses them differently (e.g., winger at club, wider forward for country).
 5. **The dashboard’s two context metrics measure different things.** Context shift sums raw per-90 differences. Consistency compares how similar a player’s style is to others in each setting (see Appendix).
@@ -247,7 +260,7 @@ Extended methodology for dashboard calculated fields is in [`docs/appendix/`](..
 
 ## PCA features (13)
 
-All clustering and consistency z-scores use the same 13 features. Per-90 rates use **`(total_event_count / total_minutes) × 90`** at the aggregation grain (player-season or player-context). Event counts come from StatsBomb `events` joined to `lineups` at player-match grain.
+All clustering and consistency z-scores use the same 13 features. Per-90 rates use **`(total_event_count / total_minutes) × 90`** when rolled up to **player-season** or **player-context** level. Event counts come from StatsBomb `events` joined to `lineups` at **player-match** level.
 
 | Feature | Formula | Event / source definition |
 |---------|---------|---------------------------|
@@ -306,7 +319,7 @@ Quadrants are assigned in `src/ml/consistency.py` after computing performance sc
 | `club_performance_score < club_med` AND `national_performance_score ≥ nat_med` | International Specialist |
 | Otherwise | Underperformer |
 
-Thresholds are **data-dependent** (recomputed each pipeline run). Scatter plots and Looker reference lines use these cohort medians.
+Thresholds are **data-dependent** (recomputed each pipeline run). On the verified run, cohort medians were **0.298** (club) and **0.175** (national). Scatter plots and Looker reference lines use these values from `analytics.consistency_scores`.
 
 ## Data sources: StatsBomb open data
 
