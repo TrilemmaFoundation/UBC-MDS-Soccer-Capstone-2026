@@ -13,23 +13,29 @@ client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 project_id = os.environ.get("GCP_PROJECT_ID", "football-capstone-mds-496219")
 bq_client = bigquery.Client(project=project_id)
 
+# Primary model: larger, more instruction-following
+# Fallback: fast model if primary is unavailable
+PRIMARY_MODEL  = "llama-3.3-70b-versatile"
+FALLBACK_MODEL = "llama-3.1-8b-instant"
+
+
 def is_safe_sql(sql_query: str) -> bool:
     """Validates that the generated query is strictly a single, read-only SELECT statement."""
     clean_sql = sql_query.strip().upper()
-    
+
     # Block multi-statement queries
     if ";" in clean_sql.rstrip(";"):
         return False
-        
+
     # Block destructive DML/DDL or data modification keywords
     forbidden_keywords = [
-        "DROP", "DELETE", "UPDATE", "INSERT", "MERGE", "CREATE", 
+        "DROP", "DELETE", "UPDATE", "INSERT", "MERGE", "CREATE",
         "ALTER", "GRANT", "CALL", "EXPORT", "TRUNCATE"
     ]
     for keyword in forbidden_keywords:
         if re.search(r'\b' + keyword + r'\b', clean_sql):
             return False
-            
+
     # Block REPLACE only if it is not followed by an opening parenthesis
     if re.search(r'\bREPLACE\b(?!\s*\()', clean_sql):
         return False
@@ -37,8 +43,9 @@ def is_safe_sql(sql_query: str) -> bool:
     # Ensure it starts with safe read-only commands
     if not (clean_sql.startswith("SELECT") or clean_sql.startswith("WITH")):
         return False
-        
+
     return True
+
 
 def query_bigquery(sql):
     """Executes a validated read-only SQL command against BigQuery Mart datasets securely."""
@@ -47,22 +54,60 @@ def query_bigquery(sql):
         return [{"status": "Error", "message": "Database query rejected: Unauthorized SQL statement structure."}]
 
     try:
-        
-        # Guardrail: Limit maximum bytes billed (e.g., 50 MB) and enforce cache usage
         job_config = bigquery.QueryJobConfig(
-            maximum_bytes_billed=50 * 1024 * 1024,  # 50MB Limit
+            maximum_bytes_billed=50 * 1024 * 1024,  # 50MB limit
             use_query_cache=True
         )
-        
         query_job = bq_client.query(sql, job_config=job_config)
         results = query_job.result()
-        
         return [dict(row) for row in results]
     except Exception as e:
-        # Server-side logging for diagnostics
         print(f"[BigQuery Error]: {str(e)}")
-        # Return generic error details to avoid fingerprinting and schema exposure
         return [{"status": "Error", "message": "An error occurred while fetching the requested statistics."}]
+
+
+def _chat(model: str, messages: list, tools: list = None, tool_choice: str = "auto"):
+    """Wrapper that falls back to FALLBACK_MODEL if the primary model call fails."""
+    kwargs = dict(messages=messages, temperature=0)
+    if tools:
+        kwargs["tools"] = tools
+        kwargs["tool_choice"] = tool_choice
+    try:
+        return client.chat.completions.create(model=model, **kwargs)
+    except Exception as e:
+        print(f"[Model fallback] {model} failed ({e}), retrying with {FALLBACK_MODEL}")
+        return client.chat.completions.create(model=FALLBACK_MODEL, **kwargs)
+
+
+def _format_fallback(query_data: list) -> str:
+    """
+    Safety net: if the LLM returns a response that doesn't contain any
+    of the actual data values, format the rows directly so the user
+    always sees the results.
+    """
+    if not query_data or (len(query_data) == 1 and "status" in query_data[0]):
+        return None  # error row — let the LLM message stand
+
+    lines = []
+    for i, row in enumerate(query_data, 1):
+        parts = [f"{k}: {v}" for k, v in row.items()]
+        lines.append(f"{i}. {' | '.join(parts)}")
+    return "\n".join(lines)
+
+
+def _response_contains_data(answer: str, query_data: list) -> bool:
+    """
+    Check whether the LLM answer actually contains values from the
+    query result (at least one player name or numeric value from row 1).
+    """
+    if not query_data or not answer:
+        return True  # nothing to check
+    first_row = query_data[0]
+    for v in first_row.values():
+        if str(v)[:6] in answer:  # first 6 chars of any value present → OK
+            return True
+    return False
+
 
 def ask_football_chatbot(user_query):
     """Main pipeline handling tool orchestration and response construction."""
@@ -98,25 +143,17 @@ def ask_football_chatbot(user_query):
         {"role": "user", "content": user_query}
     ]
 
-    response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=messages,
-        tools=tools,
-        tool_choice="auto",
-        temperature=0
-    )
-
+    response = _chat(PRIMARY_MODEL, messages, tools=tools)
     assistant_message = response.choices[0].message
     tool_calls = assistant_message.tool_calls
 
     if tool_calls:
         sql_args = json.loads(tool_calls[0].function.arguments)
         sql_query = sql_args['sql']
-        
         query_data = query_bigquery(sql_query)
-        
-        final_response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",
+
+        final_response = _chat(
+            PRIMARY_MODEL,
             messages=[
                 messages[0],
                 {"role": "user", "content": user_query},
@@ -129,8 +166,16 @@ def ask_football_chatbot(user_query):
                 }
             ]
         )
+        answer = final_response.choices[0].message.content
+
+        # Fallback: if LLM answer doesn't actually contain the data, format it directly
+        if not _response_contains_data(answer, query_data):
+            fallback = _format_fallback(query_data)
+            if fallback:
+                answer = fallback
+
         return {
-            "answer": final_response.choices[0].message.content,
+            "answer": answer,
             "sql_query": sql_query,
             "query_data": query_data,
         }
