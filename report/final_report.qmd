@@ -203,7 +203,7 @@ Quadrants are defined by **independent median splits** on `club_performance_scor
 
 ### What separates specialists?
 
-Contrasting Club Specialist vs International Specialist cohorts (Notebook 04, `04_feature_importance.ipynb`), the largest mean z-score gaps (national − club) are:
+Contrasting Club Specialist vs International Specialist, the largest mean z-score gaps (national − club) are:
 
 1. **Passes into attacking third per 90.** Club specialists rank higher on progressive passing vs **club** baselines. International specialists rank higher vs **national** baselines.
 2. **Interceptions per 90.** National-team specialists align with systems that reward more ball-winning in z-score terms.
@@ -217,12 +217,12 @@ The **consistency score** (1 − mean absolute z-gap across 13 features) measure
 
 ## Key Insights and Surprising Findings
 
-1. **Position explains roles more than league.** Archetypes align with coarse position groups. Cross-league cluster mixes differ modestly compared with position × cluster separation.
-2. **Half the dual-context cohort are single-context “specialists.”** Median-based quadrants show that peer-relative excellence often concentrates in club *or* national football, not both.
-3. **Progressive passing into the final third is the top discriminator** between club-leaning and national-leaning specialists. It separates cohorts more than raw goals or xG in z-score space.
-4. **Consistency ≠ quality.** High consistency can reflect a stable but limited role. Low consistency can reflect tactical adaptation (e.g., club winger vs national wide forward).
-5. **Context shift score and consistency score answer different questions.** Raw per-90 gaps (Looker context shift) highlight the size of stat changes. Z-profile consistency highlights tactical similarity relative to peers (Appendix).
-6. **K-Means uses *k* = 5 for interpretability.** Silhouette analysis on PCA space favors fewer clusters (Notebook 05). We accepted that trade-off to keep coach-facing archetype labels readable.
+1. **Where you play matters more than which league you play in.** Strikers, defenders, and midfielders tend to land in different archetypes. League-to-league differences in cluster mix are smaller than differences across positions.
+2. **Many players are stronger in one setting only.** About half of players with enough club and national minutes score above average in just one of those two settings, not both.
+3. **Passes into the attacking third best separate club-focused from national-focused players.** That gap shows up more clearly in our z-scores than goals or xG alone.
+4. **A stable profile is not the same as a good profile.** A player can look very similar club vs country while still performing below average in both. Big shifts between contexts can also mean the national team uses them differently (e.g., winger at club, wider forward for country).
+5. **The dashboard’s two context metrics measure different things.** Context shift sums raw per-90 differences. Consistency compares how similar a player’s style is to others in each setting (see Appendix).
+6. **We use five outfield clusters on purpose.** Statistical checks suggested fewer groups might fit the data slightly better (Notebook 05), but five labels are easier for coaches and analysts to use.
 
 # Data Product and Results
 
@@ -234,9 +234,9 @@ The **consistency score** (1 − mean absolute z-gap across 13 features) measure
 
 # Appendix: Data Dictionary
 
-This appendix closes [#123](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/issues/123). Metric definitions match `int_player_match_stats`, `int_player_season_stats`, `int_player_club_vs_national`, `src/ml/cluster.py`, and `src/ml/consistency.py`. Extended methodology for dashboard calculated fields is in [`docs/appendix/`](../docs/appendix/).
+Extended methodology for dashboard calculated fields is in [`docs/appendix/`](../docs/appendix/).
 
-## Eligibility and grains
+## Eligibility
 
 | Rule | Value | Applied in |
 |------|-------|------------|
