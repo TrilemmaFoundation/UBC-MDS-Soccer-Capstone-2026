@@ -55,7 +55,7 @@ def query_bigquery(sql):
 
     try:
         job_config = bigquery.QueryJobConfig(
-            maximum_bytes_billed=50 * 1024 * 1024,  # 50MB limit
+            maximum_bytes_billed=200 * 1024 * 1024,  # 200MB limit
             use_query_cache=True
         )
         query_job = bq_client.query(sql, job_config=job_config)
