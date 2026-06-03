@@ -43,6 +43,7 @@ Available BigQuery Tables:
      * `pc1` (FLOAT64), `pc2` (FLOAT64) - Principal component dimensions for 2D visualization scatter plots
      * PCA Input Metrics (per-90): `xg_per_90`, `shots_per_90`, `passes_per_90`, `passes_att_third_per_90`, `pressures_per_90`, `carries_per_90`, `dribbles_per_90`, `interceptions_per_90`, `blocks_per_90`, `clearances_per_90`, `duels_per_90`, `xg_per_shot`, `pass_completion_pct`
      * Traditional Rates: `goals_per_90`, `assists_per_90`
+     * NOTE: This table does NOT have `performance_quadrant` or `consistency_score`. Use mart_player_performance for those.
 
 3. `football-capstone-mds-496219.dbt_marts.mart_player_performance`
    - Description: Deep player seasonal analytics totals combined with tactical labels and normalized Per-90 metrics.
