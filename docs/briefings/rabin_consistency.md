@@ -69,7 +69,7 @@ After z-scoring, dbt keeps only players who appear in **both** contexts:
 HAVING COUNT(DISTINCT is_international) = 2
 ```
 
-Result: **two rows per eligible player** (~670 players × 2 ≈ 1,300+ context rows).
+Result: **two rows per eligible player** (489 players × 2 = 978 context rows in a full pipeline run).
 
 ### Z-score partitioning
 
@@ -155,7 +155,7 @@ Medians are recomputed every run on the dual-context cohort:
 | **International Specialist** | Club < median AND national ≥ median |
 | **Underperformer** | Both below median |
 
-Roughly 25% of players per quadrant (~167 of ~670).
+Roughly 25% of players per quadrant (~122 of 489), with small variation when many players sit on the median.
 
 ### How to interpret
 

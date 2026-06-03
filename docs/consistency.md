@@ -75,7 +75,7 @@ After z-scoring, dbt keeps only players who have **both** a club row and a natio
 HAVING COUNT(DISTINCT is_international) = 2
 ```
 
-So the table has **two rows per eligible player** (one club, one national). A full pipeline run typically yields on the order of **1,300+ context rows** (~670 players × 2).
+So the table has **two rows per eligible player** (one club, one national). A full pipeline run typically yields **978 context rows** (489 dual-context players × 2).
 
 `consistency.py` applies the same 270-minute and dual-context rules again when reading from BigQuery (defensive check).
 
@@ -157,7 +157,7 @@ Quadrants split the dual-context cohort by **medians** of `club_performance_scor
 | **International Specialist** | Club < median **and** national ≥ median | Better relative to national peers than club peers |
 | **Underperformer** | Both below median | Below median vs peers in both settings |
 
-Median splits target roughly **25% of players per quadrant** (~167 of ~670), with small variation when many players sit exactly on the median.
+Median splits target roughly **25% of players per quadrant** (~122 of 489), with small variation when many players sit exactly on the median.
 
 **Club Specialist** and **International Specialist** together are the players who “perform better” in **one** context only (about half the cohort).
 
