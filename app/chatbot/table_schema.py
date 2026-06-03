@@ -1,9 +1,12 @@
 # app/chatbot/table_schema.py
+import os
+
+_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "football-capstone-mds-496219")
 
 # Ensure this name is exactly TABLE_CONTEXT
-TABLE_CONTEXT = """
-You are querying the 'football-capstone-mds-496219' BigQuery project under the 'dbt_marts' dataset.
-Always use the full path: `football-capstone-mds-496219.dbt_marts.table_name` when writing SQL.
+TABLE_CONTEXT = f"""
+You are querying the '{_PROJECT_ID}' BigQuery project under the 'dbt_marts' dataset.
+Always use the full path: `{_PROJECT_ID}.dbt_marts.table_name` when writing SQL.
 
 IMPORTANT GRAIN RULE: All player tables have one row per (player, competition, season). The same player will appear multiple times across different seasons or competitions.
 - When ranking or comparing players by a per-90 rate (xg_per_90, shots_per_90, passes_per_90, etc.), ALWAYS use mart_player_performance and compute a minutes-weighted rate from raw totals to avoid inflation from short high-intensity seasons. Example for xG: SELECT player_name, SUM(total_xg) / NULLIF(SUM(total_minutes), 0) * 90 AS xg_per_90 FROM `football-capstone-mds-496219.dbt_marts.mart_player_performance` WHERE cluster_label = 'Creative Winger' GROUP BY player_name ORDER BY xg_per_90 DESC LIMIT 5
