@@ -13,8 +13,8 @@
     <aside class="hidden xl:flex absolute left-4 2xl:left-8 top-24 w-48 2xl:w-64 flex-col h-[calc(100vh-8rem)] overflow-y-auto pr-2">
         <h2 class="text-sm font-bold text-green-400 mb-4 uppercase tracking-wider">Suggested Questions</h2>
         <div class="space-y-3">
-            {% if sample_questions %}
-                {% for sample in sample_questions %}
+            {% if suggested_questions %}
+                {% for sample in suggested_questions %}
                 <button type="button" 
                         onclick="document.getElementById('user-input').value = this.getAttribute('data-question'); document.getElementById('user-input').focus();"
                         data-question="{{ sample.question }}"

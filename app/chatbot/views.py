@@ -1,22 +1,15 @@
 # app/chatbot/views.py
 import json
-import sys
-from pathlib import Path
 from django.shortcuts import render
 from django.http import JsonResponse
 from .llm_engine import ask_football_chatbot
 
-# Add the repository root to sys.path to access the 'src' directory for sample prompts
-repo_root = Path(__file__).resolve().parents[2]
-if str(repo_root) not in sys.path:
-    sys.path.insert(0, str(repo_root))
-
-from src.chatbot.prompts import SAMPLE_TEST_QUESTIONS
+from .prompts import SUGGESTED_QUESTIONS
 
 def chat_view(request):
     """Renders the main chat workspace framework layout."""
     context = {
-        "sample_questions": SAMPLE_TEST_QUESTIONS
+        "suggested_questions": SUGGESTED_QUESTIONS
     }
     return render(request, "chat.html", context)
 
