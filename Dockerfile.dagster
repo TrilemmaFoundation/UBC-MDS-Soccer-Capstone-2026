@@ -34,7 +34,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     plotly
 
 # Set up non-root execution permissions
-RUN useradd -m -U dagster \
+RUN useradd -m -u 1000 -U dagster \
     && chown -R dagster:dagster $DAGSTER_HOME /opt/dagster/app
 
 USER dagster
@@ -42,6 +42,12 @@ WORKDIR /opt/dagster/app
 
 # Pre-copy application files for standalone deployment (production environments)
 COPY --chown=dagster:dagster . /opt/dagster/app
+
+# Generate the dbt manifest.json file so Dagster can parse the dbt assets on startup.
+# We use --profiles-dir . assuming you map or include a profiles.yml in the root.
+RUN dbt deps --project-dir /opt/dagster/app --profiles-dir /opt/dagster/app && \
+    dbt parse --project-dir /opt/dagster/app --profiles-dir /opt/dagster/app || \
+    echo "dbt parse failed. Ensure target/manifest.json is generated locally and not in .dockerignore"
 
 EXPOSE 3000
 

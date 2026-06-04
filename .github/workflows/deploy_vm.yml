@@ -33,35 +33,54 @@ jobs:
       - name: Prepare and Copy Configuration Files
         run: |
           cp .env.example .env
-          sed -i 's|^GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json|' .env
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
-          echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
+          echo '${{ secrets.GCE_CHATBOT_SERVICE_ACCOUNT_KEY }}' > chatbot-service-account-key.json
+          echo '${{ secrets.GCE_DAGSTER_SERVICE_ACCOUNT_KEY }}' > dagster-service-account-key.json
 
-          # 1. Create directory structure and clean up previously locked files to avoid scp permission denied
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/src/dagster && sudo rm -f ~/.env ~/service-account-key.json"
-
-          # 2. Copy root files to ~/
-          scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
-          
-          # 3. Copy the definitions file explicitly into its matching subfolder
-          scp src/dagster/definitions.py ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/src/dagster/
+          # Archive and copy the repository
+          tar -czf repo.tar.gz --exclude=.git .
+          scp repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/app && sudo tar -xzf ~/repo.tar.gz -C ~/app && rm ~/repo.tar.gz"
 
       - name: Deploy Cluster on GCE VM
         run: |
           ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} << 'EOF'
             set -e
             
+            # Stop existing containers if they were started in ~
+            if [ -f "$HOME/docker-compose.yml" ]; then
+              cd $HOME
+              sudo docker compose down || true
+              # Move existing dagster_home to app/ to preserve data
+              if [ -d "$HOME/dagster_home" ] && [ ! -d "$HOME/app/dagster_home" ]; then
+                sudo mv $HOME/dagster_home $HOME/app/
+              fi
+              # Clean up old files from ~ to prevent confusion
+              sudo rm -f $HOME/docker-compose.yml $HOME/.env $HOME/chatbot-service-account-key.json $HOME/dagster-service-account-key.json
+            fi
+
+            cd $HOME/app
+
             # Safely source environmental variables even with comments or strings present
             set -a
-            source $HOME/.env
+            source .env
             set +a
 
-            # Execute cluster update using files located in $HOME
+            # Execute cluster update using files located in $HOME/app
             sudo docker compose down || true
             sudo docker image prune -a -f
 
-            # Lock down credentials so only the deployment user and Docker can read them
-            chmod 600 $HOME/.env $HOME/service-account-key.json
+            # Create a persistent directory for Dagster's SQLite database (much faster I/O)
+            mkdir -p dagster_home
+
+            # Ensure Dagster user has access to the app folder
+            sudo chown -R 1000:1000 $HOME/app
+
+            # Lock down environment and chatbot key to the host user (since Django runs as root and bypasses this)
+            sudo chmod 600 .env chatbot-service-account-key.json
+
+            # Secure the Dagster GCP key: Assign to UID 1000 (Dagster non-root user) and make it read-only
+            sudo chmod 400 dagster-service-account-key.json
 
             sudo docker compose pull
             sudo docker compose up -d

@@ -1,13 +1,15 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:141d29b1cfef7930a6bda3cf8cccefdb82e409da-django
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:fcbef3ca2d70fae85273bc4b2736048eedf6ba9d-django
     restart: unless-stopped
     env_file:
       - .env
     ports:
       - "80:8000"
     volumes:
-      - ./service-account-key.json:/app/service-account-key.json:ro
+      - ./chatbot-service-account-key.json:/app/service-account-key.json:ro
+    environment:
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json
     working_dir: /app
     command: ["python", "app/manage.py", "runserver", "0.0.0.0:8000"]
     deploy:
@@ -17,7 +19,7 @@ services:
     platform: linux/arm64
 
   jupyter-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:141d29b1cfef7930a6bda3cf8cccefdb82e409da-jupyter
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:fcbef3ca2d70fae85273bc4b2736048eedf6ba9d-jupyter
     restart: unless-stopped
     environment:
       - NB_UID=1000
@@ -29,16 +31,21 @@ services:
     platform: linux/arm64
 
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:141d29b1cfef7930a6bda3cf8cccefdb82e409da-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:fcbef3ca2d70fae85273bc4b2736048eedf6ba9d-dagster
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "3000:3000"
     volumes:
-      - ./src/dagster/definitions.py:/opt/dagster/app/definitions.py:ro
+      - ./dagster_home:/opt/dagster/dagster_home
+      - .:/opt/dagster/app
     working_dir: /opt/dagster/app
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home
-    command: ["dagster-webserver", "-h", "0.0.0.0", "-p", "3000", "-f", "definitions.py"]
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/dagster/app/dagster-service-account-key.json
+      - DBT_PROFILES_DIR=/opt/dagster/app
+    command: ["bash", "-c", "dbt deps && dbt parse && dagster dev -h 0.0.0.0 -p 3000 -f src/dagster/definitions.py"]
     deploy:
       resources:
         limits:
