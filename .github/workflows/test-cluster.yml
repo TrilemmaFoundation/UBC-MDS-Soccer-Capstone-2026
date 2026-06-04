@@ -21,7 +21,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest numpy pandas scikit-learn python-dotenv
+          pip install pytest numpy pandas scikit-learn python-dotenv google-cloud-bigquery google-cloud-storage
 
       - name: Run cluster tests
         run: |
