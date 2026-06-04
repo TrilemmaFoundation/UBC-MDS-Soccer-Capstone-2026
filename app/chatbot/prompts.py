@@ -1,7 +1,7 @@
 SUGGESTED_QUESTIONS = [
     {
         "id": "q1_creative_wingers",
-        "question": "top 5 creative wingers sorted by xG (should return recognizable attackers)",
+        "question": "Top 5 creative wingers sorted by xG (should return recognizable attackers)",
     },
     {
         "id": "q2_elite_la_liga",
