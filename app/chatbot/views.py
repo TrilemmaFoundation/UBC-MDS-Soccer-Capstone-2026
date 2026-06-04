@@ -18,7 +18,8 @@ def get_column_annotations():
             if len(parts) >= 3:
                 col_name = parts[1].strip('`')
                 desc = parts[2]
-                if col_name and desc:
+                # Restrict to technical column names containing '_' to prevent over-annotating common English words
+                if col_name and desc and '_' in col_name:
                     annotations[col_name] = desc
     return annotations
 
