@@ -5,6 +5,7 @@ import re
 from groq import Groq
 from google.cloud import bigquery
 from .table_schema import TABLE_CONTEXT
+from .marts_data_dict import MARTS_DATA_DICT
 
 # Initialize Groq client using environment variable
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -132,6 +133,7 @@ def ask_football_chatbot(user_query):
             "content": (
                 f"You are an Elite European Football AI assistant. Use the 'query_bigquery' tool to fetch data. "
                 f"Always generate valid BigQuery SQL using the strict rules and column schemas specified below:\n{TABLE_CONTEXT}\n"
+                f"\nHere is a detailed Markdown Data Dictionary for additional context constraints:\n{MARTS_DATA_DICT}\n"
                 f"CRITICAL RULES:\n"
                 f"1. ALWAYS call the 'query_bigquery' tool before answering any question about players, teams, or matches.\n"
                 f"2. After receiving the tool result, you MUST present ALL the data rows as a formatted list or table. Never skip or omit any row.\n"
