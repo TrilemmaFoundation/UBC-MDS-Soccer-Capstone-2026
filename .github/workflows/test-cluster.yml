@@ -26,3 +26,5 @@ jobs:
       - name: Run cluster tests
         run: |
           pytest tests/test_cluster.py -v
+        env:
+          PYTHONPATH: ${{ github.workspace }}
