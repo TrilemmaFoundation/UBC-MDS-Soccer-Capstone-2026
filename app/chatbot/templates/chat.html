@@ -115,6 +115,25 @@
                 });
             }
         });
+
+        // 3. Copy user message to clipboard
+        function copyToClipboard(button) {
+            const userMessageContainer = button.closest('.group');
+            const textToCopy = userMessageContainer.querySelector('.text-sm.leading-relaxed').innerText;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const tooltip = button.querySelector('.copy-tooltip-text');
+                if (tooltip) {
+                    const originalText = tooltip.innerText;
+                    tooltip.innerText = 'Copied!';
+                    setTimeout(() => {
+                        tooltip.innerText = originalText;
+                    }, 2000);
+                }
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
     </script>
 </body>
 </html>
