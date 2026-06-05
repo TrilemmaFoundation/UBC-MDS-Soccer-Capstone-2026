@@ -34,7 +34,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
     plotly
 
 # Set up non-root execution permissions
-RUN useradd -m -u 1000 -U dagster \
+RUN useradd -m -u 1003 -U dagster \
     && chown -R dagster:dagster $DAGSTER_HOME /opt/dagster/app
 
 USER dagster

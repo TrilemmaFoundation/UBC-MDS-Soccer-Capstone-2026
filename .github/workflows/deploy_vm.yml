@@ -32,6 +32,10 @@ jobs:
 
       - name: Prepare and Copy Configuration Files
         run: |
+          # 0. Archive and copy the repository
+          tar -czf /tmp/repo.tar.gz --exclude=.git .
+          scp /tmp/repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+
           cp .env.example .env
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
           echo '${{ secrets.GCE_CHATBOT_SERVICE_ACCOUNT_KEY }}' > chatbot-service-account-key.json
@@ -42,10 +46,6 @@ jobs:
 
           # 2. Copy configuration files to ~/
           scp .env chatbot-service-account-key.json dagster-service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
-
-          # 3. Archive and copy the repository
-          tar -czf /tmp/repo.tar.gz --exclude=.git .
-          scp /tmp/repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
 
       - name: Deploy Cluster on GCE VM
         run: |
@@ -70,13 +70,13 @@ jobs:
             # Lock down environment and chatbot key to the host user (since Django runs as root and bypasses this)
             chmod 600 $HOME/.env $HOME/chatbot-service-account-key.json
 
-            # Secure the Dagster GCP key: Assign to UID 1000 (Dagster non-root user) and make it read-only
-            sudo chown 1000:1000 $HOME/dagster-service-account-key.json
+            # Secure the Dagster GCP key: Assign to UID 1003 (Dagster non-root user) and make it read-only
+            sudo chown 1003:1003 $HOME/dagster-service-account-key.json
             sudo chmod 400 $HOME/dagster-service-account-key.json
 
             # Create a persistent directory for Dagster's SQLite database (much faster I/O)
             mkdir -p $HOME/repo/dagster_home
-            sudo chown 1000:1000 $HOME/repo/dagster_home
+            sudo chown 1003:1003 $HOME/repo/dagster_home
 
             sudo docker compose pull
             sudo docker compose up -d
