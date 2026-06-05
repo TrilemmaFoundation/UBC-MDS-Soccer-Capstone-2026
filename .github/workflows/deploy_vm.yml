@@ -33,8 +33,9 @@ jobs:
       - name: Prepare and Copy Configuration Files
         run: |
           # 1. Clean up previously locked files to avoid scp permission denied
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz ~/repo"
-
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz"
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -rf ~/repo"
+          
           # 0. Archive and copy the repository
           tar -czf /tmp/repo.tar.gz --exclude=.git .
           scp /tmp/repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
