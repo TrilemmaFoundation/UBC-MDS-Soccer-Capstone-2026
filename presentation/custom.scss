@@ -1,0 +1,76 @@
+/* presentation/custom.scss — accessible, readable defaults */
+
+/*-- scss:defaults --*/
+$presentation-font-size-root: 36px;
+$body-bg: #f8f9fa;
+$body-color: #1a1a2e;
+$link-color: #2d6a9f;
+$selection-bg: #2d6a9f;
+
+/*-- scss:rules --*/
+
+.reveal {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.reveal h1 {
+  font-size: 1.6em;
+  color: #1a1a2e;
+}
+
+.reveal h2 {
+  font-size: 1.25em;
+  color: #2d6a9f;
+}
+
+.reveal h3 {
+  font-size: 1em;
+  color: #444;
+}
+
+.reveal .slide-number {
+  font-size: 14px;
+  color: #666;
+}
+
+.reveal ul {
+  line-height: 1.5;
+}
+
+.reveal .small {
+  font-size: 0.75em;
+}
+
+.reveal .columns {
+  gap: 1.5rem;
+}
+
+.reveal .callout {
+  font-size: 0.7em;
+  padding: 0.5em 1em;
+  border-left: 4px solid #e8a838;
+  background: #fff8e8;
+  margin-top: 0.5em;
+}
+
+.reveal table {
+  font-size: 0.65em;
+}
+
+.reveal table th {
+  background: #2d6a9f;
+  color: white;
+}
+
+.reveal .placeholder {
+  border: 2px dashed #aaa;
+  border-radius: 8px;
+  padding: 2em;
+  color: #888;
+  font-size: 0.7em;
+  text-align: center;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
