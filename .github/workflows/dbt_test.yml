@@ -41,7 +41,7 @@ jobs:
 
       - name: Create PR BigQuery Dataset
         run: |
-          bq mk --dataset football-capstone-mds-496219:pr_validation_${{ github.event.number }}
+          bq mk --dataset ${{ vars.GCP_PROJECT_ID }}:pr_validation_${{ github.event.number }}
 
       - name: Set up dbt Profiles Directory
         run: |
@@ -53,7 +53,7 @@ jobs:
               pr:
                 type: bigquery
                 method: oauth
-                project: football-capstone-mds-496219
+                project: ${{ vars.GCP_PROJECT_ID }}
                 dataset: pr_validation_${{ github.event.number }}
                 threads: 4
                 timeout_seconds: 300
@@ -84,4 +84,4 @@ jobs:
       - name: Clean Up PR Dataset (Always Runs)
         if: always()
         run: |
-          bq rm -r -f -d football-capstone-mds-496219:pr_validation_${{ github.event.number }}
+          bq rm -r -f -d ${{ vars.GCP_PROJECT_ID }}:pr_validation_${{ github.event.number }}

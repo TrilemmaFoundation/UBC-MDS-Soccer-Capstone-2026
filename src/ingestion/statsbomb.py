@@ -11,14 +11,25 @@ os.makedirs(f"{OUTPUT_DIR}/matches", exist_ok=True)
 os.makedirs(f"{OUTPUT_DIR}/events", exist_ok=True)
 os.makedirs(f"{OUTPUT_DIR}/lineups", exist_ok=True)
 
-# competitions to include (matching your chart)
+# statsbombpy reads SB_USERNAME and SB_PASSWORD from the environment automatically.
+# If both are set, the paid API is used (full historical data).
+# If either is missing, the library falls back to StatsBomb open data (free, GitHub-hosted).
+_sb_user = os.getenv("SB_USERNAME")
+_sb_pass = os.getenv("SB_PASSWORD")
+if _sb_user and _sb_pass:
+    print("StatsBomb: using authenticated API (paid data)")
+else:
+    print("StatsBomb: SB_USERNAME/SB_PASSWORD not set — using open data (free)")
+
+# Competition names must match StatsBomb's exact spelling (case-sensitive).
+# "Indian Super league" uses lowercase 'l' as returned by the StatsBomb API.
 TARGET_COMPETITIONS = [
     "La Liga",
     "Ligue 1",
     "Premier League",
     "Serie A",
     "1. Bundesliga",
-    "Indian Super League",
+    "Indian Super league",
     "Champions League",
     "Major League Soccer",
     "Copa del Rey",

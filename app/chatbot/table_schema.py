@@ -1,7 +1,7 @@
 # app/chatbot/table_schema.py
 import os
 
-_PROJECT_ID = os.environ.get("GCP_PROJECT_ID", "football-capstone-mds-496219")
+_PROJECT_ID = os.environ.get("GCP_PROJECT_ID")
 
 # Ensure this name is exactly TABLE_CONTEXT
 TABLE_CONTEXT = f"""

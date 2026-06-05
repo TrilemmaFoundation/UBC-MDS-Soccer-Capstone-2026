@@ -67,7 +67,7 @@ def gcs_new_file_sensor(context):
     triggers the post-ingestion pipeline: dbt → ML → mart refresh.
     Does NOT re-run ingestion to avoid an infinite trigger loop.
     """
-    bucket_name = os.getenv("INGESTION_GCS_BUCKET", "football-analytics-mds2026")
+    bucket_name = os.getenv("INGESTION_GCS_BUCKET")
     prefix = "raw/statsbomb/matches/"
 
     try:
