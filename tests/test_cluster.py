@@ -9,35 +9,19 @@ Tests cover:
 import numpy as np
 import pandas as pd
 import pytest
-
+from src.ml.cluster import (
+    FEATURES,
+    CLUSTER_LABELS,
+    N_CLUSTERS,
+    build_gk_assignments,
+    preprocess,
+    run_clustering,
+)
 # ---------------------------------------------------------------------------
 # Helpers to build minimal test DataFrames
 # ---------------------------------------------------------------------------
 
-FEATURES = [
-    "xg_per_90",
-    "shots_per_90",
-    "passes_per_90",
-    "passes_att_third_per_90",
-    "pressures_per_90",
-    "carries_per_90",
-    "dribbles_per_90",
-    "interceptions_per_90",
-    "blocks_per_90",
-    "clearances_per_90",
-    "duels_per_90",
-    "xg_per_shot",
-    "pass_completion_pct",
-]
 
-N_CLUSTERS = 5
-CLUSTER_LABELS = {
-    0: "Low Activity",
-    1: "Creative Playmaker",
-    2: "Creative Winger",
-    3: "Pressing Forward",
-    4: "Defensive Anchor",
-}
 
 
 def _make_outfield_df(n: int = 60, seed: int = 42) -> pd.DataFrame:
@@ -73,8 +57,6 @@ def _make_gk_df(n: int = 10, seed: int = 99) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # Import functions under test (adjust path if needed)
 # ---------------------------------------------------------------------------
-
-from src.ml.cluster import build_gk_assignments, preprocess, run_clustering
 
 
 # ---------------------------------------------------------------------------
