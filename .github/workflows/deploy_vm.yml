@@ -61,7 +61,7 @@ jobs:
             # Create a `repo` directory and extract the code.
             mkdir -p $HOME/repo
             tar -xzf $HOME/repo.tar.gz -C $HOME/repo
-            # rm -f $HOME/repo.tar.gz
+            rm -f $HOME/repo.tar.gz
 
             # Execute cluster update using files located in $HOME
             sudo docker compose down || true
