@@ -32,6 +32,9 @@ jobs:
 
       - name: Prepare and Copy Configuration Files
         run: |
+          # 1. Clean up previously locked files to avoid scp permission denied
+          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz ~/repo"
+
           # 0. Archive and copy the repository
           tar -czf /tmp/repo.tar.gz --exclude=.git .
           scp /tmp/repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
@@ -40,9 +43,6 @@ jobs:
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
           echo '${{ secrets.GCE_CHATBOT_SERVICE_ACCOUNT_KEY }}' > chatbot-service-account-key.json
           echo '${{ secrets.GCE_DAGSTER_SERVICE_ACCOUNT_KEY }}' > dagster-service-account-key.json
-
-          # 1. Clean up previously locked files to avoid scp permission denied
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz"
 
           # 2. Copy configuration files to ~/
           scp .env chatbot-service-account-key.json dagster-service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
@@ -76,7 +76,10 @@ jobs:
 
             # Create a persistent directory for Dagster's SQLite database (much faster I/O)
             mkdir -p $HOME/repo/dagster_home
-            sudo chown 1003:1003 $HOME/repo/dagster_home
+
+            # This prevents permission denied errors when dbt deps/parse generates files.
+            sudo chown -R 1003:1003 $HOME/repo
+            sudo chmod -R 775 $HOME/repo
 
             sudo docker compose pull
             sudo docker compose up -d
