@@ -1,13 +1,30 @@
-<div class="flex justify-end w-full mb-4">
-    <div class="bg-green-700 text-white p-3 rounded-xl max-w-[80%] shadow-md">
-        <p class="text-sm leading-relaxed">{{ user_message }}</p>
+<div class="flex justify-end w-full mb-4 group">
+    <div class="flex flex-col items-start max-w-[80%]">
+        <div class="bg-green-700 text-white p-3 rounded-xl shadow-md">
+            <p class="text-sm leading-relaxed">{{ user_message }}</p>
+        </div>
+        <div class="mt-1 relative">
+            <button 
+                onclick="copyToClipboard(this)"
+                class="opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-1.5 rounded-full hover:bg-gray-700 text-gray-400 hover:text-gray-200 group/copy-btn"
+                aria-label="Copy message to clipboard">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="currentColor" viewBox="0 -960 960 960">
+                    <path d="M360-240q-33 0-56.5-23.5T280-320v-480q0-33 23.5-56.5T360-880h360q33 0 56.5 23.5T800-800v480q0 33-23.5 56.5T720-240H360Zm0-80h360v-480H360v480ZM200-80q-33 0-56.5-23.5T120-160v-560h80v560h440v80H200Zm160-240v-480 480Z"/>
+                </svg>
+
+                <span class="copy-tooltip-text absolute bottom-full left-0 mb-1 w-max bg-gray-900 text-white text-xs rounded py-1 px-2 opacity-0 group-hover/copy-btn:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-sm border border-gray-700">
+                    Copy to clipboard
+                </span>
+            </button>
+        </div>
     </div>
 </div>
 
 <div class="flex justify-start w-full mb-4">
     <div class="bg-gray-800 p-4 rounded-xl max-w-[80%] border border-gray-700 shadow-md">
         <p class="text-xs font-bold text-green-400 mb-1 tracking-wide">Elite AI Assistant</p>
-        <div class="text-sm leading-relaxed text-gray-200 whitespace-pre-wrap">{{ ai_message }}</div>
+        <div class="text-sm leading-relaxed text-gray-200 whitespace-pre-wrap">{{ ai_message|safe }}</div>
         
         {% if advanced_mode and sql_query %}
         <div class="mt-4 p-3 bg-gray-900 rounded-lg border border-gray-700">

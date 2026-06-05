@@ -7,7 +7,24 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white font-sans">
+<body class="bg-gray-900 text-white font-sans relative">
+
+    <!-- Suggested Questions in left blank area (shows on wider screens) -->
+    <aside class="hidden xl:flex absolute left-4 2xl:left-8 top-24 w-64 2xl:w-64 flex-col h-[calc(100vh-8rem)] overflow-y-auto pr-2">
+        <h2 class="text-sm font-bold text-green-400 mb-4 uppercase tracking-wider">Suggested Questions</h2>
+        <div class="space-y-3">
+            {% if suggested_questions %}
+                {% for sample in suggested_questions %}
+                <button type="button" 
+                        onclick="document.getElementById('user-input').value = this.getAttribute('data-question'); document.getElementById('user-input').focus();"
+                        data-question="{{ sample.question }}"
+                        class="w-full text-left text-xs text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white p-3 rounded-lg border border-gray-700 transition shadow-sm">
+                    {{ sample.question }}
+                </button>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </aside>
 
     <div class="max-w-4xl mx-auto h-screen flex flex-col p-4">
         <header class="py-4 border-b border-gray-700 flex justify-between items-center flex-wrap gap-2">
@@ -35,6 +52,20 @@
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
             <span>Querying BigQuery...</span>
+        </div>
+
+        <!-- Suggested Questions fallback for smaller screens -->
+        <div class="xl:hidden w-full flex flex-wrap gap-2 mb-2 pb-2">
+            {% if suggested_questions %}
+                {% for sample in suggested_questions %}
+                <button type="button" 
+                        onclick="document.getElementById('user-input').value = this.getAttribute('data-question'); document.getElementById('user-input').focus();"
+                        data-question="{{ sample.question }}"
+                        class="text-left text-xs text-gray-300 bg-gray-800 hover:bg-gray-700 hover:text-white px-4 py-2 rounded-full border border-gray-700 transition shadow-sm">
+                    {{ sample.question }}
+                </button>
+                {% endfor %}
+            {% endif %}
         </div>
 
         <form hx-post="{% url 'ask_chatbot' %}" 
@@ -84,6 +115,25 @@
                 });
             }
         });
+
+        // 3. Copy user message to clipboard
+        function copyToClipboard(button) {
+            const userMessageContainer = button.closest('.group');
+            const textToCopy = userMessageContainer.querySelector('.text-sm.leading-relaxed').innerText;
+
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                const tooltip = button.querySelector('.copy-tooltip-text');
+                if (tooltip) {
+                    const originalText = tooltip.innerText;
+                    tooltip.innerText = 'Copied!';
+                    setTimeout(() => {
+                        tooltip.innerText = originalText;
+                    }, 2000);
+                }
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
     </script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import re
 from groq import Groq
 from google.cloud import bigquery
 from .table_schema import TABLE_CONTEXT
+from .marts_data_dict import MARTS_DATA_DICT
 
 # Initialize Groq client using environment variable
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
@@ -143,7 +144,15 @@ def ask_football_chatbot(user_query):
         {"role": "user", "content": user_query}
     ]
 
-    response = _chat(PRIMARY_MODEL, messages, tools=tools)
+    try:
+        response = _chat(PRIMARY_MODEL, messages, tools=tools)
+    except Exception as e:
+        return {
+            "answer": f"Error: {str(e)}",
+            "sql_query": None,
+            "query_data": None,
+        }
+
     assistant_message = response.choices[0].message
     tool_calls = assistant_message.tool_calls
 
@@ -152,27 +161,30 @@ def ask_football_chatbot(user_query):
         sql_query = sql_args['sql']
         query_data = query_bigquery(sql_query)
 
-        final_response = _chat(
-            PRIMARY_MODEL,
-            messages=[
-                messages[0],
-                {"role": "user", "content": user_query},
-                assistant_message,
-                {
-                    "role": "tool",
-                    "tool_call_id": tool_calls[0].id,
-                    "name": "query_bigquery",
-                    "content": json.dumps(query_data, default=str)
-                }
-            ]
-        )
-        answer = final_response.choices[0].message.content
+        try:
+            final_response = _chat(
+                PRIMARY_MODEL,
+                messages=[
+                    messages[0],
+                    {"role": "user", "content": user_query},
+                    assistant_message,
+                    {
+                        "role": "tool",
+                        "tool_call_id": tool_calls[0].id,
+                        "name": "query_bigquery",
+                        "content": json.dumps(query_data, default=str)
+                    }
+                ]
+            )
+            answer = final_response.choices[0].message.content
 
-        # Fallback: if LLM answer doesn't actually contain the data, format it directly
-        if not _response_contains_data(answer, query_data):
-            fallback = _format_fallback(query_data)
-            if fallback:
-                answer = fallback
+            # Fallback: if LLM answer doesn't actually contain the data, format it directly
+            if not _response_contains_data(answer, query_data):
+                fallback = _format_fallback(query_data)
+                if fallback:
+                    answer = fallback
+        except Exception as e:
+            answer = f"Error: {str(e)}"
 
         return {
             "answer": answer,
