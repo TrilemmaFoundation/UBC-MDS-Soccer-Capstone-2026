@@ -58,7 +58,9 @@ jobs:
             set +a
 
             # Extract the repository into the home directory so Dagster volume mounts (.:/opt/dagster/app) work
-            tar -xzf $HOME/repo.tar.gz -C $HOME/
+            # Create a `repo` directory and extract the code.
+            mkdir -p $HOME/repo
+            tar -xzf $HOME/repo.tar.gz -C $HOME/repo
             rm -f $HOME/repo.tar.gz
 
             # Execute cluster update using files located in $HOME
@@ -73,8 +75,8 @@ jobs:
             sudo chmod 400 $HOME/dagster-service-account-key.json
 
             # Create a persistent directory for Dagster's SQLite database (much faster I/O)
-            mkdir -p $HOME/dagster_home
-            sudo chown 1000:1000 $HOME/dagster_home
+            mkdir -p $HOME/repo/dagster_home
+            sudo chown 1000:1000 $HOME/repo/dagster_home
 
             sudo docker compose pull
             sudo docker compose up -d

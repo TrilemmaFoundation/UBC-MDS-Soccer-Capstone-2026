@@ -38,8 +38,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./dagster_home:/opt/dagster/dagster_home
-      - .:/opt/dagster/app
+      - ./repo/dagster_home:/opt/dagster/dagster_home
+      - ./repo:/opt/dagster/app
+      - ./dagster-service-account-key.json:/opt/dagster/app/dagster-service-account-key.json:ro
     working_dir: /opt/dagster/app
     environment:
       - DAGSTER_HOME=/opt/dagster/dagster_home
