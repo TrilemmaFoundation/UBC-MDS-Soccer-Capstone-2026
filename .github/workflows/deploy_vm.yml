@@ -38,7 +38,7 @@ jobs:
           echo '${{ secrets.GCE_DAGSTER_SERVICE_ACCOUNT_KEY }}' > dagster-service-account-key.json
 
           # Archive and copy the repository
-          tar -czf repo.tar.gz --exclude=.git .
+          tar -czf repo.tar.gz --exclude=.git --exclude=repo.tar.gz .
           scp repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
           ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/app && sudo tar -xzf ~/repo.tar.gz -C ~/app && rm ~/repo.tar.gz"
 
