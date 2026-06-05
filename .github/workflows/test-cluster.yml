@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/unit-tests-cluster
+      - main
   pull_request:
     branches:
       - main
