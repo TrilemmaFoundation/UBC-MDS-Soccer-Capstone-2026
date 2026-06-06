@@ -21,8 +21,8 @@ from google.cloud import bigquery, storage
 
 load_dotenv()
 
-PROJECT_ID = os.getenv("GCP_PROJECT_ID", "football-capstone-mds-496219")
-BUCKET_NAME = os.getenv("ML_GCS_BUCKET", "football-analytics-mds496219")
+PROJECT_ID = os.getenv("GCP_PROJECT_ID")
+BUCKET_NAME = os.getenv("ML_GCS_BUCKET")
 TARGET_DATASET = os.getenv("ML_BQ_DATASET", "analytics")
 INTERMEDIATE_DATASET = os.getenv("DBT_INTERMEDIATE_DATASET", "dbt_intermediate")
 SOURCE_DATASET = os.getenv("CONSISTENCY_SOURCE_DATASET", INTERMEDIATE_DATASET)

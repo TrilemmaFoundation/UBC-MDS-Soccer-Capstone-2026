@@ -1,5 +1,13 @@
-from dagster import asset, Output, MetadataValue
+import os
 import subprocess
+
+from dagster import Output, MetadataValue, asset
+from dotenv import load_dotenv
+
+load_dotenv()
+
+_ingestion_bucket = os.getenv("INGESTION_GCS_BUCKET", "")
+_project_id = os.getenv("GCP_PROJECT_ID", "")
 
 
 @asset(
@@ -7,11 +15,12 @@ import subprocess
     description=(
         "Runs the full StatsBomb ingestion pipeline: "
         "StatsBomb API → local Parquet (statsbomb.py) → "
-        "GCS (upload_gcs.py) → BigQuery raw_statsbomb (load_bq.py)"
+        "GCS (upload_gcs.py) → BigQuery raw_statsbomb (load_bq.py). "
+        "Uses paid API if SB_USERNAME/SB_PASSWORD are set, otherwise falls back to open data."
     ),
     metadata={
-        "gcs_bucket": MetadataValue.text("gs://football-analytics-mds2026/raw/statsbomb/"),
-        "bq_dataset": MetadataValue.text("football-capstone-mds-496219.raw_statsbomb"),
+        "gcs_bucket": MetadataValue.text(f"gs://{_ingestion_bucket}/raw/statsbomb/"),
+        "bq_dataset": MetadataValue.text(f"{_project_id}.raw_statsbomb"),
     }
 )
 def raw_statsbomb():
@@ -36,18 +45,20 @@ def raw_statsbomb():
     group_name="ingestion",
     description=(
         "Placeholder: Polymarket ingestion is not yet automated. "
-        "Upload parquet files manually to gs://football-analytics-mds2026/raw/polymarket/ "
+        f"Upload parquet files manually to gs://{_ingestion_bucket}/raw/polymarket/ "
         "and load them to BigQuery raw_polymarket before running downstream models."
     ),
     metadata={
-        "bq_dataset": MetadataValue.text("football-capstone-mds-496219.raw_polymarket"),
+        "bq_dataset": MetadataValue.text(f"{_project_id}.raw_polymarket"),
         "status": MetadataValue.text("manual upload required — no automated ingestion script yet"),
     }
 )
 def raw_polymarket():
+    ingestion_bucket = os.getenv("INGESTION_GCS_BUCKET", "")
     print(
-        "WARNING: raw_polymarket has no automated ingestion script. "
-        "Data must be uploaded to GCS and loaded to BigQuery manually."
+        f"WARNING: raw_polymarket has no automated ingestion script. "
+        f"Data must be uploaded to gs://{ingestion_bucket}/raw/polymarket/ "
+        f"and loaded to BigQuery manually."
     )
     return Output(
         value=None,

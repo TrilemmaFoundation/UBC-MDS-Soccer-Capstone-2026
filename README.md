@@ -31,13 +31,13 @@ docker compose up
 ## Architecture
 
 ```
-StatsBomb API
+StatsBomb API (open data or paid — see INGESTION_GCS_BUCKET in .env)
     │
     ▼
-GCS (gs://football-analytics-mds496219/raw/)
+GCS ($INGESTION_GCS_BUCKET/raw/statsbomb/)
     │
     ▼
-BigQuery: raw_statsbomb
+BigQuery: $INGESTION_BQ_DATASET  (default: raw_statsbomb)
     │
     ▼  dbt (staging layer)
 BigQuery: dbt_staging
@@ -128,13 +128,16 @@ dbt test
 
 ## GCP Setup
 
-| Item | Value |
-|---|---|
-| Project ID | `football-capstone-mds-496219` |
-| Service Account | `football-analytics-sa@football-capstone-mds-496219.iam.gserviceaccount.com` |
-| GCS Bucket | `gs://football-analytics-mds496219/` |
+All GCP resource names are configured via `.env` (copy from `.env.example`). No values are hardcoded.
 
-BigQuery datasets: `raw_statsbomb`, `dbt_staging`, `dbt_intermediate`, `dbt_marts`, `analytics`
+| Item | Env var |
+|---|---|
+| Project ID | `GCP_PROJECT_ID` |
+| Service Account key | `GOOGLE_APPLICATION_CREDENTIALS` |
+| Ingestion GCS bucket | `INGESTION_GCS_BUCKET` |
+| ML outputs GCS bucket | `ML_GCS_BUCKET` |
+
+BigQuery datasets (env vars): `INGESTION_BQ_DATASET` (raw), `DBT_INTERMEDIATE_DATASET`, `ML_BQ_DATASET`, plus `dbt_staging` and `dbt_marts` (managed by dbt).
 
 ---
 

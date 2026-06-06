@@ -22,8 +22,8 @@ from sklearn.preprocessing import StandardScaler
 
 load_dotenv()
 
-PROJECT_ID           = os.getenv("GCP_PROJECT_ID", "football-capstone-mds-496219")
-BUCKET_NAME          = os.getenv("ML_GCS_BUCKET", "football-analytics-mds496219")
+PROJECT_ID           = os.getenv("GCP_PROJECT_ID")
+BUCKET_NAME          = os.getenv("ML_GCS_BUCKET")
 INTERMEDIATE_DATASET = os.getenv("DBT_INTERMEDIATE_DATASET", "dbt_intermediate")
 TARGET_DATASET       = os.getenv("ML_BQ_DATASET", "analytics")
 SOURCE_TABLE         = f"{PROJECT_ID}.{INTERMEDIATE_DATASET}.int_player_season_stats"

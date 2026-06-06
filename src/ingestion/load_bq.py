@@ -6,8 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID")
-BUCKET_NAME = os.getenv("INGESTION_GCS_BUCKET", "football-analytics-mds2026")
-DATASET = "raw_statsbomb"
+BUCKET_NAME = os.getenv("INGESTION_GCS_BUCKET")
+DATASET = os.getenv("INGESTION_BQ_DATASET", "raw_statsbomb")
 DATE_PREFIX = date.today().strftime("%Y-%m-%d")
 
 

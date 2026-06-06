@@ -1,11 +1,16 @@
+import os
 import shutil
 import subprocess
 from pathlib import Path
 
 from dagster import asset, Output, MetadataValue, AssetKey
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Project root — needed so subprocess dbt commands run from the right directory
 _PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+_ml_bucket = os.getenv("ML_GCS_BUCKET", "")
 
 
 @asset(
@@ -13,7 +18,7 @@ _PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
     description="Runs PCA + KMeans clustering on int_player_season_stats. Exports cluster_assignments and pca_loadings to GCS and BigQuery analytics dataset.",
     metadata={
         "bq_table": MetadataValue.text("analytics.cluster_assignments"),
-        "gcs_path": MetadataValue.text("gs://football-analytics-mds496219/models/clustering/"),
+        "gcs_path": MetadataValue.text(f"gs://{_ml_bucket}/models/clustering/"),
     }
 )
 def cluster_assignments():
@@ -43,7 +48,7 @@ def cluster_assignments():
     ),
     metadata={
         "bq_table": MetadataValue.text("analytics.consistency_scores"),
-        "gcs_path": MetadataValue.text("gs://football-analytics-mds496219/models/consistency/"),
+        "gcs_path": MetadataValue.text(f"gs://{_ml_bucket}/models/consistency/"),
     }
 )
 def consistency_score():

@@ -11,7 +11,7 @@ from .marts_data_dict import MARTS_DATA_DICT
 client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Initialize BigQuery client once at the module level
-project_id = os.environ.get("GCP_PROJECT_ID", "football-capstone-mds-496219")
+project_id = os.environ.get("GCP_PROJECT_ID")
 bq_client = bigquery.Client(project=project_id)
 
 # Primary model: larger, more instruction-following

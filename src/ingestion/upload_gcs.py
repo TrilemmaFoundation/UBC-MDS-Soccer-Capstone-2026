@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 PROJECT_ID = os.getenv("GCP_PROJECT_ID")
-BUCKET_NAME = os.getenv("INGESTION_GCS_BUCKET", "football-analytics-mds2026")
+BUCKET_NAME = os.getenv("INGESTION_GCS_BUCKET")
 LOCAL_PARQUET_DIR = "data/parquet"
 DATE_PREFIX = date.today().strftime("%Y-%m-%d")
 

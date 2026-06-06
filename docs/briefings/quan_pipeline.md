@@ -17,7 +17,7 @@ My part is the **entire data backbone** of the platform. Nothing else works with
 ### Credentials
 You need two things to run anything:
 - `service-account-key.json` — GCP service account key. Get this from the team. Place it in the project root. **Never commit it.**
-- `.env` — copy from `.env.example`, fill in `GROQ_API_KEY`
+- `.env` — copy from `.env.example`, fill in at minimum `GROQ_API_KEY`. All GCP resource names (`GCP_PROJECT_ID`, `INGESTION_GCS_BUCKET`, `ML_GCS_BUCKET`) are read from this file — do not hardcode them anywhere.
 
 ```bash
 cp .env.example .env
@@ -26,17 +26,19 @@ export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
 
 ### GCP Resources
 
-| Resource | Name | Purpose |
+All values below are set via `.env` (copy from `.env.example`). The env var name is shown in parentheses.
+
+| Resource | Env var | Purpose |
 |---|---|---|
-| GCP Project | `football-capstone-mds-496219` | Everything lives here |
-| Service Account | `football-analytics-sa@...` | All GCP API calls |
-| GCS bucket | `football-analytics-mds2026` | Raw ingestion (StatsBomb parquet files) |
-| GCS bucket | `football-analytics-mds496219` | ML outputs (cluster_assignments, pca_loadings, consistency_scores) |
-| BigQuery dataset | `raw_statsbomb` | Raw ingested tables |
-| BigQuery dataset | `dbt_staging` | 1:1 mirror of raw |
-| BigQuery dataset | `dbt_intermediate` | Filtered + aggregated business logic |
-| BigQuery dataset | `dbt_marts` | Final analytics tables (chatbot + dashboard read from here) |
-| BigQuery dataset | `analytics` | ML script outputs |
+| GCP Project | `GCP_PROJECT_ID` | Everything lives here |
+| Service Account | `GOOGLE_APPLICATION_CREDENTIALS` | All GCP API calls |
+| GCS bucket | `INGESTION_GCS_BUCKET` | Raw ingestion (StatsBomb parquet files) |
+| GCS bucket | `ML_GCS_BUCKET` | ML outputs (cluster_assignments, pca_loadings, consistency_scores) |
+| BigQuery dataset | `INGESTION_BQ_DATASET` | Raw ingested tables (default: `raw_statsbomb`) |
+| BigQuery dataset | — | `dbt_staging` — 1:1 mirror of raw |
+| BigQuery dataset | `DBT_INTERMEDIATE_DATASET` | Filtered + aggregated business logic (default: `dbt_intermediate`) |
+| BigQuery dataset | — | `dbt_marts` — final analytics tables (chatbot + dashboard read from here) |
+| BigQuery dataset | `ML_BQ_DATASET` | ML script outputs (default: `analytics`) |
 
 ### Test GCP access
 ```bash
@@ -52,10 +54,21 @@ Three scripts run in sequence:
 | Script | Does |
 |---|---|
 | `src/ingestion/statsbomb.py` | Calls StatsBomb Python library, extracts matches/events/lineups, saves to `data/parquet/` locally |
-| `src/ingestion/upload_gcs.py` | Uploads local parquet files to `gs://football-analytics-mds2026/raw/statsbomb/YYYY-MM-DD/` |
-| `src/ingestion/load_bq.py` | Loads from GCS into BigQuery `raw_statsbomb.{matches,events,lineups}` using `WRITE_TRUNCATE` (safe to re-run) |
+| `src/ingestion/upload_gcs.py` | Uploads local parquet files to `gs://$INGESTION_GCS_BUCKET/raw/statsbomb/YYYY-MM-DD/` |
+| `src/ingestion/load_bq.py` | Loads from GCS into BigQuery `$INGESTION_BQ_DATASET.{matches,events,lineups}` using `WRITE_TRUNCATE` (safe to re-run) |
 
 Competitions ingested are defined in `TARGET_COMPETITIONS` in `statsbomb.py`: La Liga, Premier League, Ligue 1, Serie A, Bundesliga, Champions League, World Cup, Euros, AFCON, Copa America and more. Men's only, from 1970 onwards.
+
+### StatsBomb data access
+
+The pipeline supports two modes, selected automatically based on environment variables:
+
+| Mode | When | Data coverage |
+|---|---|---|
+| **Open data** (default) | `SB_USERNAME`/`SB_PASSWORD` not set | Free StatsBomb data hosted on GitHub — limited seasons per competition |
+| **Paid API** | Both `SB_USERNAME` and `SB_PASSWORD` set in `.env` | Full historical coverage |
+
+`statsbombpy` handles authentication automatically — no code change is needed to switch modes. The script logs which mode is active at startup.
 
 ### Run manually
 ```bash
@@ -73,6 +86,8 @@ python src/ingestion/load_bq.py
 - **DefaultCredentialsError** → `export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json`
 - **Missing parquet file** → `statsbomb.py` failed mid-run; check stdout for which competition errored
 - **StatsBomb rate limit** → the library handles it automatically; just let it run
+- **`NoAuthWarning: credentials were not supplied`** → expected when running on open data; not an error. Set `SB_USERNAME` and `SB_PASSWORD` in `.env` to use the paid API instead.
+- **`INGESTION_GCS_BUCKET` not set** → `upload_gcs.py` and `load_bq.py` will fail with a `None` bucket error. Make sure `.env` is populated and `load_dotenv()` has run.
 
 ---
 
@@ -158,7 +173,7 @@ docker compose up dagster-env
 ### Maintenance
 - **Add a new asset** → add `@asset` function in `ml_assets.py`, register it in `definitions.py`
 - **Change the schedule** → edit `cron_schedule` in `definitions.py`
-- **Sensor not firing** → verify `INGESTION_GCS_BUCKET=football-analytics-mds2026` in `.env`
+- **Sensor not firing** → verify `INGESTION_GCS_BUCKET` is set in `.env`
 
 ### Common issues
 - **"dbt not found"** → activate conda env before starting Dagster
