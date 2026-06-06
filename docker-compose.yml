@@ -1,6 +1,6 @@
 services:
   django-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:e62257c13b78c4d1f3f364fd0e7b6bc3a12fdd17-django
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:b6cb6022cb81af49037d11a343d9e8b42bba25f1-django
     restart: unless-stopped
     env_file:
       - .env
@@ -19,7 +19,7 @@ services:
     platform: linux/arm64
 
   jupyter-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:e62257c13b78c4d1f3f364fd0e7b6bc3a12fdd17-jupyter
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:b6cb6022cb81af49037d11a343d9e8b42bba25f1-jupyter
     restart: unless-stopped
     environment:
       - NB_UID=1000
@@ -31,7 +31,7 @@ services:
     platform: linux/arm64
 
   dagster-env:
-    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:e62257c13b78c4d1f3f364fd0e7b6bc3a12fdd17-dagster
+    image: mdssoccer2026/ubc-mds-soccer-capstone-2026:b6cb6022cb81af49037d11a343d9e8b42bba25f1-dagster
     restart: unless-stopped
     env_file:
       - .env
