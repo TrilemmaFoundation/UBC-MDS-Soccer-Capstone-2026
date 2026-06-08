@@ -63,6 +63,14 @@ def extract_matches():
 
     print(f"Found {len(filtered)} competition-seasons to extract")
 
+    if len(filtered) == 0:
+        available = sorted(all_comps["competition_name"].unique().tolist())
+        raise ValueError(
+            f"No competition-seasons matched TARGET_COMPETITIONS in the available data.\n"
+            f"Available competitions from the API: {available}\n"
+            f"Check competition name spelling (case-sensitive) in TARGET_COMPETITIONS."
+        )
+
     all_matches = []
     for _, row in filtered.iterrows():
         comp_id = row["competition_id"]
@@ -75,6 +83,13 @@ def extract_matches():
             all_matches.append(matches)
         except Exception as e:
             print(f"  ERROR: {comp_name} {season_name} -- {e}")
+
+    if not all_matches:
+        raise ValueError(
+            "No matches were fetched — all competition/season requests failed or returned nothing. "
+            "If using open data, check that TARGET_COMPETITIONS names match the StatsBomb API exactly. "
+            "If using the paid API, verify SB_USERNAME and SB_PASSWORD are set correctly in .env."
+        )
 
     df = pd.concat(all_matches, ignore_index=True)
     df = pd.json_normalize(df.to_dict(orient="records"))
@@ -98,6 +113,12 @@ def extract_events(match_ids):
             all_events.append(events)
         except Exception as e:
             print(f"  ERROR match_id={match_id} -- {e}")
+
+    if not all_events:
+        raise ValueError(
+            "No events were fetched — all match event requests failed or returned nothing. "
+            "Check the match IDs returned by extract_matches() and your StatsBomb credentials."
+        )
 
     df = pd.concat(all_events, ignore_index=True)
     for col in df.columns:
@@ -127,6 +148,12 @@ def extract_lineups(match_ids):
                 all_lineups.append(lineup_df)
         except Exception as e:
             print(f"  ERROR match_id={match_id} -- {e}")
+
+    if not all_lineups:
+        raise ValueError(
+            "No lineup data was fetched — all lineup requests failed or returned nothing. "
+            "Check the match IDs returned by extract_matches() and your StatsBomb credentials."
+        )
 
     df = pd.concat(all_lineups, ignore_index=True)
     df = clean_column_names(df)
