@@ -21,17 +21,29 @@ def upload_file(client, local_path, gcs_path):
 def upload_all():
     client = storage.Client(project=PROJECT_ID)
 
-    files = {
+    # matches and lineups are single files
+    single_files = {
         f"{LOCAL_PARQUET_DIR}/matches/matches.parquet": f"raw/statsbomb/matches/{DATE_PREFIX}/matches.parquet",
-        f"{LOCAL_PARQUET_DIR}/events/events.parquet": f"raw/statsbomb/events/{DATE_PREFIX}/events.parquet",
         f"{LOCAL_PARQUET_DIR}/lineups/lineups.parquet": f"raw/statsbomb/lineups/{DATE_PREFIX}/lineups.parquet",
     }
-
-    for local_path, gcs_path in files.items():
+    for local_path, gcs_path in single_files.items():
         if os.path.exists(local_path):
             upload_file(client, local_path, gcs_path)
         else:
             print(f"WARNING: {local_path} not found, skipping")
+
+    # events are written as part_XXXX.parquet batch files to avoid OOM during extraction
+    events_local_dir = f"{LOCAL_PARQUET_DIR}/events"
+    part_files = sorted(
+        f for f in os.listdir(events_local_dir) if f.endswith(".parquet")
+    )
+    if not part_files:
+        print(f"WARNING: no parquet files found in {events_local_dir}, skipping events upload")
+    else:
+        for fname in part_files:
+            local_path = os.path.join(events_local_dir, fname)
+            gcs_path = f"raw/statsbomb/events/{DATE_PREFIX}/{fname}"
+            upload_file(client, local_path, gcs_path)
 
 
 if __name__ == "__main__":

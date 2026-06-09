@@ -28,9 +28,10 @@ def load_table(client, gcs_uri, table_name):
 def load_all():
     client = bigquery.Client(project=PROJECT_ID)
 
+    # events are uploaded as part_XXXX.parquet files; BigQuery wildcard loads them all
     tables = {
         f"gs://{BUCKET_NAME}/raw/statsbomb/matches/{DATE_PREFIX}/matches.parquet": "matches",
-        f"gs://{BUCKET_NAME}/raw/statsbomb/events/{DATE_PREFIX}/events.parquet": "events",
+        f"gs://{BUCKET_NAME}/raw/statsbomb/events/{DATE_PREFIX}/*.parquet": "events",
         f"gs://{BUCKET_NAME}/raw/statsbomb/lineups/{DATE_PREFIX}/lineups.parquet": "lineups",
     }
 
