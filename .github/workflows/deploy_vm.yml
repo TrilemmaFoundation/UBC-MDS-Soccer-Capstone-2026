@@ -28,17 +28,17 @@ jobs:
       - name: Add VM to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.GCE_VM_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ vars.GCE_VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Prepare and Copy Configuration Files
         run: |
           # 1. Clean up previously locked files to avoid scp permission denied
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz"
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "sudo rm -rf ~/repo"
+          ssh ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz"
+          ssh ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }} "sudo rm -rf ~/repo"
           
           # 0. Archive and copy the repository
           tar -czf /tmp/repo.tar.gz --exclude=.git .
-          scp /tmp/repo.tar.gz ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          scp /tmp/repo.tar.gz ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }}:~/
 
           cp .env.example .env
           sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
@@ -46,11 +46,11 @@ jobs:
           echo '${{ secrets.GCE_DAGSTER_SERVICE_ACCOUNT_KEY }}' > dagster-service-account-key.json
 
           # 2. Copy configuration files to ~/
-          scp .env chatbot-service-account-key.json dagster-service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          scp .env chatbot-service-account-key.json dagster-service-account-key.json docker-compose.yml ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }}:~/
 
       - name: Deploy Cluster on GCE VM
         run: |
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} << 'EOF'
+          ssh ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }} << 'EOF'
             set -e
             
             # Safely source environmental variables even with comments or strings present
