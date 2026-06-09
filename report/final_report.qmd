@@ -75,7 +75,7 @@ Three preprocessing steps were applied in sequence before modelling:
 
 ### Dimensionality Reduction (PCA)
 
-Principal Component Analysis was applied to the scaled feature matrix to reduce noise and multicollinearity among the 13 features. The number of components was selected automatically using a 80% cumulative explained variance threshold, which typically results in 6 principal components depending on the data..
+Principal Component Analysis was applied to the scaled feature matrix to reduce noise and multicollinearity among the 13 features. The number of components was selected automatically using an 80% cumulative explained variance threshold, which typically results in 6 principal components depending on the data.
 
 The leading components capture interpretable structure in the data:
 
