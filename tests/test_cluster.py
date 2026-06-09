@@ -55,11 +55,6 @@ def _make_gk_df(n: int = 10, seed: int = 99) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
-# Import functions under test (adjust path if needed)
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
 # preprocess() tests
 # ---------------------------------------------------------------------------
 
@@ -182,7 +177,10 @@ class TestRunClustering:
         assert set(loadings["feature"].unique()) == set(FEATURES)
 
     def test_all_five_clusters_present(self, clustering_output):
-        """With enough data, all 5 clusters should appear."""
+        """With enough data, all 5 clusters should appear.
+        Note: relies on fixed seed=42 and n=100 synthetic data producing
+        5 non-empty clusters. Result is deterministic but data-dependent.
+        """
         _, assignments, _ = clustering_output
         assert assignments["cluster"].nunique() == N_CLUSTERS
 
