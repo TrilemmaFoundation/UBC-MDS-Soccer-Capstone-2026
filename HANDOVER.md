@@ -43,7 +43,7 @@ This platform answers football analytics questions using StatsBomb open event da
 - **Scores** player consistency between club and international competition
 - **Serves** results through two products:
   - A **Django LLM chatbot** (Groq + BigQuery) for natural language football analytics queries
-  - A **Looker Studio dashboard** for visual exploration of player clusters, team comparisons, and consistency scores
+  - A **Looker Studio dashboard** (12 pages) for match overview, player clusters, team comparisons, and consistency analysis
 
 ---
 
@@ -117,8 +117,10 @@ This platform answers football analytics questions using StatsBomb open event da
 │  └── Advanced Mode: shows SQL + raw data for debugging          │
 │                                                                 │
 │  Looker Studio dashboard (embedded in Django at /dashboard/)    │
-│  └── 4 pages: Player Clusters, Consistency Explorer,            │
-│               Team Comparison, Competition Breakdown            │
+│  └── 12 pages: match overview, clustering, team comparison,     │
+│               consistency (5 pages), appendix (3)               │
+│      Pages 1–4 read from dbt_marts (Dagster-automated).         │
+│      Pages 5–9 read from analytics.* tables (notebook export).  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -163,18 +165,16 @@ This platform answers football analytics questions using StatsBomb open event da
 │   ├── upload_gcs.py             # Upload local Parquet → GCS
 │   └── load_bq.py                # Load GCS Parquet → BigQuery
 │
-├── notebooks/                    # Databricks analysis notebooks
-│   ├── 01_eda.ipynb              # Exploratory data analysis
-│   ├── 02_clustering.ipynb       # Li's clustering notebook (ML source of truth)
-│   └── 03_consistency.ipynb      # Rabin's consistency scoring notebook
+├── notebooks/                    # Databricks analysis notebooks (full catalog: docs/notebooks.md)
+│   ├── 01_data_exploration.py.ipynb
+│   ├── 05_player_clustering.py.ipynb   # Li — clustering design (cluster.py source)
+│   ├── 03_consistency_score.ipynb      # Rabin — consistency scoring (consistency.py source)
+│   └── ...                             # see docs/notebooks.md for all 11 notebooks
 │
 ├── docs/                         # Component documentation
 │   ├── briefings/                # Per-person technical briefings
-│   ├── ml_pipeline.md
+│   ├── notebooks.md              # Notebook catalog, run order, and export notes
 │   ├── consistency.md
-│   ├── dagster.md
-│   ├── chatbot.md
-│   ├── dashboard.md
 │   └── databricks_bigquery_setup.md
 │
 ├── report/                       # Final report (Quarto)
@@ -571,7 +571,7 @@ dbt test
 | `dbt_intermediate.int_player_club_vs_national` | ~979 | Players with 270+ min in BOTH club and international |
 | `dbt_intermediate.int_match_stats` | ~5,800 | Men's matches only |
 | `analytics.cluster_assignments` | ~5,800 | One row per player-season (incl. GKs at cluster=-1) |
-| `analytics.pca_loadings` | ~52 | 13 features × 4 PCs (long format) |
+| `analytics.pca_loadings` | 13 × n_components (~78) | Long format |
 | `analytics.consistency_scores` | ~979 | One row per player |
 | `dbt_marts.mart_player_clusters` | ~5,800 | No duplicate player-seasons |
 | `dbt_marts.mart_player_performance` | ~5,800 | One row per player-season |
@@ -862,38 +862,104 @@ Checkbox in the UI that shows the executed SQL and raw BigQuery JSON for debuggi
 **URL:** https://lookerstudio.google.com/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53
 **Embedded at:** `/dashboard/` in the Django app (iframe via `LOOKER_STUDIO_URL` in `.env`)
 
-#### Dashboard Page
+The dashboard has **12 pages** (4 match/clustering pages, 5 consistency pages, 3 methodology appendix pages).
 
-| Page | Tab Name | Key Question / Title | Primary Source Table(s) |
-|------|----------|----------------------|-------------------------|
-| 1  | Match Overview            | StatsBomb Open Data — Coverage Overview                               | `mart_match_analysis`, `mart_player_clusters` |
-| 2  | Competition Breakdown     | How does player style vary across competitions?                       | `mart_player_clusters` |
-| 3  | Player Archetype Explorer | How are players distributed across tactical archetypes over seasons?  | `mart_player_clusters` |
-| 4  | Team Comparison           | How did team performance vary across seasons? / head-to-head          | `mart_team_comparison`, `mart_match_analysis` |
-| 5  | International Overview    | Who is in our club vs national analysis?                              | `consistency_national_team` |
-| 6  | Consistency Explorer      | Who performs like an elite player in both club and country?           | `consistency_national_team` |
-| 7  | National Team Explorer    | Which countries' players perform best nationally?                     | `consistency_national_team` |
-| 8  | Anomaly Detection         | Which players play better for country than for club?                  | `player_club_nat_blend` |
-| 9  | Club vs International     | Club vs National Player Performance (per-90 metric comparison)        | `player_ctx` |
-| 10 | Appendix                  | Methods and Formulas — Context Shift Score                            | — |
-| 11 | Appendix Part 2           | Methods and Formulas — Consistency Explorer                           | — |
-| 12 | Appendix Part 3           | Methodology — How Players Are Clustered (PCA + K-Means)              | — |
+#### Data sources and refresh
+
+Not every page is fed by Dagster. Know which tables refresh automatically vs which need a manual notebook export:
+
+| Refresh | BigQuery location | How it is populated |
+|---|---|---|
+| **Automated** (Dagster / dbt / ML) | `dbt_marts.*` | `raw_statsbomb` → dbt → `cluster.py` → `consistency.py` → `dbt_mart_refresh` |
+| **Automated** (ML only) | `analytics.consistency_scores` | `consistency.py` (also joined into `mart_player_performance`) |
+| **Manual export** | `analytics.consistency_national_team` | Notebook-derived table for national-team consistency views — re-export after pipeline changes |
+| **Manual export** | `analytics.player_club_nat_blend` | Notebook-derived blend table for anomaly detection — re-export after pipeline changes |
+| **Manual export** | `analytics.player_ctx` | Export cell in `Data Validation & research question 3.ipynb` — player × Club/National per-90 comparison |
+
+> **Important:** Pages 5–9 will **not** update when you run Dagster alone. After re-running the pipeline, re-export the `analytics.*` tables above from the relevant notebooks (see `docs/notebooks.md`). Pages 1–4 and the chatbot stay current via Dagster.
+
+Formula definitions for consistency pages are in `docs/appendix/`.
+
+#### Dashboard pages (all 12)
+
+| Page | Tab Name | Key Question / Title | Primary Source Table(s) | Refresh |
+|------|----------|----------------------|-------------------------|---------|
+| 1  | Match Overview            | StatsBomb Open Data — Coverage Overview                               | `dbt_marts.mart_match_analysis`, `dbt_marts.mart_player_clusters` | Dagster |
+| 2  | Competition Breakdown     | How does player style vary across competitions?                       | `dbt_marts.mart_player_clusters` | Dagster |
+| 3  | Player Archetype Explorer | How are players distributed across tactical archetypes over seasons?  | `dbt_marts.mart_player_clusters` | Dagster |
+| 4  | Team Comparison           | How did team performance vary across seasons? / head-to-head          | `dbt_marts.mart_team_comparison`, `dbt_marts.mart_match_analysis` | Dagster |
+| 5  | International Overview    | Who is in our club vs national analysis?                              | `analytics.consistency_national_team` | Notebook export |
+| 6  | Consistency Explorer      | Who performs like an elite player in both club and country?           | `analytics.consistency_national_team` | Notebook export |
+| 7  | National Team Explorer    | Which countries' players perform best nationally?                     | `analytics.consistency_national_team` | Notebook export |
+| 8  | Anomaly Detection         | Which players play better for country than for club?                  | `analytics.player_club_nat_blend` | Notebook export |
+| 9  | Club vs International     | Club vs National Player Performance (per-90 metric comparison)        | `analytics.player_ctx` | Notebook export |
+| 10 | Appendix                  | Methods and Formulas — Context Shift Score                            | — (static) | — |
+| 11 | Appendix Part 2           | Methods and Formulas — Consistency Explorer                           | — (static) | — |
+| 12 | Appendix Part 3           | Methodology — How Players Are Clustered (PCA + K-Means)              | — (static) | — |
+
+#### Visual preview (selected pages)
+
+Screenshots below show four representative pages. All 12 page captures live in `results/dashboard/` (files named `01_match_overview.png` … `12_appendix_clustering.png`).
+
+**Page 1 — Match Overview** · *Refresh: Dagster*  
+Coverage scorecards (matches, players, competitions, date range), matches-by-season and matches-by-competition charts.  
+*Source:* `dbt_marts.mart_match_analysis`, `dbt_marts.mart_player_clusters`
+
+![Page 1 — Match Overview](results/dashboard/01_match_overview.png)
+
+**Page 2 — Competition Breakdown** · *Refresh: Dagster*  
+100% stacked bars showing archetype mix per competition (La Liga, Premier League, World Cup, etc.); filter by competition or year.  
+*Source:* `dbt_marts.mart_player_clusters`
+
+![Page 2 — Competition Breakdown](results/dashboard/02_competition_breakdown.png)
+
+**Page 6 — Consistency Explorer** · *Refresh: Notebook export*  
+Quadrant scatter (Elite / Club Specialist / International Specialist / Underperformer) with player search and performance-score filters.  
+*Source:* `analytics.consistency_national_team`
+
+![Page 6 — Consistency Explorer](results/dashboard/06_consistency_explorer.png)
+
+**Page 8 — Anomaly Detection** · *Refresh: Notebook export*  
+Context Shift Score table and top/bottom bar charts — players who perform better for country vs club (signed sum of national minus club per-90 metrics).  
+*Source:* `analytics.player_club_nat_blend`
+
+![Page 8 — Anomaly Detection](results/dashboard/08_anomaly_detection.png)
+
 ---
 
 ### 9h. Databricks Notebooks
 
 **Directory:** `notebooks/`
+**Full catalog and run order:** `docs/notebooks.md`
 **Setup guide:** `docs/databricks_bigquery_setup.md`
 
-Databricks was used during development for EDA and to develop the ML pipeline before it was productionised. The notebooks are the **source of truth** for the ML methodology.
+Databricks was used during development for EDA and to develop the ML pipeline before it was productionised. The notebooks are the **source of truth** for ML methodology; production code lives in `src/ml/`.
 
-#### What each notebook does
+#### Key notebooks (production lineage)
 
 | Notebook | Author | Purpose |
 |---|---|---|
-| `01_eda.ipynb` | All | Exploratory data analysis — distributions, nulls, competition breakdown |
-| `02_clustering.ipynb` | Li | PCA + KMeans development. Defines the 13 features, preprocessing steps, and archetype labelling. `cluster.py` is derived from this. |
-| `03_consistency.ipynb` | Rabin | Club vs national consistency scoring development. `consistency.py` is derived from this. |
+| `05_player_clustering.py.ipynb` | Li | PCA + KMeans development. Defines the 13 features, preprocessing steps, and archetype labelling. `cluster.py` is derived from this. |
+| `03_consistency_score.ipynb` | Rabin | Club vs national consistency scoring development. `consistency.py` is derived from this. |
+| `Data Validation & research question 3.ipynb` | Rabin | RQ3 validation; exports `analytics.player_ctx` for Looker page 9 |
+
+#### Full notebook catalog
+
+| Notebook | Topic | Main outputs |
+|---|---|---|
+| `01_data_exploration.py.ipynb` | EDA | Summary stats, plots (display only) |
+| `02_feature_engineering.py.ipynb` | RQ2 features | Engineered feature tables (Databricks) |
+| `03_consistency_score.ipynb` | Consistency formula | `analytics.consistency_scores` (optional export; production uses `consistency.py`) |
+| `04_feature_importance.ipynb` | Specialist analysis | Feature-importance plots (display only) |
+| `05_player_clustering.py.ipynb` | Clustering design | k selection, archetype notes → `cluster.py` |
+| `06_export_artifacts.py.ipynb` | Artifacts | GCS / Delta exports (check notebook cells) |
+| `07_rq1_role_distribution.py.ipynb` | RQ1 report | Chi-square tables, heatmaps → `report/final_report.qmd` |
+| `08_rq3_four_quadrant_consistency.py.ipynb` | RQ3 report | Quadrant tables, scatter plots → `report/final_report.qmd` |
+| `player_clustering.ipynb` | Legacy / local | Local clustering experiments |
+| `player_profiles_international_eda.ipynb` | International EDA | EDA plots (display only) |
+| `Data Validation & research question 3.ipynb` | RQ3 validation | `analytics.player_ctx` export for Looker |
+
+See `docs/notebooks.md` for recommended run order, BigQuery table paths, and troubleshooting.
 
 #### Accessing Databricks Community Edition
 1. Go to https://community.cloud.databricks.com
@@ -971,7 +1037,7 @@ One row per team-season (campaigns with ≥10 matches). Contains seasonal baseli
 One row per player-season. Written by `cluster.py`. Includes GKs with `cluster=-1`.
 
 ### `analytics.pca_loadings`
-Long format: one row per `(component, feature)` pair. Columns: `component`, `feature`, `loading`. Used by `consistency.py` as feature weights.
+Long format: one row per `(component, feature)` pair (13 features × n_components rows). `n_components` is chosen dynamically by `cluster.py` to explain ≥80% variance (typically ~6, so ~78 rows). Columns: `component`, `feature`, `loading`. Used by `consistency.py` as feature weights.
 
 ### `analytics.consistency_scores`
 One row per player (only players with 270+ min in BOTH club and international contexts). Written by `consistency.py`.
@@ -1023,7 +1089,7 @@ On every PR that touches `models/`, `macros/`, or `dbt_project.yml`:
 2. Aggregate it in `models/intermediate/int_player_match_stats.sql`
 3. Sum and expose as per-90 in `models/intermediate/int_player_season_stats.sql`
 4. Add to mart columns in `mart_player_clusters.sql` and/or `mart_player_performance.sql`
-5. If adding to clustering: add to `FEATURES` list in `cluster.py` AND update Li's notebook (`02_clustering.ipynb`)
+5. If adding to clustering: add to `FEATURES` list in `cluster.py` AND update Li's notebook (`05_player_clustering.py.ipynb`)
 6. Update `app/chatbot/table_schema.py` so the LLM knows about the new column
 
 ### Women's football
@@ -1060,7 +1126,9 @@ dbt test --select <model_name>
 
 ### Adding a new Looker Studio page
 1. Open the dashboard in Looker Studio edit mode
-2. Add a new page and connect it to the relevant `dbt_marts` table
+2. Add a new page and connect it to the relevant BigQuery table:
+   - Pipeline-fed pages → `dbt_marts.*` (refreshed by Dagster)
+   - Consistency deep-dive pages → `analytics.*` (may require a notebook export first — see §9g)
 3. The Django embed at `/dashboard/` will automatically show the new page (iframe)
 
 ### Rotating GCP credentials
