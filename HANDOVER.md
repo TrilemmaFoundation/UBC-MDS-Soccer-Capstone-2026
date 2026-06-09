@@ -862,33 +862,22 @@ Checkbox in the UI that shows the executed SQL and raw BigQuery JSON for debuggi
 **URL:** https://lookerstudio.google.com/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53
 **Embedded at:** `/dashboard/` in the Django app (iframe via `LOOKER_STUDIO_URL` in `.env`)
 
-#### Pages
+#### Dashboard Page
 
-| Page | Source table | Description |
-|---|---|---|
-| 1. Player Clusters | `mart_player_clusters` | Scatter plot of PC1/PC2, filter by archetype |
-| 2. Consistency Explorer | `mart_player_performance` | Club vs international performance quadrant |
-| 3. Team Comparison | `mart_team_comparison` | xG trends, goals vs xG, possession vs pressing |
-| 4. Competition Breakdown | `mart_player_clusters` + `mart_player_performance` | Cluster distribution per competition |
-
-#### Connecting Looker Studio to BigQuery (first time or new project)
-1. Open Looker Studio → Create → Report
-2. Add data source → BigQuery → select your project → select `dbt_marts` dataset → select table
-3. Repeat for each mart table the report uses
-4. Use the shared report URL — viewers do not need a Looker Studio account to view it
-
-#### Updating the dashboard after a pipeline run
-The BigQuery connection is live — the dashboard automatically reflects new data. If columns were added or renamed:
-1. Open Looker Studio → Resource → Manage added data sources
-2. For each data source: click Edit → Refresh fields
-3. Re-map any broken chart dimensions/metrics
-
-#### Granting access
-Share → Add people → assign Editor (to modify) or Viewer (to view only).
-
-#### Changing the embed URL
-Update `LOOKER_STUDIO_URL` in `.env` (and in the Docker environment variables). Restart Django.
-
+| Page | Tab Name | Key Question / Title | Primary Source Table(s) |
+|------|----------|----------------------|-------------------------|
+| 1  | Match Overview            | StatsBomb Open Data — Coverage Overview                               | `mart_match_analysis`, `mart_player_clusters` |
+| 2  | Competition Breakdown     | How does player style vary across competitions?                       | `mart_player_clusters` |
+| 3  | Player Archetype Explorer | How are players distributed across tactical archetypes over seasons?  | `mart_player_clusters` |
+| 4  | Team Comparison           | How did team performance vary across seasons? / head-to-head          | `mart_team_comparison`, `mart_match_analysis` |
+| 5  | International Overview    | Who is in our club vs national analysis?                              | `consistency_national_team` |
+| 6  | Consistency Explorer      | Who performs like an elite player in both club and country?           | `consistency_national_team` |
+| 7  | National Team Explorer    | Which countries' players perform best nationally?                     | `consistency_national_team` |
+| 8  | Anomaly Detection         | Which players play better for country than for club?                  | `player_club_nat_blend` |
+| 9  | Club vs International     | Club vs National Player Performance (per-90 metric comparison)        | `player_ctx` |
+| 10 | Appendix                  | Methods and Formulas — Context Shift Score                            | — |
+| 11 | Appendix Part 2           | Methods and Formulas — Consistency Explorer                           | — |
+| 12 | Appendix Part 3           | Methodology — How Players Are Clustered (PCA + K-Means)              | — |
 ---
 
 ### 9h. Databricks Notebooks
