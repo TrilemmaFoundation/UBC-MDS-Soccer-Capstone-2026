@@ -69,13 +69,13 @@ Three preprocessing steps were applied in sequence before modelling:
 
 1. **Median imputation.** Missing values (arising from players with zero events of a particular type in a season) were filled with the column median. This preserves the natural zero-skewed distribution of defensive metrics without introducing artificial mean values.
 
-2. **99th percentile clipping.** Values above the 99th percentile were capped column-wise to limit the influence of statistical outliers on the scaling step. Values above the 99th percentile were capped column-wise across all features to limit the influence of statistical outliers on the scaling step.
+2. **99th percentile clipping.** Values above the 99th percentile were capped column-wise to limit the influence of statistical outliers on the scaling step. 
 
 3. **StandardScaler.** All features were standardised to zero mean and unit variance. This ensures that features with naturally larger magnitudes (e.g., `passes_per_90` in the hundreds) do not dominate features with smaller magnitudes (e.g., `xg_per_shot` in the range 0–1).
 
 ### Dimensionality Reduction (PCA)
 
-Principal Component Analysis was applied to the scaled feature matrix to reduce noise and multicollinearity among the 13 features. The number of components was selected automatically using a **80% cumulative explained variance threshold**, which resulted in **6 principal components**.
+Principal Component Analysis was applied to the scaled feature matrix to reduce noise and multicollinearity among the 13 features. The number of components was selected automatically using a 80% cumulative explained variance threshold, which typically results in 6 principal components depending on the data..
 
 The leading components capture interpretable structure in the data:
 
