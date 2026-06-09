@@ -290,16 +290,62 @@ Page 3 — Germany leads in our cohort. Crop the ranking table or chart so count
 
 ## System Architecture
 
-::: {.slide-image}
-::: {.placeholder}
-**TODO (Teem):** One screenshot → `assets/architecture-diagram.png`
+```{mermaid}
+flowchart LR
+    %% Node Definitions
+    SB([StatsBomb API])
+    GCS[(Google Cloud Storage)]
+    BQ[(Google BigQuery)]
+    ML[Machine Learning]
+    
+    %% Infrastructure: Google Compute Engine
+    subgraph GCE [Google Compute Engine]
+        direction TB
+        
+        %% Docker: Dagster
+        subgraph DockerDagster [Docker: Dagster]
+            DBT{{dbt Layers}}
+        end
+        
+        %% Docker: Django
+        subgraph DockerDjango [Docker: Django Web App]
+            direction TB
+            Core[Django Backend / Routing]
+            Looker[Looker Studio Dashboard<br/>embedded iframe]
+            Chatbot[Natural Language Chatbot<br/>Groq LLM]
+            
+            Core --> Looker
+            Core --> Chatbot
+        end
+    end
 
-*Crop tight: StatsBomb → GCS → BigQuery → dbt → ML → Django/Looker/Chatbot — labels readable*
-:::
-:::
+    %% Pipeline Connections
+    SB -- "Extract" --> GCS
+    GCS -- "Load" --> BQ
+    BQ -- "Raw Data" --> DBT
+    DBT -- "Clean Data" --> ML
+    
+    %% Connection to Serving Layer
+    ML -- "ML Outputs & Marts" --> Core
+
+    %% Styling 
+    classDef source fill:#ffe0b2,stroke:#f57c00,stroke-width:2px;
+    classDef storage fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
+    classDef compute fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
+    classDef serve fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
+    classDef docker fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
+    classDef vm fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px,stroke-dasharray: 5 5;
+    
+    class SB source;
+    class GCS,BQ storage;
+    class ML compute;
+    class Core,Looker,Chatbot serve;
+    class DockerDagster,DockerDjango docker;
+    class GCE vm;
+```
 
 ::: {.slide-caption}
-End-to-end pipeline · ingestion through serving
+End-to-end pipeline: data → serving
 :::
 
 ::: {.notes}
@@ -308,10 +354,13 @@ Thanks Rabin. End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transfo
 
 ## Architecture — Components {.compact}
 
-- **Ingestion** — StatsBomb API → GCS → BigQuery
-- **dbt** — staging → intermediate → marts
-- **ML** — `cluster.py` + `consistency.py`
-- **Serving** — Django app, Looker embed, LLM chatbot
+System Architecture: End-to-End
+
+- Ingestion: StatsBomb API to Google Cloud Storage (GCS)
+- Warehouse: Centralized in Google BigQuery
+- Transformation: 3-layer dbt architecture
+- Machine Learning: Python scripts for PCA/KMeans and Consistency Scoring
+- Serving Layer: Django web application, Looker Studio dashboard, and LLM chatbot
 
 ::: {.notes}
 Four layers. Quan covered dbt and Dagster earlier — here is how it connects to the products.
@@ -339,11 +388,7 @@ Looking closer at the transformation pipeline, we adopted a strict three-layer d
 ## Dagster Asset Graph
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Teem):** One screenshot → `assets/dagster-asset-graph.png`
-
-*Highlight weekly schedule + asset dependency chain — labels readable*
-:::
+![](assets/dagster.svg)
 :::
 
 ::: {.slide-caption}
@@ -367,11 +412,7 @@ Weekly full refresh plus hourly sensor for manual uploads. Same Dagster concept 
 ## Chatbot Demo
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Teem):** One screenshot → `assets/chatbot-demo.png`
-
-*Full query + answer visible — text readable from back of room*
-:::
+![](assets/chatbot_screenshot.png)
 :::
 
 ::: {.slide-caption}
@@ -417,11 +458,7 @@ What the partner receives. Next slide: screenshot of the repo README or HANDOVER
 ## Partner Handover — Repository
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Teem):** One screenshot → `assets/handover-readme.png`
-
-*README or HANDOVER.md header — setup steps readable*
-:::
+![](assets/handover.png)
 :::
 
 ::: {.notes}
