@@ -1,7 +1,7 @@
-/* presentation/custom.scss — accessible, readable defaults */
+/* presentation/custom.scss — readable but fits 1280×720 */
 
 /*-- scss:defaults --*/
-$presentation-font-size-root: 36px;
+$presentation-font-size-root: 38px;
 $body-bg: #f8f9fa;
 $body-color: #1a1a2e;
 $link-color: #2d6a9f;
@@ -13,19 +13,45 @@ $selection-bg: #2d6a9f;
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+/* Equal left/right inset — Reveal default only pads top/bottom */
+.reveal .slides > section {
+  padding: 0.6em 3.5rem !important;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.reveal .slides > section > * {
+  max-width: 100%;
+}
+
+.reveal .slides > section .mermaid,
+.reveal .slides > section table,
+.reveal .slides > section .slide-image,
+.reveal .slides > section .placeholder {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .reveal h1 {
-  font-size: 1.6em;
+  font-size: 1.5em;
   color: #1a1a2e;
+  margin-bottom: 0.4em;
 }
 
 .reveal h2 {
-  font-size: 1.25em;
+  font-size: 1.1em;
   color: #2d6a9f;
+  margin-bottom: 0.35em;
 }
 
 .reveal h3 {
-  font-size: 1em;
+  font-size: 0.95em;
   color: #444;
+  margin-bottom: 0.3em;
+}
+
+.reveal p {
+  margin-bottom: 0.45em;
 }
 
 .reveal .slide-number {
@@ -34,11 +60,16 @@ $selection-bg: #2d6a9f;
 }
 
 .reveal ul {
-  line-height: 1.5;
+  line-height: 1.35;
+  margin-bottom: 0.5em;
+}
+
+.reveal li {
+  margin-bottom: 0.15em;
 }
 
 .reveal .small {
-  font-size: 0.75em;
+  font-size: 0.8em;
 }
 
 .reveal .columns {
@@ -46,31 +77,160 @@ $selection-bg: #2d6a9f;
 }
 
 .reveal .callout {
-  font-size: 0.7em;
-  padding: 0.5em 1em;
+  font-size: 0.75em;
+  padding: 0.4em 0.8em;
   border-left: 4px solid #e8a838;
   background: #fff8e8;
-  margin-top: 0.5em;
+  margin-top: 0.35em;
 }
 
 .reveal table {
-  font-size: 0.65em;
+  font-size: 0.72em;
+  margin-top: 0.3em;
 }
 
 .reveal table th {
   background: #2d6a9f;
   color: white;
+  padding: 0.35em 0.5em;
+}
+
+.reveal table td {
+  padding: 0.3em 0.5em;
+}
+
+.reveal pre,
+.reveal code {
+  font-size: 0.68em;
+}
+
+/* Dense slides: methodology, formulas, architecture bullets */
+.reveal .compact {
+  font-size: 0.9em;
+}
+
+.reveal .compact ul {
+  line-height: 1.25;
+}
+
+.reveal .compact .mermaid {
+  margin: 0.2em 0;
+}
+
+/* Medium tables — readable but fits more rows (e.g. clustering pipeline) */
+.reveal .table-md {
+  font-size: 1em;
+}
+
+.reveal .table-md table {
+  font-size: 0.88em;
+  width: 100%;
+  margin-top: 0.45em;
+}
+
+.reveal .table-md table th,
+.reveal .table-md table td {
+  padding: 0.42em 0.65em;
+  line-height: 1.3;
+}
+
+/* Table-heavy slides: full base size, larger cells */
+.reveal .table-lg {
+  font-size: 1em;
+}
+
+.reveal .table-lg table {
+  font-size: 0.95em;
+  width: 100%;
+  margin-top: 0.5em;
+}
+
+.reveal .table-lg table th,
+.reveal .table-lg table td {
+  padding: 0.5em 0.75em;
+  line-height: 1.35;
+}
+
+.reveal .mermaid svg {
+  max-width: 100%;
+  height: auto !important;
+}
+
+/* Medium mermaid — long labels (e.g. consistency pipeline) */
+.reveal .mermaid-md .mermaid {
+  display: block;
+  width: 100%;
+  margin: 0.3em 0 0.4em;
+}
+
+.reveal .mermaid-md .mermaid svg {
+  max-width: 88%;
+  margin: 0 auto;
+  display: block;
+  height: auto !important;
+}
+
+/* Large mermaid — short labels (e.g. dbt layers) */
+.reveal .mermaid-lg .mermaid {
+  display: block;
+  width: 100%;
+  margin: 0.4em 0 0.45em;
+}
+
+.reveal .mermaid-lg .mermaid svg {
+  width: 100% !important;
+  max-width: 100%;
+  min-height: 150px;
+  height: auto !important;
+}
+
+.reveal .mermaid-lg ul {
+  margin-top: 0.35em;
+  margin-bottom: 0.35em;
+}
+
+.reveal .mermaid-lg li {
+  margin-bottom: 0.1em;
+}
+
+.reveal .slide-image .placeholder,
+.reveal .slide-image img {
+  width: 100%;
+  max-width: 100%;
+  max-height: 460px;
+  object-fit: contain;
+  display: block;
+}
+
+.reveal .slide-image-lg .slide-image img {
+  max-height: 600px;
+}
+
+.reveal .slide-image-lg h2 {
+  margin-bottom: 0.2em;
+}
+
+.reveal .slide-image .placeholder {
+  min-height: 340px;
+  font-size: 0.75em;
+}
+
+.reveal .slide-caption {
+  font-size: 0.8em;
+  margin-top: 0.25em;
+  color: #555;
 }
 
 .reveal .placeholder {
   border: 2px dashed #aaa;
   border-radius: 8px;
-  padding: 2em;
+  padding: 1.25em;
   color: #888;
-  font-size: 0.7em;
+  font-size: 0.75em;
   text-align: center;
-  min-height: 200px;
+  min-height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
