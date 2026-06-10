@@ -121,7 +121,7 @@ Third result — the chatbot. Analysts type a question in plain English, and the
 | Output | 5 archetypes → `cluster_assignments` → Looker + chatbot |
 
 ::: {.notes}
-For RQ1, we cluster outfield players by playing style. Per-season stats from dbt, 270-minute minimum, goalkeepers excluded, 13 features through PCA and KMeans. Output lands in BigQuery and feeds the dashboard and chatbot.
+Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt's intermediate layer — only outfield players with at least 270 minutes played, which filters out players with too few appearances to be statistically meaningful. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output — cluster assignments for every player-season — lands in BigQuery and feeds both the dashboard and the chatbot.
 :::
 
 ## Cluster Results: 5 Archetypes {.table-lg}
@@ -135,7 +135,7 @@ For RQ1, we cluster outfield players by playing style. Per-season stats from dbt
 | **Low Activity** | Below-cohort activity |
 
 ::: {.notes}
-KMeans produces five interpretable archetypes plus a separate goalkeeper label. Next slide: the Looker scatter — crop it so labels are readable.
+KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely and assigned a separate label directly from their position — their statistical profile is fundamentally different from outfield players.
 :::
 
 ## Cluster Scatter — Looker Studio
@@ -145,11 +145,11 @@ KMeans produces five interpretable archetypes plus a separate goalkeeper label. 
 :::
 
 ::: {.slide-caption}
-PCA scatter · colour-coded archetypes
+PCA scatter · 5,759 player-seasons · 5 archetypes · PC1 = activity level · PC2 = attacking vs defensive profile
 :::
 
 ::: {.notes}
-The scatter plot shows PCA space with 5 colour-coded archetypes. PC1 captures overall activity level — players on the right are more active. PC2 separates attacking from defensive profiles. Each dot is one player-season.
+This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 on the horizontal axis captures overall activity level — players on the right are more active. PC2 on the vertical axis separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, which validates that our features and k=5 choice are capturing real tactical differences.
 :::
 
 ## Player Archetypes Dashboard — Overview
@@ -159,11 +159,11 @@ The scatter plot shows PCA space with 5 colour-coded archetypes. PC1 captures ov
 :::
 
 ::: {.slide-caption}
-Cohort overview · archetype distribution
+5,759 player-seasons · 15 competitions · Low Activity and Defensive Anchor are the largest groups · filter by archetype, year, or competition
 :::
 
 ::: {.notes}
-The Player Archetype Explorer shows the full distribution across 5,759 player-seasons. Low Activity and Defensive Anchor are the largest groups. Analysts can filter by year, competition, or archetype to drill down.
+This is the Player Archetype Explorer in Looker Studio. Across 5,759 player-seasons from 15 competitions, Low Activity and Defensive Anchor are the two largest groups — which makes sense given that most players in the dataset are defenders or squad players with limited attacking output. Analysts can filter by archetype, competition, or year to explore how the distribution shifts across different leagues and seasons.
 :::
 
 ## Player Archetypes Dashboard — Explorer
@@ -173,11 +173,11 @@ The Player Archetype Explorer shows the full distribution across 5,759 player-se
 :::
 
 ::: {.slide-caption}
-Top players by archetype · filter by player
+Messi classified as Creative Winger across 22 La Liga seasons · search any player to see their archetype history
 :::
 
 ::: {.notes}
-Searching by player shows all seasons for that player. Messi is classified as Creative Winger across most La Liga seasons — consistent with his dribbling and xG profile. This wraps up RQ1 — Rabin covers RQ2 next.
+The explorer also supports player-level search. Here we've filtered to Messi — across 22 La Liga seasons he is consistently classified as Creative Winger, which aligns with his dribbling and xG profile. Any analyst can search any player in the dataset to see their full archetype history across seasons and competitions. That wraps up RQ1 and RQ2 — Rabin will now cover RQ3, club vs national consistency.
 :::
 
 ## Consistency: The Question & Pipeline {.mermaid-md}
