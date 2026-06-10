@@ -177,7 +177,7 @@ Messi classified as Creative Winger across 22 La Liga seasons · search any play
 :::
 
 ::: {.notes}
-The explorer also supports player-level search. Here we've filtered to Messi — across 22 La Liga seasons he is consistently classified as Creative Winger, which aligns with his dribbling and xG profile. Any analyst can search any player in the dataset to see their full archetype history across seasons and competitions. That wraps up RQ1 and RQ2 — Rabin will now cover RQ3, club vs national consistency.
+The explorer also supports player-level search. Here we've filtered to Messi — across 22 La Liga seasons he is consistently classified as Creative Winger, which aligns with his dribbling and xG profile. Any analyst can search any player in the dataset to see their full archetype history across seasons and competitions. That wraps up RQ1 — Rabin will now cover RQ2, club vs national consistency.
 :::
 
 ## Consistency: The Question & Pipeline {.mermaid-md}
