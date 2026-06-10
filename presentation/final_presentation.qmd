@@ -6,7 +6,8 @@ author:
   - Li Pu
   - Teem Kwong
   - Rabindranath Duran Pons
-date: "June 2026"
+date: "June 12, 2026"
+date-format: "MMMM D, YYYY"
 format:
   revealjs:
     theme: [default, custom.scss]
