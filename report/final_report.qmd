@@ -35,6 +35,81 @@ format:
 
 # Data Science Methods
 
+## Player Archetype Clustering
+
+### Motivation
+
+A key analytical goal of this project is to characterise *how* players play, not just *how well*. Raw per-90 statistics are difficult for coaches and analysts to interpret at scale across thousands of player-seasons. We address this by clustering players into a small set of interpretable tactical archetypes that can be used to compare playing styles across competitions and seasons.
+
+### Data and Scope
+
+The clustering pipeline operates on `int_player_season_stats`, the dbt intermediate table containing aggregated per-90 statistics for each player-season combination. A minimum threshold of **270 minutes** of playing time per season was applied to exclude players with insufficient data for reliable per-90 rate estimation, yielding **5469 outfield player-season records** across all competitions in the dataset.
+
+**Goalkeepers** were identified by `position_name = 'Goalkeeper'` and excluded from the clustering pipeline entirely. Their statistical profiles are structurally distinct from outfield players (no shots, xG, or dribbles in typical event data), and mixing them with outfield players would distort the feature space. Goalkeepers were subsequently assigned a fixed archetype label of `"Goalkeeper"` (cluster id = −1) without going through K-Means.
+
+
+### Feature Selection
+
+Thirteen per-90 features were selected to capture a broad range of tactical contributions spanning attacking output, ball progression, defensive work, and technical quality:
+
+| Feature | Tactical dimension |
+|---|---|
+| `xg_per_90`, `shots_per_90` | Attacking threat |
+| `passes_per_90`, `passes_att_third_per_90`, `pass_completion_pct` | Ball circulation and progression |
+| `carries_per_90`, `dribbles_per_90` | Direct ball-carrying |
+| `pressures_per_90` | Defensive pressure and pressing |
+| `interceptions_per_90`, `blocks_per_90`, `clearances_per_90`, `duels_per_90` | Defensive actions |
+| `xg_per_shot` | Shot quality / efficiency |
+
+Features were chosen to align with the 13 dimensions used in the PCA loadings table (`analytics.pca_loadings`), ensuring consistency between the clustering pipeline and the dashboard visualisations.
+
+### Preprocessing
+
+Three preprocessing steps were applied in sequence before modelling:
+
+1. **Median imputation.** Missing values (arising from players with zero events of a particular type in a season) were filled with the column median. This preserves the natural zero-skewed distribution of defensive metrics without introducing artificial mean values.
+
+2. **99th percentile clipping.** Values above the 99th percentile were capped column-wise to limit the influence of statistical outliers on the scaling step. 
+
+3. **StandardScaler.** All features were standardised to zero mean and unit variance. This ensures that features with naturally larger magnitudes (e.g., `passes_per_90` in the hundreds) do not dominate features with smaller magnitudes (e.g., `xg_per_shot` in the range 0–1).
+
+### Dimensionality Reduction (PCA)
+
+Principal Component Analysis was applied to the scaled feature matrix to reduce noise and multicollinearity among the 13 features. The number of components was selected automatically using an 80% cumulative explained variance threshold, which typically results in 6 principal components depending on the data.
+
+The leading components capture interpretable structure in the data:
+
+- **PC1** loads positively on overall activity metrics (pressures, carries, passes), representing a general *volume of involvement* dimension.
+- **PC2** contrasts defensive actions (interceptions, clearances) against attacking output (xG, shots), separating defensive and attacking profiles.
+
+A separate 2-component PCA projection (PC1 vs PC2) was computed for visualisation purposes, allowing cluster membership to be displayed as a 2D scatter plot in the Looker Studio dashboard.
+
+### Clustering (K-Means)
+
+K-Means clustering with **k = 5** was applied to the 6-component PCA-reduced feature space. The number of clusters was selected through a combination of the elbow method (inertia vs k) and interpretability: five outfield clusters produce tactically coherent archetypes that are meaningful to football analysts without over-segmenting the data. Model parameters: `random_state = 42`, `n_init = 10`.
+
+### Archetypes
+
+The six final archetypes (5 K-Means clusters + 1 rule-based goalkeeper label) and their distribution across the full dataset are shown in @tbl-cluster-dist.
+
+| Archetype | Player-seasons | Tactical profile |
+|---|---|---|
+| Low Activity | 1,963 | Low volume across all metrics; squad players and limited roles |
+| Defensive Anchor | 1,470 | High clearances, interceptions, duels; low attacking output |
+| Creative Playmaker | 807 | High pass completion, progressive passes, carries; attacking midfielders |
+| Pressing Forward | 766 | High pressures, shots, and xG; high-energy forwards and pressing wingers |
+| Creative Winger | 463 | High dribbles, carries, shots; direct wide attackers |
+| Goalkeeper | 290 | Assigned by position; excluded from K-Means |
+
+: Player archetype distribution across all player-seasons. {#tbl-cluster-dist}
+
+### Notable Findings
+
+The archetype framework captures genuine tactical variation both within and across careers. A player's archetype can change between seasons, reflecting real shifts in their role. For example, Lionel Messi is classified as **Creative Winger** for the majority of his career but as **Pressing Forward** during Copa America 2024, consistent with the more compact, press-oriented system deployed by the Argentina national team in that tournament. This highlights that archetypes describe *how a player is used* in a given season rather than a fixed career identity.
+
+At the competition level, archetype distributions differ across leagues. The Bundesliga shows a higher share of Pressing Forwards relative to Serie A, where Low Activity is the largest single bucket among the top-five European leagues. These differences are secondary to position effects (see RQ1 analysis), but confirm that league context influences tactical role assignment at the margins.
+
+  
 <!-- TODO: Team to complete — clustering, consistency scoring, chatbot, dashboard methods -->
 
 # Data Engineering
