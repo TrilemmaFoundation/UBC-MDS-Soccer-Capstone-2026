@@ -33,7 +33,7 @@
       vertical-align: middle;
     }
   </style>
-  <link rel="stylesheet" href="final_presentation_files/libs/revealjs/dist/theme/quarto-1c94b9310283370208ff5c8e888eb09d.css">
+  <link rel="stylesheet" href="final_presentation_files/libs/revealjs/dist/theme/quarto-da723826c31cfbba1614217de782dc32.css">
   <link href="final_presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="final_presentation_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="final_presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -212,7 +212,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="data-pipeline-dbt" class="slide level2 compact">
+<section id="data-pipeline-dbt" class="slide level2 compact center">
 <h2>Data Pipeline — dbt</h2>
 <p>StatsBomb API → GCS → BigQuery → <strong>dbt</strong> (3 layers) → chatbot + dashboard</p>
 <ul>
@@ -236,7 +236,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="pipeline-orchestration-dagster" class="slide level2 compact">
+<section id="pipeline-orchestration-dagster" class="slide level2 center">
 <h2>Pipeline Orchestration — Dagster</h2>
 <p><strong>Dagster</strong> = <strong>cron + Makefile dependency graph</strong> (like GitHub Actions job order)</p>
 <ul>
@@ -636,9 +636,9 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="system-architecture" class="slide level2">
-<h2>System Architecture</h2>
-<div class="arch-diagram">
+<section id="system-architecture-data-to-serving" class="slide level2">
+<h2>System Architecture — Data to Serving</h2>
+<div class="arch-diagram" style="font-size:0.95em; margin-top:0.9em; margin-bottom:1.1em;">
 
   <div class="arch-row">
     <span class="arch-node orange">StatsBomb API</span>
@@ -669,10 +669,10 @@ Rabindranath Duran Pons
 
 </div>
 <div class="slide-caption">
-<p>End-to-end pipeline: data → serving</p>
+<p>StatsBomb → GCS → BigQuery → dbt → ML → Django (GCE) → Looker · Chatbot</p>
 </div>
 <aside class="notes">
-<p>End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot.</p>
+<p>End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot. All compute runs on Google Compute Engine.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -685,7 +685,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="architecture-components" class="slide level2 compact">
+<section id="architecture-components" class="slide level2 compact center">
 <h2>Architecture — Components</h2>
 <ul>
 <li><strong>Ingestion:</strong> StatsBomb API → Google Cloud Storage (GCS)</li>
@@ -710,21 +710,28 @@ Rabindranath Duran Pons
 </section>
 <section id="dbt-layers-detail" class="slide level2">
 <h2>dbt Layers (Detail)</h2>
-<div class="arch-diagram" style="font-size:0.95em; margin-top:0.9em; margin-bottom:1.1em;">
-  <div class="arch-row">
-    <span class="arch-node orange">raw_statsbomb</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node blue">staging</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node blue">intermediate</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node green bold-italic">marts</span>
+<div style="display:flex; align-items:center; justify-content:center; margin-top:1.4em; gap:0.5em; font-size:0.92em; font-family:'Calibri','Segoe UI',Arial,sans-serif;">
+  <span class="arch-node orange">raw_statsbomb</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">staging</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">intermediate</span>
+  <svg width="52" height="110" viewbox="0 0 52 110" style="flex-shrink:0; overflow:visible;">
+    <line x1="0" y1="55" x2="22" y2="55" stroke="#90A4AE" stroke-width="1.5"></line>
+    <line x1="22" y1="24" x2="22" y2="86" stroke="#90A4AE" stroke-width="1.5"></line>
+    <line x1="22" y1="24" x2="52" y2="24" stroke="#90A4AE" stroke-width="1.5"></line>
+    <line x1="22" y1="86" x2="52" y2="86" stroke="#90A4AE" stroke-width="1.5"></line>
+  </svg>
+  <div style="display:flex; flex-direction:column; gap:0.9em; align-items:flex-start;">
+    <span class="arch-node green"><b>marts</b></span>
+    <span class="arch-node green"><b><i>ML models</i></b></span>
   </div>
 </div>
 <ul>
-<li><strong>Staging</strong> — 1:1 mirror, type casts only</li>
-<li><strong>Intermediate</strong> — men’s filter, 270-min threshold, per-90 metrics</li>
-<li><strong>Marts</strong> — ML outputs joined in → chatbot + Looker read here</li>
+<li><strong>Staging</strong> — 3 models · type casts only, 1:1 mirror</li>
+<li><strong>Intermediate</strong> — 7 models · 270-min filter, per-90 metrics, men’s only</li>
+<li><strong>Marts</strong> — 5 models · joined for Looker + chatbot</li>
+<li><strong>ML models</strong> — 2 models · cluster assignments + consistency scores</li>
 </ul>
 <aside class="notes">
 <p>Three-layer dbt architecture. Staging cleans data types. Intermediate aggregates per-90 metrics, applies the 270-minute threshold, and scopes to men’s competitions. Marts joins ML cluster assignments, producing the clean tables that Looker and the chatbot read from.</p>
@@ -748,29 +755,11 @@ Rabindranath Duran Pons
 <div class="slide-caption">
 <p>Asset graph · ingestion → dbt → ML → marts</p>
 </div>
-<aside class="notes">
-<p>Dagster asset graph screenshot. Quan already defined Dagster — here we show what it looks like in practice.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="dagster-how-it-runs" class="slide level2 compact">
-<h2>Dagster — How It Runs</h2>
 <ul>
 <li><strong>Asset graph</strong> — run in order: Ingestion → dbt → ML → mart refresh</li>
-<li><strong><code>full_pipeline_job</code></strong> — every Monday 6:00 AM UTC</li>
-<li><strong>Hourly GCS sensor</strong> — new match file → <code>post_ingestion_job</code> only (no re-ingestion loop)</li>
 </ul>
 <aside class="notes">
-<p>Weekly full refresh plus hourly sensor for manual uploads.</p>
+<p>Dagster asset graph screenshot. Quan already defined Dagster — here we show what it looks like in practice.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -786,7 +775,7 @@ Rabindranath Duran Pons
 <section id="chatbot-demo" class="slide level2">
 <h2>Chatbot Demo</h2>
 <div class="slide-image">
-<p><img data-src="assets/chatbot_screenshot.png"></p>
+<p><a href="http://34.11.235.252/"><img data-src="assets/chatbot_screenshot.png"></a></p>
 </div>
 <div class="slide-caption">
 <p>Plain-English question → BigQuery answer</p>
@@ -805,12 +794,11 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="chatbot-how-it-works" class="slide level2 compact">
+<section id="chatbot-how-it-works" class="slide level2 center">
 <h2>Chatbot — How It Works</h2>
 <ul>
 <li><strong>Engine:</strong> Groq <code>llama-3.3-70b-versatile</code></li>
 <li><strong>Tool-calling:</strong> English → BigQuery SQL → formatted answer</li>
-<li><strong>Security:</strong> <code>is_safe_sql</code> blocks non-SELECT statements</li>
 <li><strong>Advanced mode:</strong> shows generated SQL for debugging</li>
 </ul>
 <aside class="notes">
@@ -827,11 +815,11 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="limitations-future-scope" class="slide level2 compact">
+<section id="limitations-future-scope" class="slide level2 compact center">
 <h2>Limitations &amp; Future Scope</h2>
 <ul>
-<li><strong>Goalkeepers</strong> — excluded from PCA clustering (<code>cluster = -1</code>, archetype Goalkeeper)</li>
-<li><strong>Polymarket odds</strong> — manual GCS upload only; no automated ingestion yet</li>
+<li><strong>Goalkeeper Filter</strong> — excluded from PCA clustering (<code>cluster = -1</code>, archetype Goalkeeper)</li>
+<li><strong>Data Asymmetry</strong> — open-source event data is inherently incomplete and unbalanced; match volume varies</li>
 <li><strong>Women’s football</strong> — men’s filter at intermediate layer; needs parallel dbt models</li>
 </ul>
 <aside class="notes">
@@ -848,7 +836,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="partner-handover-what-trilemma-gets" class="slide level2 compact">
+<section id="partner-handover-what-trilemma-gets" class="slide level2 center">
 <h2>Partner Handover — What Trilemma Gets</h2>
 <ul>
 <li>Fully documented <strong>GitHub repository</strong></li>

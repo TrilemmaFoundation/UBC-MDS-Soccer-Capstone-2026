@@ -330,6 +330,18 @@ $link-color: $secondary;
   margin-top: 0.15em;
 }
 
+// ── Center-only slides — larger font + more breathing room between items ────
+.reveal section.center:not(.compact) li {
+  font-size: 1.05em;
+  line-height: 1.9;
+  margin-bottom: 0.35em;
+}
+
+.reveal section.center:not(.compact) p {
+  font-size: 1.05em;
+  line-height: 1.9;
+}
+
 // ── Strong / emphasis ──────────────────────────────────────────────────────
 .reveal strong {
   color: $primary;

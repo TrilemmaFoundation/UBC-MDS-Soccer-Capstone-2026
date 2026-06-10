@@ -39,7 +39,7 @@ format:
 Trilemma had rich StatsBomb data but no scalable way to answer these questions without writing complex SQL. This table is our map for the talk — three research questions, each answered by a different part of the product. I'll walk you through how the data gets there first, then hand off to the rest of the team.
 :::
 
-## Data Pipeline — dbt {.compact}
+## Data Pipeline — dbt {.compact .center}
 
 StatsBomb API → GCS → BigQuery → **dbt** (3 layers) → chatbot + dashboard
 
@@ -55,7 +55,7 @@ StatsBomb API → GCS → BigQuery → **dbt** (3 layers) → chatbot + dashboar
 Before the results: three ingestion scripts land StatsBomb data in BigQuery. dbt transforms it in three layers. If you've used Make or GitHub Actions, dbt is the same idea — define steps, declare dependencies, run tests. Dagster runs the whole thing automatically.
 :::
 
-## Pipeline Orchestration — Dagster {.compact}
+## Pipeline Orchestration — Dagster {.center}
 
 **Dagster** = **cron + Makefile dependency graph** (like GitHub Actions job order)
 
@@ -264,70 +264,48 @@ Page 3 — Germany leads in our cohort. Everything in Looker is also queryable t
 
 ## System Architecture — Data to Serving
 
-```{mermaid}
-flowchart LR
-    subgraph Ingestion["Data Ingestion Pipeline"]
-        direction LR
-        GCS[("Google Cloud Storage")]
-        SB(["StatsBomb API"])
-        BQ[("Google BigQuery")]
-    end
-    
-    subgraph DockerDagster["Docker: Dagster"]
-        DBT{{"dbt Layers"}}
-    end
-    
-    subgraph DockerDjango["Docker: Django Web App"]
-        Core["Django Backend / Routing"]
-        Looker["Looker Studio Dashboard<br/>embedded iframe"]
-        Chatbot["Natural Language Chatbot<br/>Groq LLM"]
-    end
-    
-    subgraph GCE["Google Compute Engine"]
-        direction TB
-        DockerDagster
-        ML["Machine Learning"]
-        DockerDjango
-    end
+```{=html}
+<div class="arch-diagram" style="font-size:0.95em; margin-top:0.9em; margin-bottom:1.1em;">
 
-    %% Pipeline Connections (Quoted strings prevent parsing cut-offs)
-    SB -- "Extract" --> GCS
-    GCS -- "Load" --> BQ
-    Core --> Looker & Chatbot
-    DockerDagster --> ML
-    ML --> DockerDjango
-    Ingestion -- "Raw Data" --> GCE
+  <div class="arch-row">
+    <span class="arch-node orange">StatsBomb API</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node blue">GCS</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node blue">BigQuery</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node green bold-italic">dbt</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node green">ML Scripts</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node purple">Django</span>
+  </div>
 
-    %% Node Styling
-    SB:::source
-    GCS:::storage
-    BQ:::storage
-    DBT:::compute
-    ML:::compute
-    Core:::serve
-    Looker:::serve
-    Chatbot:::serve
-    
-    %% Subgraph Styling
-    class DockerDagster docker
-    class DockerDjango docker
-    class GCE vm
-    class Ingestion vm
+  <div style="display:flex; flex-direction:column; align-items:center; margin-top:0.1em;">
+    <svg width="360" height="42" style="overflow:visible; display:block;">
+      <line x1="180" y1="0"  x2="180" y2="14" stroke="#90A4AE" stroke-width="1.5"/>
+      <line x1="90"  y1="14" x2="270" y2="14" stroke="#90A4AE" stroke-width="1.5"/>
+      <line x1="90"  y1="14" x2="90"  y2="42" stroke="#90A4AE" stroke-width="1.5"/>
+      <line x1="270" y1="14" x2="270" y2="42" stroke="#90A4AE" stroke-width="1.5"/>
+    </svg>
+    <div style="display:flex; gap:5.5em; margin-top:0;">
+      <span class="arch-node purple">Looker Studio</span>
+      <span class="arch-node purple">Chatbot / Groq</span>
+    </div>
+  </div>
 
-    %% Class Definitions
-    classDef source fill:#ffe0b2,stroke:#f57c00,stroke-width:2px
-    classDef storage fill:#e1f5fe,stroke:#0288d1,stroke-width:2px
-    classDef compute fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
-    classDef serve fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef docker fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef vm fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px,stroke-dasharray: 5 5
+</div>
 ```
 
-::: {.notes}
-End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot.
+::: {.slide-caption}
+StatsBomb → GCS → BigQuery → dbt → ML → Django (GCE) → Looker · Chatbot
 :::
 
-## Architecture — Components {.compact}
+::: {.notes}
+End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot. All compute runs on Google Compute Engine.
+:::
+
+## Architecture — Components {.compact .center}
 
 - **Ingestion:** StatsBomb API → Google Cloud Storage (GCS)
 - **Warehouse:** Centralized in Google BigQuery
@@ -341,37 +319,30 @@ Four layers. Quan covered dbt and Dagster earlier — here is how it connects to
 
 ## dbt Layers (Detail)
 
-```{mermaid}
-flowchart LR
-    %% Nodes
-    Raw[raw_statsbomb]
-    Stg[staging]
-    Int[intermediate]
-    Marts["<b>marts</b>"]
-    ML["<b>ML models</b>"]
-
-    %% Connections
-    Raw --> Stg
-    Stg --> Int
-    Int --> Marts
-    Int --> ML
-
-    %% Styling 
-    classDef orange fill:#ffe0b2,stroke:#f57c00,stroke-width:2px,color:#000;
-    classDef blue fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#000;
-    classDef green fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#000;
-
-    %% Apply Classes
-    class Raw orange;
-    class Stg,Int blue;
-    class Marts green;
-    class ML green;
+```{=html}
+<div style="display:flex; align-items:center; justify-content:center; margin-top:1.4em; gap:0.5em; font-size:0.92em; font-family:'Calibri','Segoe UI',Arial,sans-serif;">
+  <span class="arch-node orange">raw_statsbomb</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">staging</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">intermediate</span>
+  <svg width="52" height="110" viewBox="0 0 52 110" style="flex-shrink:0; overflow:visible;">
+    <line x1="0"  y1="55" x2="22" y2="55" stroke="#90A4AE" stroke-width="1.5"/>
+    <line x1="22" y1="24" x2="22" y2="86" stroke="#90A4AE" stroke-width="1.5"/>
+    <line x1="22" y1="24" x2="52" y2="24" stroke="#90A4AE" stroke-width="1.5"/>
+    <line x1="22" y1="86" x2="52" y2="86" stroke="#90A4AE" stroke-width="1.5"/>
+  </svg>
+  <div style="display:flex; flex-direction:column; gap:0.9em; align-items:flex-start;">
+    <span class="arch-node green"><b>marts</b></span>
+    <span class="arch-node green"><b><i>ML models</i></b></span>
+  </div>
+</div>
 ```
 
-- **Staging** — stg_statsbomb__matches, stg_statsbomb__events, stg_statsbomb__lineups (3 models)
-- **Intermediate** — int_match_stats, int_player_match_stats, int_player_season_stats, int_team_season_stats, int_team_rolling_form, int_match_features, int_player_club_vs_national (7 models)
-- **Marts** — mart_match_analysis, mart_player_performance, mart_player_clusters, mart_team_comparison, mart_match_prediction_features (5 marts)
-- **ML models** — cluster_assignments, consistency_score (2 models)
+- **Staging** — 3 models · type casts only, 1:1 mirror
+- **Intermediate** — 7 models · 270-min filter, per-90 metrics, men's only
+- **Marts** — 5 models · joined for Looker + chatbot
+- **ML models** — 2 models · cluster assignments + consistency scores
 
 ::: {.notes}
 Three-layer dbt architecture. Staging cleans data types. Intermediate aggregates per-90 metrics, applies the 270-minute threshold, and scopes to men's competitions. Marts joins ML cluster assignments, producing the clean tables that Looker and the chatbot read from.
@@ -407,7 +378,7 @@ Plain-English question → BigQuery answer
 Chatbot in action. Show a real tactical question and the formatted response.
 :::
 
-## Chatbot — How It Works {.compact}
+## Chatbot — How It Works {.center}
 
 - **Engine:** Groq `llama-3.3-70b-versatile`
 - **Tool-calling:** English → BigQuery SQL → formatted answer
@@ -417,7 +388,7 @@ Chatbot in action. Show a real tactical question and the formatted response.
 Django + Groq tool-calling loop. Security layer blocks anything that isn't a SELECT. Advanced mode lets analysts verify the SQL.
 :::
 
-## Limitations & Future Scope {.compact}
+## Limitations & Future Scope {.compact .center}
 
 - **Goalkeeper Filter** — excluded from PCA clustering (`cluster = -1`, archetype Goalkeeper)
 - **Data Asymmetry** — open-source event data is inherently incomplete and unbalanced; match volume varies
@@ -427,7 +398,7 @@ Django + Groq tool-calling loop. Security layer blocks anything that isn't a SEL
 Three known limitations and future work items.
 :::
 
-## Partner Handover — What Trilemma Gets {.compact}
+## Partner Handover — What Trilemma Gets {.center}
 
 - Fully documented **GitHub repository**
 - **Quarto** final report
