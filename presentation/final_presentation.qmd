@@ -11,7 +11,7 @@ format:
   revealjs:
     theme: [default, custom.scss]
     slide-number: true
-    scrollable: true
+    scrollable: false
     chalkboard: false
     preview-links: auto
     footer: "UBC MDS Capstone 2026 · Trilemma Foundation"
@@ -101,14 +101,14 @@ Second result — consistency scoring. 493 players had enough minutes in both cl
 :::
 
 ::: {.slide-caption}
-Plain English in · answers in \< 10 sec · no SQL
+Plain English in · answers in < 10 sec · no SQL
 :::
 
 ::: {.notes}
 Third result — the chatbot. Analysts type a question in plain English, and the system writes the BigQuery SQL, runs it, and returns a formatted answer in under 10 seconds. No SQL knowledge required. Li will now walk through RQ1 — the clustering methodology and player archetypes dashboard.
 :::
 
-## Clustering Pipeline {.table-md}
+## Clustering Pipeline
 
 **RQ1:** What player archetypes exist across European football?
 
@@ -121,10 +121,10 @@ Third result — the chatbot. Analysts type a question in plain English, and the
 | Output | 5 archetypes → `cluster_assignments` → Looker + chatbot |
 
 ::: {.notes}
-Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt's intermediate layer — only outfield players with at least 270 minutes played, which filters out players with too few appearances to be statistically meaningful. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output — cluster assignments for every player-season — lands in BigQuery and feeds both the dashboard and the chatbot.
+Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt's intermediate layer — only outfield players with at least 270 minutes played. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output lands in BigQuery and feeds both the dashboard and the chatbot.
 :::
 
-## Cluster Results: 5 Archetypes {.table-lg}
+## Cluster Results: 5 Archetypes
 
 | Archetype | Style |
 |-----------|-------|
@@ -135,7 +135,7 @@ Our first question: what tactical archetypes exist across European football? We 
 | **Low Activity** | Below-cohort activity |
 
 ::: {.notes}
-KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely and assigned a separate label directly from their position — their statistical profile is fundamentally different from outfield players.
+KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely.
 :::
 
 ## Cluster Scatter — Looker Studio
@@ -149,7 +149,7 @@ PCA scatter · 5,759 player-seasons · 5 archetypes · PC1 = activity level · P
 :::
 
 ::: {.notes}
-This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 on the horizontal axis captures overall activity level — players on the right are more active. PC2 on the vertical axis separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, which validates that our features and k=5 choice are capturing real tactical differences.
+This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 captures overall activity level. PC2 separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, validating our k=5 choice.
 :::
 
 ## Player Archetypes Dashboard — Overview
@@ -163,7 +163,7 @@ This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 o
 :::
 
 ::: {.notes}
-This is the Player Archetype Explorer in Looker Studio. Across 5,759 player-seasons from 15 competitions, Low Activity and Defensive Anchor are the two largest groups — which makes sense given that most players in the dataset are defenders or squad players with limited attacking output. Analysts can filter by archetype, competition, or year to explore how the distribution shifts across different leagues and seasons.
+This is the Player Archetype Explorer in Looker Studio. Low Activity and Defensive Anchor are the two largest groups. Analysts can filter by archetype, competition, or year.
 :::
 
 ## Player Archetypes Dashboard — Explorer
@@ -177,20 +177,17 @@ Messi classified as Creative Winger across 22 La Liga seasons · search any play
 :::
 
 ::: {.notes}
-The explorer also supports player-level search. Here we've filtered to Messi — across 22 La Liga seasons he is consistently classified as Creative Winger, which aligns with his dribbling and xG profile. Any analyst can search any player in the dataset to see their full archetype history across seasons and competitions. That wraps up RQ1 — Rabin will now cover RQ2, club vs national consistency.
+The explorer also supports player-level search. Here we've filtered to Messi — consistently classified as Creative Winger across 22 La Liga seasons. That wraps up RQ1 — Rabin will now cover RQ2.
 :::
 
-## Consistency: The Question & Pipeline {.mermaid-md}
+## Consistency: The Question & Pipeline
 
 **RQ2:** Do players perform differently for club vs national team?
 
-```{mermaid}
-%%| fig-width: 10
-%%{init: {'themeVariables': {'fontSize': '18px'}, 'flowchart': {'nodeSpacing': 38, 'rankSpacing': 34, 'padding': 12}}}%%
-flowchart LR
-    A[dbt: int_player_club_vs_national] --> B[consistency.py]
-    B --> C[analytics.consistency_scores]
-    C --> D[Looker Consistency Explorer]
+```{=html}
+<div class="pipeline-box">
+  int_player_club_vs_national &rarr; consistency.py &rarr; consistency_scores &rarr; Looker Explorer
+</div>
 ```
 
 - **Eligibility:** ≥ 270 minutes in **both** contexts (~3 full matches)
@@ -198,7 +195,7 @@ flowchart LR
 - Z-scores computed **within each context** (club peers vs club, national vs national)
 
 ::: {.notes}
-We built club-vs-national consistency scoring for RQ2. Trilemma wanted to know whether strong club players show up the same way for their country. dbt builds int_player_club_vs_national, splitting stats by context and z-scoring 13 metrics within each. consistency.py weights z-scores with PCA loadings, computes scores and quadrants, and writes to BigQuery. Only players with 270+ minutes in both contexts qualify — 493 players across 58 countries.
+We built club-vs-national consistency scoring for RQ2. dbt builds int_player_club_vs_national, splitting stats by context and z-scoring 13 metrics within each. consistency.py weights z-scores with PCA loadings, computes scores and quadrants, and writes to BigQuery. Only players with 270+ minutes in both contexts qualify — 493 players across 58 countries.
 :::
 
 ## Consistency Formulas & Results {.compact}
@@ -216,108 +213,87 @@ We built club-vs-national consistency scoring for RQ2. Trilemma wanted to know w
 - **Germany** leads national score · **Sweden** lowest in cohort
 
 ::: {.notes}
-Three metrics: performance scores are the scatter axes; consistency measures profile similarity across contexts, not quality. Headline results before the dashboard walkthrough — 493 dual-context players, roughly even quadrant split, Germany leads on national performance.
+Three metrics: performance scores are the scatter axes; consistency measures profile similarity across contexts, not quality. 493 dual-context players, roughly even quadrant split, Germany leads on national performance.
 :::
 
-## Quadrant Definitions {.table-lg}
+## Quadrant Definitions
 
 Split cohort at **medians** of club & national performance (~25% each)
 
 | Quadrant | Rule |
 |----------|------|
 | **Elite** | ≥ median in **both** contexts |
-| **Club Specialist** | Club ≥ median, national \< median |
-| **International Specialist** | Club \< median, national ≥ median |
+| **Club Specialist** | Club ≥ median, national < median |
+| **International Specialist** | Club < median, national ≥ median |
 | **Underperformer** | Below median in both |
 
 ::: {.notes}
-Quadrants split at medians. Next slides show this in Looker — one cropped screenshot per page.
+Quadrants split at medians. Next slides show this in Looker — one screenshot per page.
 :::
 
-## Consistency Explorer — Overview {.slide-image-lg}
+## Consistency Explorer — Overview
 
 ::: {.slide-image}
 ![](assets/looker-consistency-p1.png)
 :::
 
 ::: {.notes}
-Page 1 — coverage and cohort size. Crop so 493 players and 58 countries are the largest text on screen.
+Page 1 — coverage and cohort size. 493 players and 58 countries.
 :::
 
-## Consistency Explorer — Quadrant View {.slide-image-lg}
+## Consistency Explorer — Quadrant View
 
 ::: {.slide-image}
 ![](assets/looker-quadrant-scatter.png)
 :::
 
 ::: {.notes}
-Page 2 — the core scatter. Crop aggressively: quadrant labels, axis titles, and a few player names must be readable from the back.
+Page 2 — the core scatter. Quadrant labels, axis titles, and a few player names must be readable from the back.
 :::
 
-## Consistency Explorer — Country Rankings {.slide-image-lg}
+## Consistency Explorer — Country Rankings
 
 ::: {.slide-image}
 ![](assets/looker-consistency-p2.png)
 :::
 
 ::: {.notes}
-Page 3 — Germany leads in our cohort. Crop the ranking table or chart so country names and scores are legible. Everything in Looker is also queryable through our chatbot — Teem covers that next.
+Page 3 — Germany leads in our cohort. Everything in Looker is also queryable through our chatbot — Teem covers that next.
 :::
 
 ## System Architecture
 
-```{mermaid}
-flowchart LR
-    %% Node Definitions
-    SB([StatsBomb API])
-    GCS[(Google Cloud Storage)]
-    BQ[(Google BigQuery)]
-    ML[Machine Learning]
-    
-    %% Infrastructure: Google Compute Engine
-    subgraph GCE [Google Compute Engine]
-        direction TB
-        
-        %% Docker: Dagster
-        subgraph DockerDagster [Docker: Dagster]
-            DBT{{dbt Layers}}
-        end
-        
-        %% Docker: Django
-        subgraph DockerDjango [Docker: Django Web App]
-            direction TB
-            Core[Django Backend / Routing]
-            Looker[Looker Studio Dashboard<br/>embedded iframe]
-            Chatbot[Natural Language Chatbot<br/>Groq LLM]
-            
-            Core --> Looker
-            Core --> Chatbot
-        end
-    end
+```{=html}
+<div class="arch-diagram">
 
-    %% Pipeline Connections
-    SB -- "Extract" --> GCS
-    GCS -- "Load" --> BQ
-    BQ -- "Raw Data" --> DBT
-    DBT -- "Clean Data" --> ML
-    
-    %% Connection to Serving Layer
-    ML -- "ML Outputs & Marts" --> Core
+  <div class="arch-row">
+    <span class="arch-node orange">StatsBomb API</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node blue">GCS</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node blue">BigQuery</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node green bold-italic">dbt</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node green">ML Scripts</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node purple">Django</span>
+  </div>
 
-    %% Styling 
-    classDef source fill:#ffe0b2,stroke:#f57c00,stroke-width:2px;
-    classDef storage fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
-    classDef compute fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
-    classDef serve fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px;
-    classDef docker fill:#e3f2fd,stroke:#1565c0,stroke-width:2px;
-    classDef vm fill:#f5f5f5,stroke:#9e9e9e,stroke-width:2px,stroke-dasharray: 5 5;
-    
-    class SB source;
-    class GCS,BQ storage;
-    class ML compute;
-    class Core,Looker,Chatbot serve;
-    class DockerDagster,DockerDjango docker;
-    class GCE vm;
+  <div style="display:flex; flex-direction:column; align-items:center; margin-top:0.1em;">
+    <svg width="360" height="42" style="overflow:visible; display:block;">
+      <line x1="180" y1="0"  x2="180" y2="14" stroke="#90A4AE" stroke-width="1.5"/>
+      <line x1="90"  y1="14" x2="270" y2="14" stroke="#90A4AE" stroke-width="1.5"/>
+      <line x1="90"  y1="14" x2="90"  y2="42" stroke="#90A4AE" stroke-width="1.5"/>
+      <line x1="270" y1="14" x2="270" y2="42" stroke="#90A4AE" stroke-width="1.5"/>
+    </svg>
+    <div style="display:flex; gap:5.5em; margin-top:0;">
+      <span class="arch-node purple">Looker Studio</span>
+      <span class="arch-node purple">Chatbot / Groq</span>
+    </div>
+  </div>
+
+</div>
 ```
 
 ::: {.slide-caption}
@@ -325,32 +301,35 @@ End-to-end pipeline: data → serving
 :::
 
 ::: {.notes}
-Thanks Rabin. End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot.
+End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot.
 :::
 
 ## Architecture — Components {.compact}
 
-System Architecture: End-to-End
-
-- Ingestion: StatsBomb API to Google Cloud Storage (GCS)
-- Warehouse: Centralized in Google BigQuery
-- Transformation: 3-layer dbt architecture
-- Machine Learning: Python scripts for PCA/KMeans and Consistency Scoring
-- Serving Layer: Django web application, Looker Studio dashboard, and LLM chatbot
+- **Ingestion:** StatsBomb API → Google Cloud Storage (GCS)
+- **Warehouse:** Centralized in Google BigQuery
+- **Transformation:** 3-layer dbt architecture
+- **Machine Learning:** Python scripts for PCA/KMeans and Consistency Scoring
+- **Serving:** Django web app · Looker Studio dashboard · LLM chatbot
 
 ::: {.notes}
 Four layers. Quan covered dbt and Dagster earlier — here is how it connects to the products.
 :::
 
-## dbt Layers (Detail) {.mermaid-lg}
+## dbt Layers (Detail)
 
-```{mermaid}
-%%| fig-width: 14
-%%{init: {'themeVariables': {'fontSize': '26px'}, 'flowchart': {'nodeSpacing': 70, 'rankSpacing': 55, 'padding': 24}}}%%
-flowchart LR
-    RAW[raw_statsbomb] --> STG[staging]
-    STG --> INT[intermediate]
-    INT --> MART[marts]
+```{=html}
+<div class="arch-diagram" style="font-size:0.95em; margin-top:0.9em; margin-bottom:1.1em;">
+  <div class="arch-row">
+    <span class="arch-node orange">raw_statsbomb</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node blue">staging</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node blue">intermediate</span>
+    <span class="arch-arrow">→</span>
+    <span class="arch-node green bold-italic">marts</span>
+  </div>
+</div>
 ```
 
 - **Staging** — 1:1 mirror, type casts only
@@ -358,7 +337,7 @@ flowchart LR
 - **Marts** — ML outputs joined in → chatbot + Looker read here
 
 ::: {.notes}
-Looking closer at the transformation pipeline, we adopted a strict three-layer dbt architecture. Raw StatsBomb parquet files land in our GCS bucket and BigQuery. Staging acts purely as a 1:1 mirror to clean up data types. The heavy lifting happens in the intermediate layer, where we aggregate per-90 metrics, apply our 270-minute playing threshold to remove statistical noise, and scope the current data to men's competitions. Finally, our marts layer joins these transformations with the ML cluster assignments, producing the clean tables that Looker and our chatbot read from.
+Three-layer dbt architecture. Staging cleans data types. Intermediate aggregates per-90 metrics, applies the 270-minute threshold, and scopes to men's competitions. Marts joins ML cluster assignments, producing the clean tables that Looker and the chatbot read from.
 :::
 
 ## Dagster Asset Graph
@@ -372,17 +351,17 @@ Asset graph · ingestion → dbt → ML → marts
 :::
 
 ::: {.notes}
-Dagster asset graph screenshot. Crop so asset names and the schedule are readable. Quan already defined Dagster — here we show what it looks like in practice.
+Dagster asset graph screenshot. Quan already defined Dagster — here we show what it looks like in practice.
 :::
 
-## Dagster — How It Runs
+## Dagster — How It Runs {.compact}
 
 - **Asset graph** — run in order: Ingestion → dbt → ML → mart refresh
 - **`full_pipeline_job`** — every Monday 6:00 AM UTC
 - **Hourly GCS sensor** — new match file → `post_ingestion_job` only (no re-ingestion loop)
 
 ::: {.notes}
-Weekly full refresh plus hourly sensor for manual uploads. Same Dagster concept as Quan introduced — cron with a dependency graph.
+Weekly full refresh plus hourly sensor for manual uploads.
 :::
 
 ## Chatbot Demo
@@ -396,10 +375,10 @@ Plain-English question → BigQuery answer
 :::
 
 ::: {.notes}
-Chatbot in action. One screenshot, cropped large. Show a real tactical question and the formatted response.
+Chatbot in action. Show a real tactical question and the formatted response.
 :::
 
-## Chatbot — How It Works
+## Chatbot — How It Works {.compact}
 
 - **Engine:** Groq `llama-3.3-70b-versatile`
 - **Tool-calling:** English → BigQuery SQL → formatted answer
@@ -410,17 +389,17 @@ Chatbot in action. One screenshot, cropped large. Show a real tactical question 
 Django + Groq tool-calling loop. Security layer blocks anything that isn't a SELECT. Advanced mode lets analysts verify the SQL.
 :::
 
-## Limitations & Future Scope
+## Limitations & Future Scope {.compact}
 
 - **Goalkeepers** — excluded from PCA clustering (`cluster = -1`, archetype Goalkeeper)
 - **Polymarket odds** — manual GCS upload only; no automated ingestion yet
 - **Women's football** — men's filter at intermediate layer; needs parallel dbt models
 
 ::: {.notes}
-Three known limitations and future work items. Keep it brief before handover.
+Three known limitations and future work items.
 :::
 
-## Partner Handover — What Trilemma Gets
+## Partner Handover — What Trilemma Gets {.compact}
 
 - Fully documented **GitHub repository**
 - **Quarto** final report
@@ -428,7 +407,7 @@ Three known limitations and future work items. Keep it brief before handover.
 - **`docker compose up`** → Django app + Dagster UI
 
 ::: {.notes}
-What the partner receives. Next slide: screenshot of the repo README or HANDOVER.md top section.
+What the partner receives.
 :::
 
 ## Partner Handover — Repository
@@ -450,5 +429,5 @@ Screenshot of HANDOVER.md or README so the audience sees the partner can run thi
 **Repo:** [UBC-MDS-Soccer-Capstone-2026](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026)
 
 ::: {.notes}
-That concludes our presentation. Thank you, and we'll now open the floor to any questions.
+Thank you — we'll now open the floor to any questions.
 :::
