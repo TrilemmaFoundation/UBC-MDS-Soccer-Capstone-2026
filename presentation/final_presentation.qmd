@@ -141,11 +141,7 @@ KMeans produces five interpretable archetypes plus a separate goalkeeper label. 
 ## Cluster Scatter — Looker Studio
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Li):** One screenshot → `assets/looker-cluster-scatter.png`
-
-*Crop tight: PCA axes, archetype colours, and legend readable*
-:::
+![](assets/looker-cluster-scatter.png)
 :::
 
 ::: {.slide-caption}
@@ -153,17 +149,13 @@ PCA scatter · colour-coded archetypes
 :::
 
 ::: {.notes}
-The scatter plot in Looker shows PCA space with color-coded clusters. Analysts can instantly find players with a similar tactical profile.
+The scatter plot shows PCA space with 5 colour-coded archetypes. PC1 captures overall activity level — players on the right are more active. PC2 separates attacking from defensive profiles. Each dot is one player-season.
 :::
 
 ## Player Archetypes Dashboard — Overview
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Li):** One screenshot → `assets/looker-cluster-page1.png`
-
-*Crop tight: player counts, archetype breakdown, key numbers visible*
-:::
+![](assets/looker-cluster-page1.png)
 :::
 
 ::: {.slide-caption}
@@ -171,25 +163,21 @@ Cohort overview · archetype distribution
 :::
 
 ::: {.notes}
-Looker Page 1 — overview. Crop so the headline numbers and archetype counts are clearly readable, not the full browser window.
+The Player Archetype Explorer shows the full distribution across 5,759 player-seasons. Low Activity and Defensive Anchor are the largest groups. Analysts can filter by year, competition, or archetype to drill down.
 :::
 
 ## Player Archetypes Dashboard — Explorer
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Li):** One screenshot → `assets/looker-cluster-page2.png`
-
-*Crop tight: top players table or filters — names and stats readable*
-:::
+![](assets/looker-cluster-page2.png)
 :::
 
 ::: {.slide-caption}
-Top players by archetype · filter by position
+Top players by archetype · filter by player
 :::
 
 ::: {.notes}
-Looker Page 2 — explorer and top-player tables. We showed how we cluster players into tactical archetypes. Our second objective is consistency scoring — Rabin covers RQ2 next.
+Searching by player shows all seasons for that player. Messi is classified as Creative Winger across most La Liga seasons — consistent with his dribbling and xG profile. This wraps up RQ1 and RQ2 — Rabin covers RQ3 next.
 :::
 
 ## Consistency: The Question & Pipeline {.mermaid-md}
