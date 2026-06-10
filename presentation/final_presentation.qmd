@@ -29,13 +29,13 @@ format:
 
 | RQ | Question | Who |
 |----|----------|-----|
-| **RQ1** | Which players fit a tactical role? | **Li** · clustering |
-| **RQ2** | Which teams are in form? | **Li** · Archetypes dashboard |
-| **RQ3** | Club vs national consistency? | **Rabin** · Consistency Explorer |
-| — | How does data get there? | **Quan** · dbt · **Teem** · Dagster + chatbot |
+| **RQ1** | What tactical archetypes exist across competitions? | **Li** · clustering + dashboard |
+| **RQ2** | Do players perform consistently club vs nationally? | **Rabin** · Consistency Explorer |
+| **RQ3** | Can analysts query football data in plain English? | **Teem** · chatbot |
+| — | How does data get there? | **Quan** · dbt + Dagster |
 
 ::: {.notes}
-Trilemma had rich StatsBomb data but no scalable way to answer these questions without SQL — this table is our map for the talk. Next: how the data actually moves, starting with dbt.
+Trilemma had rich StatsBomb data but no scalable way to answer these questions without writing complex SQL. This table is our map for the talk — three research questions, each answered by a different part of the product. I'll walk you through how the data gets there first, then hand off to the rest of the team.
 :::
 
 ## Data Pipeline — dbt {.compact}
@@ -66,14 +66,10 @@ Before the results: three ingestion scripts land StatsBomb data in BigQuery. dbt
 Dagster is the scheduler and dependency manager on top of dbt. Think cron, but smarter: it knows ingestion must finish before dbt, clustering before consistency, and shows you a visual graph when something breaks.
 :::
 
-## Key Result — RQ2: Tactical Archetypes
+## RQ1: 5 Tactical Archetypes Found Across 15 Competitions
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Quan):** One cropped screenshot → `assets/key-results-cluster.png`
-
-*Crop tight: archetype labels + counts must be readable from the back of the room*
-:::
+![](assets/looker-cluster-scatter.png)
 :::
 
 ::: {.slide-caption}
@@ -81,17 +77,13 @@ Dagster is the scheduler and dependency manager on top of dbt. Think cron, but s
 :::
 
 ::: {.notes}
-First result — clustering. Crop the Looker scatter so archetype names and player counts are large and legible. Don't show the full dashboard chrome — just the insight.
+Before the deep dives — here's what we found. This scatter is every outfield player-season in our dataset, coloured by archetype. Five distinct playing styles emerge from the data: Creative Wingers on the right, Defensive Anchors at the top, Pressing Forwards in the bottom middle, and Low Activity players on the far left. Li will walk through the methodology and dashboard in detail.
 :::
 
-## Key Result — RQ3: Club vs National Consistency
+## RQ2: Most Players Perform Differently Club vs Nationally
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Quan):** One cropped screenshot → `assets/key-results-consistency.png`
-
-*Crop tight: quadrant labels + example player names readable*
-:::
+![](assets/looker-quadrant-scatter.png)
 :::
 
 ::: {.slide-caption}
@@ -99,17 +91,13 @@ First result — clustering. Crop the Looker scatter so archetype names and play
 :::
 
 ::: {.notes}
-Second result — consistency. Crop the quadrant scatter so axis labels, quadrant names, and a few player names are clearly visible. Rabin will go deeper into this later.
+Second result — consistency scoring. 493 players had enough minutes in both club and international football to compare. We put each player in one of four quadrants based on their performance in each context. Rabin will go deep on the methodology and findings.
 :::
 
-## Key Result — Plain-English Chatbot
+## RQ3: Any Football Question, Answered in Plain English
 
 ::: {.slide-image}
-::: {.placeholder}
-**TODO (Quan):** One screenshot → `assets/key-results-chatbot.png`
-
-*Show the full query + answer — text must be readable*
-:::
+![](assets/chatbot_screenshot.png)
 :::
 
 ::: {.slide-caption}
@@ -117,12 +105,12 @@ Plain English in · answers in \< 10 sec · no SQL
 :::
 
 ::: {.notes}
-Third result — the chatbot answering a real question. Show both the prompt and the response large enough to read. Li will now walk through RQ1 and RQ2 — clustering and the Player Archetypes dashboard.
+Third result — the chatbot. Analysts type a question in plain English, and the system writes the BigQuery SQL, runs it, and returns a formatted answer in under 10 seconds. No SQL knowledge required. Li will now walk through RQ1 — the clustering methodology and player archetypes dashboard.
 :::
 
 ## Clustering Pipeline {.table-md}
 
-**RQ2:** What player archetypes exist across European football?
+**RQ1:** What player archetypes exist across European football?
 
 | Step | Detail |
 |------|--------|
@@ -133,7 +121,7 @@ Third result — the chatbot answering a real question. Show both the prompt and
 | Output | 5 archetypes → `cluster_assignments` → Looker + chatbot |
 
 ::: {.notes}
-For RQ2, we cluster outfield players by playing style. Per-season stats from dbt, 270-minute minimum, goalkeepers excluded, 13 features through PCA and KMeans. Output lands in BigQuery and feeds the dashboard and chatbot.
+For RQ1, we cluster outfield players by playing style. Per-season stats from dbt, 270-minute minimum, goalkeepers excluded, 13 features through PCA and KMeans. Output lands in BigQuery and feeds the dashboard and chatbot.
 :::
 
 ## Cluster Results: 5 Archetypes {.table-lg}
@@ -201,12 +189,12 @@ Top players by archetype · filter by position
 :::
 
 ::: {.notes}
-Looker Page 2 — explorer and top-player tables. We showed how we cluster players into tactical archetypes. Our second objective is consistency scoring — Rabin covers RQ3 next.
+Looker Page 2 — explorer and top-player tables. We showed how we cluster players into tactical archetypes. Our second objective is consistency scoring — Rabin covers RQ2 next.
 :::
 
 ## Consistency: The Question & Pipeline {.mermaid-md}
 
-**RQ3:** Do players perform differently for club vs national team?
+**RQ2:** Do players perform differently for club vs national team?
 
 ```{mermaid}
 %%| fig-width: 10
@@ -222,7 +210,7 @@ flowchart LR
 - Z-scores computed **within each context** (club peers vs club, national vs national)
 
 ::: {.notes}
-We built club-vs-national consistency scoring for RQ3. Trilemma wanted to know whether strong club players show up the same way for their country. dbt builds int_player_club_vs_national, splitting stats by context and z-scoring 13 metrics within each. consistency.py weights z-scores with PCA loadings, computes scores and quadrants, and writes to BigQuery. Only players with 270+ minutes in both contexts qualify — 493 players across 58 countries.
+We built club-vs-national consistency scoring for RQ2. Trilemma wanted to know whether strong club players show up the same way for their country. dbt builds int_player_club_vs_national, splitting stats by context and z-scoring 13 metrics within each. consistency.py weights z-scores with PCA loadings, computes scores and quadrants, and writes to BigQuery. Only players with 270+ minutes in both contexts qualify — 493 players across 58 countries.
 :::
 
 ## Consistency Formulas & Results {.compact}
