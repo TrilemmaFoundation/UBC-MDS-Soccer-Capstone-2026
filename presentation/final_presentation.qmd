@@ -177,7 +177,7 @@ Top players by archetype · filter by player
 :::
 
 ::: {.notes}
-Searching by player shows all seasons for that player. Messi is classified as Creative Winger across most La Liga seasons — consistent with his dribbling and xG profile. This wraps up RQ1 and RQ2 — Rabin covers RQ3 next.
+Searching by player shows all seasons for that player. Messi is classified as Creative Winger across most La Liga seasons — consistent with his dribbling and xG profile. This wraps up RQ1 — Rabin covers RQ2 next.
 :::
 
 ## Consistency: The Question & Pipeline {.mermaid-md}
@@ -325,7 +325,7 @@ End-to-end pipeline: data → serving
 :::
 
 ::: {.notes}
-Thanks Rabin. End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot. Replace this placeholder with a clean architecture diagram or screenshot.
+Thanks Rabin. End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot.
 :::
 
 ## Architecture — Components {.compact}
