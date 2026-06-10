@@ -41,7 +41,7 @@ jobs:
 
       - name: Create PR BigQuery Dataset
         run: |
-          bq mk --dataset ${{ vars.GCP_PROJECT_ID }}:pr_validation_${{ github.event.number }}
+          bq mk --dataset ${{ vars.GCP_PROJECT_ID }}:pr_validation || true
 
       - name: Set up dbt Profiles Directory
         run: |
@@ -54,7 +54,7 @@ jobs:
                 type: bigquery
                 method: oauth
                 project: ${{ vars.GCP_PROJECT_ID }}
-                dataset: pr_validation_${{ github.event.number }}
+                dataset: pr_validation
                 threads: 4
                 timeout_seconds: 300
                 location: US
@@ -78,10 +78,4 @@ jobs:
       # Compiles and validates staging & intermediate models on every PR
       - name: Run dbt Tests
         run: |
-          dbt test --select "path:models/staging path:models/intermediate"
-
-      # Automatically drop the temporary PR schema so BigQuery doesn't stay cluttered
-      - name: Clean Up PR Dataset (Always Runs)
-        if: always()
-        run: |
-          bq rm -r -f -d ${{ vars.GCP_PROJECT_ID }}:pr_validation_${{ github.event.number }}
+          dbt test --select "path:models/staging path:models/intermediate" --exclude "path:models/marts"
