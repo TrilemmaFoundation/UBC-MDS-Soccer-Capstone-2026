@@ -401,7 +401,7 @@ Three known limitations and future work items.
 ## Partner Handover — What Trilemma Gets {.center}
 
 - Fully documented **GitHub repository**
-- Automated CI/CD Pipeline → automated tests + automated deployment
+- **CI/CD Pipeline** → automated tests + automated deployment
 - **Quarto** final report
 - **`HANDOVER.md`** — component runbooks
 - **`docker compose up`** → Django app + Dagster UI
