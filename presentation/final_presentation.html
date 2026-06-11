@@ -6,8 +6,8 @@
 <script src="final_presentation_files/libs/quarto-html/tippy.umd.min.js"></script>
 <link href="final_presentation_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="final_presentation_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="final_presentation_files/libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.8.26">
+<link href="final_presentation_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.7.33">
 
   <meta name="author" content="Ngoc Minh Quan Hoang">
   <meta name="author" content="Li Pu">
@@ -33,7 +33,7 @@
       vertical-align: middle;
     }
   </style>
-  <link rel="stylesheet" href="final_presentation_files/libs/revealjs/dist/theme/quarto-7c226e85007f8652447987f3aa9a36a3.css">
+  <link rel="stylesheet" href="final_presentation_files/libs/revealjs/dist/theme/quarto-da723826c31cfbba1614217de782dc32.css">
   <link href="final_presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="final_presentation_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="final_presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -159,7 +159,7 @@ Rabindranath Duran Pons
 
   <p class="date">June 12, 2026</p>
 </section>
-<section id="trilemma-foundation-our-team" class="slide level2 center">
+<section id="trilemma-foundation-our-team" class="slide level2">
 <h2>Trilemma Foundation &amp; Our Team</h2>
 <p><strong>Partner:</strong> Trilemma Foundation — non-profit advancing <strong>evidence-based football development</strong> worldwide, partnering with clubs, federations, and analysts using StatsBomb event data.</p>
 <table class="caption-top">
@@ -202,7 +202,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="our-dataset-statsbomb-event-data" class="slide level2 compact center">
+<section id="our-dataset-statsbomb-event-data" class="slide level2">
 <h2>Our Dataset — StatsBomb Event Data</h2>
 <ul>
 <li><strong>Source:</strong> StatsBomb open event data — every on-ball action (pass, shot, pressure, dribble, tackle) tracked per match</li>
@@ -659,10 +659,11 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="chatbot-demo" class="slide level2">
-<h2>Chatbot Demo</h2>
+<section id="llm-chatbot" class="slide level2">
+<h2>LLM chatbot</h2>
+<p><strong>RQ3:</strong> Can analysts query football data in plain English?</p>
 <div class="slide-image">
-<p><a href="http://34.11.235.252/"><img data-src="assets/chatbot_screenshot.png"></a></p>
+<p><a href="http://34.11.235.252/"><img data-src="assets/chatbot.gif"></a></p>
 </div>
 <div class="slide-caption">
 <p>Plain-English question → BigQuery SQL → formatted answer</p>
@@ -681,8 +682,8 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="chatbot-how-it-works" class="slide level2 center">
-<h2>Chatbot — How It Works</h2>
+<section id="llm-chatbot-how-it-works" class="slide level2">
+<h2>LLM chatbot — How It Works</h2>
 <ul>
 <li><strong>Engine:</strong> Groq <code>llama-3.3-70b-versatile</code></li>
 <li><strong>Tool-calling:</strong> English → BigQuery SQL → formatted answer</li>
@@ -724,7 +725,30 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="data-transformation-dbt" class="slide level2 compact center">
+<section id="architecture-components" class="slide level2">
+<h2>Architecture — Components</h2>
+<ul>
+<li><strong>Ingestion:</strong> StatsBomb API → Google Cloud Storage (GCS)</li>
+<li><strong>Warehouse:</strong> Centralized in Google BigQuery</li>
+<li><strong>Transformation:</strong> 3-layer dbt architecture</li>
+<li><strong>Machine Learning:</strong> Python scripts for PCA/KMeans and Consistency Scoring</li>
+<li><strong>Serving:</strong> Django web app · Looker Studio dashboard · LLM chatbot</li>
+</ul>
+<aside class="notes">
+<p>5 layers. Quan covered dbt and Dagster earlier — here is how it connects to the products.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="data-transformation-dbt" class="slide level2">
 <h2>Data Transformation — dbt</h2>
 <p><strong>dbt</strong> (data build tool) = <strong>version-controlled SQL with automated testing</strong> — like GitHub Actions for your data warehouse: define each transform as a SQL SELECT, declare dependencies, dbt runs them in order and tests each output.</p>
 <ul>
@@ -763,7 +787,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="pipeline-orchestration-dagster" class="slide level2 compact">
+<section id="pipeline-orchestration-dagster" class="slide level2">
 <h2>Pipeline Orchestration — Dagster</h2>
 <p><strong>Dagster</strong> = <strong>automated scheduler + dependency graph</strong> — like GitHub Actions job order for data: knows what must run before what, and surfaces failures visually.</p>
 <div class="columns">
@@ -794,7 +818,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="limitations-future-scope" class="slide level2 compact center">
+<section id="limitations-future-scope" class="slide level2">
 <h2>Limitations &amp; Future Scope</h2>
 <ul>
 <li><strong>Goalkeeper Filter</strong> — excluded from PCA clustering (<code>cluster = -1</code>, archetype = “Goalkeeper”)</li>
@@ -816,7 +840,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="partner-handover-what-trilemma-gets" class="slide level2 center">
+<section id="partner-handover-what-trilemma-gets" class="slide level2">
 <h2>Partner Handover — What Trilemma Gets</h2>
 <ul>
 <li>Fully documented <strong>GitHub repository</strong></li>
@@ -1067,7 +1091,7 @@ Rabindranath Duran Pons
         margin: 0.1,
 
         math: {
-          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js',
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
           config: 'TeX-AMS_HTML-full',
           tex2jax: {
             inlineMath: [['\\(','\\)']],
@@ -1141,14 +1165,13 @@ Rabindranath Duran Pons
           e.clearSelection();
         }
         const getTextToCopy = function(trigger) {
-          const outerScaffold = trigger.parentElement.cloneNode(true);
-          const codeEl = outerScaffold.querySelector('code');
-          for (const childEl of codeEl.children) {
-            if (isCodeAnnotation(childEl)) {
-              childEl.remove();
+            const codeEl = trigger.previousElementSibling.cloneNode(true);
+            for (const childEl of codeEl.children) {
+              if (isCodeAnnotation(childEl)) {
+                childEl.remove();
+              }
             }
-          }
-          return codeEl.innerText;
+            return codeEl.innerText;
         }
         const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
           text: getTextToCopy
