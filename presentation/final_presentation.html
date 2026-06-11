@@ -6,8 +6,8 @@
 <script src="final_presentation_files/libs/quarto-html/tippy.umd.min.js"></script>
 <link href="final_presentation_files/libs/quarto-html/tippy.css" rel="stylesheet">
 <link href="final_presentation_files/libs/quarto-html/light-border.css" rel="stylesheet">
-<link href="final_presentation_files/libs/quarto-html/quarto-syntax-highlighting-ea385d0e468b0dd5ea5bf0780b1290d9.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
-  <meta name="generator" content="quarto-1.7.33">
+<link href="final_presentation_files/libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.8.26">
 
   <meta name="author" content="Ngoc Minh Quan Hoang">
   <meta name="author" content="Li Pu">
@@ -33,7 +33,7 @@
       vertical-align: middle;
     }
   </style>
-  <link rel="stylesheet" href="final_presentation_files/libs/revealjs/dist/theme/quarto-da723826c31cfbba1614217de782dc32.css">
+  <link rel="stylesheet" href="final_presentation_files/libs/revealjs/dist/theme/quarto-7c226e85007f8652447987f3aa9a36a3.css">
   <link href="final_presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
   <link href="final_presentation_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
   <link href="final_presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
@@ -386,7 +386,7 @@ Rabindranath Duran Pons
 <p><strong>13 per-90 features:</strong> goals · xG · shots · passes · key passes · dribbles completed · pressures · tackles · interceptions · clearances · blocks · carries · aerial duels won</p>
 </div>
 <aside class="notes">
-<p>13 per-90 metrics listed at the bottom. These capture attacking output, defensive contribution, and ball-carrying. Median imputation handles missing values, then scale, PCA, and KMeans k=5.</p>
+<p>Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt’s intermediate layer — only outfield players with at least 270 minutes played, which filters out players with too few appearances to be statistically meaningful. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output — cluster assignments for every player-season — lands in BigQuery and feeds both the dashboard and the chatbot.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -433,7 +433,7 @@ Rabindranath Duran Pons
 </tbody>
 </table>
 <aside class="notes">
-<p>Five interpretable archetypes. The x_ prefix in our dbt intermediate layer marks per-90 transformed columns. Goalkeepers get cluster = -1 — excluded from the main five.</p>
+<p>KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely and assigned a separate label directly from their position — their statistical profile is fundamentally different from outfield players.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -455,7 +455,7 @@ Rabindranath Duran Pons
 <p>PC1 = overall activity level (left = low, right = high) · PC2 = defensive vs attacking profile (top = defensive) · colour = archetype</p>
 </div>
 <aside class="notes">
-<p>Same scatter as the teaser — but now with context on the axes. PC1 captures how involved a player is per 90. PC2 separates defensive from attacking profiles. The 5 clusters are well-separated, validating k=5.</p>
+<p>This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 on the horizontal axis captures overall activity level — players on the right are more active. PC2 on the vertical axis separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, which validates that our features and k=5 choice are capturing real tactical differences.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -477,7 +477,7 @@ Rabindranath Duran Pons
 <p>5,759 player-seasons · 15 competitions · Low Activity and Defensive Anchor are the largest groups · filter by archetype, year, or competition</p>
 </div>
 <aside class="notes">
-<p>The Player Archetype Explorer in Looker Studio. Analysts can filter by archetype, competition, or season. Low Activity and Defensive Anchor are the two largest groups — consistent with football’s positional mix.</p>
+<p>This is the Player Archetype Explorer in Looker Studio. Across 5,759 player-seasons from 15 competitions, Low Activity and Defensive Anchor are the two largest groups — consistent with football’s positional mix. Analysts can filter by archetype, competition, or year to explore how the distribution shifts across different leagues and seasons.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -505,7 +505,7 @@ Rabindranath Duran Pons
 </ul>
 </div></div>
 <aside class="notes">
-<p>The practical application. The clustering turns a descriptive finding into a decision tool — which positions does a team lack? Which players fit a specific tactical role? The dashboard makes this self-serve for Trilemma’s analysts. Rabin now covers RQ2.</p>
+<p>The explorer also supports player-level search. Here we’ve filtered to Messi — across 21 seasons he is consistently classified as Creative Winger, which aligns with his dribbling and xG profile. But there’s one outlier season where he’s classified as Pressing Forward — showing that even the same player can shift archetypes depending on how their role evolves. Any analyst can search any player to see their full archetype history. That wraps up RQ1 — Rabin will now cover RQ2, club vs national consistency.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -1067,7 +1067,7 @@ Rabindranath Duran Pons
         margin: 0.1,
 
         math: {
-          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.9/MathJax.js',
+          mathjax: 'https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js',
           config: 'TeX-AMS_HTML-full',
           tex2jax: {
             inlineMath: [['\\(','\\)']],
@@ -1141,13 +1141,14 @@ Rabindranath Duran Pons
           e.clearSelection();
         }
         const getTextToCopy = function(trigger) {
-            const codeEl = trigger.previousElementSibling.cloneNode(true);
-            for (const childEl of codeEl.children) {
-              if (isCodeAnnotation(childEl)) {
-                childEl.remove();
-              }
+          const outerScaffold = trigger.parentElement.cloneNode(true);
+          const codeEl = outerScaffold.querySelector('code');
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
             }
-            return codeEl.innerText;
+          }
+          return codeEl.innerText;
         }
         const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
           text: getTextToCopy
