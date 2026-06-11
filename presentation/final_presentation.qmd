@@ -24,47 +24,45 @@ format:
     center: false
 ---
 
-## Problem & Roadmap
+## Trilemma Foundation & Our Team {.center}
 
-**The gap:** StatsBomb event data exists, but analysts need complex SQL to use it.
+**Partner:** Trilemma Foundation — non-profit advancing **evidence-based football development** worldwide, partnering with clubs, federations, and analysts using StatsBomb event data.
 
-| RQ | Question | Who |
-|----|----------|-----|
-| **RQ1** | What tactical archetypes exist across competitions? | **Li** · clustering + dashboard |
-| **RQ2** | Do players perform consistently club vs nationally? | **Rabin** · Consistency Explorer |
-| **RQ3** | Can analysts query football data in plain English? | **Teem** · chatbot |
-| — | How does data get there? | **Quan** · dbt + Dagster |
+| Name | Role |
+|------|------|
+| **Quan Hoang** | Data pipeline · dbt + Dagster |
+| **Li Pu** | RQ1 · Player archetypes · Clustering |
+| **Rabin Duran** | RQ2 · Consistency scoring · Explorer |
+| **Teem Kwong** | RQ3 · Natural language chatbot |
 
 ::: {.notes}
-Trilemma had rich StatsBomb data but no scalable way to answer these questions without writing complex SQL. This table is our map for the talk — three research questions, each answered by a different part of the product. I'll walk you through how the data gets there first, then hand off to the rest of the team.
+Our team of four, each owning one research question and one deliverable. Trilemma Foundation is our industry partner — they work in football analytics and came to us with a data access problem.
 :::
 
-## Data Pipeline — dbt {.compact .center}
+## Our Dataset — StatsBomb Event Data {.compact .center}
 
-StatsBomb API → GCS → BigQuery → **dbt** (3 layers) → chatbot + dashboard
-
-- **Staging** — type casts only, 1:1 mirror
-- **Intermediate** — 270-min filter, per-90 metrics, men's only
-- **Marts** — ML outputs joined in
-
-**dbt** = **Makefile + git for SQL** — version-controlled `SELECT`s with tests.
-
-*Orchestrated by **Dagster** — next slide.*
+- **Source:** StatsBomb open event data — every on-ball action (pass, shot, pressure, dribble, tackle) tracked per match
+- **Scale:** 15 competitions · ~3.5 M events · 5,800+ player-seasons across multiple seasons of La Liga, Premier League, Champions League, Bundesliga, and more
+- **Aggregation for ML:** player-season level · filtered to **≥ 270 minutes** (~3 full matches) to ensure statistically reliable samples
+- **Scope:** men's competitions only · goalkeepers excluded from archetype clustering
 
 ::: {.notes}
-Before the results: three ingestion scripts land StatsBomb data in BigQuery. dbt transforms it in three layers. If you've used Make or GitHub Actions, dbt is the same idea — define steps, declare dependencies, run tests. Dagster runs the whole thing automatically.
+StatsBomb is the gold standard for granular football event data. We aggregate to player-season level for ML — the 270-minute threshold ensures we're not clustering players on a handful of matches. Men's competitions only for consistency; extending to women's football is a noted future step.
 :::
 
-## Pipeline Orchestration — Dagster {.center}
+## Problem & Research Questions
 
-**Dagster** = **cron + Makefile dependency graph** (like GitHub Actions job order)
+**The gap:** StatsBomb event data exists, but analysts need complex SQL to extract meaning.
 
-- **Weekly** — full pipeline, Monday 6:00 AM UTC
-- **Hourly sensor** — new GCS file → dbt + ML + marts only
-- Hands-off for Trilemma — no manual runs
+| RQ | Question | Who | Product |
+|----|----------|-----|---------|
+| **RQ1** | What tactical archetypes exist across competitions? | **Li** | Clustering + Looker dashboard |
+| **RQ2** | Do players perform consistently club vs nationally? | **Rabin** | Consistency Explorer |
+| **RQ3** | Can analysts query football data in plain English? | **Teem** | LLM chatbot |
+| — | How does data get there automatically? | **Quan** | dbt + Dagster pipeline |
 
 ::: {.notes}
-Dagster is the scheduler and dependency manager on top of dbt. Think cron, but smarter: it knows ingestion must finish before dbt, clustering before consistency, and shows you a visual graph when something breaks.
+Three research questions, one shared automated pipeline. I'll preview the headline result from each, then hand off to each person for the methodology deep-dive. I'll cover the pipeline at the end.
 :::
 
 ## RQ1: 5 Tactical Archetypes Found Across 15 Competitions
@@ -74,11 +72,11 @@ Dagster is the scheduler and dependency manager on top of dbt. Think cron, but s
 :::
 
 ::: {.slide-caption}
-5 archetypes · 5,800+ player-seasons · 15 competitions
+PCA scatter — 5 archetypes · 5,800+ player-seasons · 15 competitions · Li walks through the methodology
 :::
 
 ::: {.notes}
-Before the deep dives — here's what we found. This scatter is every outfield player-season in our dataset, coloured by archetype. Five distinct playing styles emerge from the data: Creative Wingers on the right, Defensive Anchors at the top, Pressing Forwards in the bottom middle, and Low Activity players on the far left. Li will walk through the methodology and dashboard in detail.
+Five distinct playing styles emerge from the data — data-driven labels, not hand-crafted categories. Li will cover the methodology and dashboard.
 :::
 
 ## RQ2: Most Players Perform Differently Club vs Nationally
@@ -88,11 +86,11 @@ Before the deep dives — here's what we found. This scatter is every outfield p
 :::
 
 ::: {.slide-caption}
-493 players · Elite · Club Specialist · International Specialist · Underperformer
+Performance score = weighted sum of Z-scores across 13 per-90 metrics · 493 players · 4 quadrants · Rabin covers the method
 :::
 
 ::: {.notes}
-Second result — consistency scoring. 493 players had enough minutes in both club and international football to compare. We put each player in one of four quadrants based on their performance in each context. Rabin will go deep on the methodology and findings.
+493 players had enough minutes in both contexts. The axes are performance scores — how a player compares to peers within that specific context, not raw stats. Rabin explains the scoring model.
 :::
 
 ## RQ3: Any Football Question, Answered in Plain English
@@ -102,14 +100,14 @@ Second result — consistency scoring. 493 players had enough minutes in both cl
 :::
 
 ::: {.slide-caption}
-Plain English in · answers in < 10 sec · no SQL
+Plain English → BigQuery SQL → formatted answer · under 10 sec · no SQL required · Teem demos live
 :::
 
 ::: {.notes}
-Third result — the chatbot. Analysts type a question in plain English, and the system writes the BigQuery SQL, runs it, and returns a formatted answer in under 10 seconds. No SQL knowledge required. Li will now walk through RQ1 — the clustering methodology and player archetypes dashboard.
+Type any football question in plain English, get an answer in under 10 seconds. No SQL knowledge needed. Teem demos this live shortly.
 :::
 
-## Clustering Pipeline
+## Clustering Pipeline {.compact}
 
 **RQ1:** What player archetypes exist across European football?
 
@@ -117,40 +115,46 @@ Third result — the chatbot. Analysts type a question in plain English, and the
 |------|--------|
 | Input | `int_player_season_stats` from dbt |
 | Filter | ≥ 270 min · goalkeepers excluded |
-| Features | 13 per-90 metrics (xG, passes, pressures, …) |
+| Features | 13 per-90 metrics — see below |
 | Model | Median impute · clip outliers · Scaler → PCA → KMeans k=5 |
 | Output | 5 archetypes → `cluster_assignments` → Looker + chatbot |
 
-::: {.notes}
-Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt's intermediate layer — only outfield players with at least 270 minutes played. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output lands in BigQuery and feeds both the dashboard and the chatbot.
+::: {style="font-size:0.62em; color:#5E7A8A; margin-top:0.5em; line-height:1.5;"}
+**13 per-90 features:** goals · xG · shots · passes · key passes · dribbles completed · pressures · tackles · interceptions · clearances · blocks · carries · aerial duels won
 :::
 
-## Cluster Results: 5 Archetypes
-
-| Archetype | Style |
-|-----------|-------|
-| **Creative Winger** | xG, dribbles, att. third passes |
-| **Creative Playmaker** | Passes, carries, chance creation |
-| **Pressing Forward** | Pressures, shots, defensive actions |
-| **Defensive Anchor** | Interceptions, clearances, blocks |
-| **Low Activity** | Below-cohort activity |
-
 ::: {.notes}
-KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely.
+13 per-90 metrics listed at the bottom. These capture attacking output, defensive contribution, and ball-carrying. Median imputation handles missing values, then scale, PCA, and KMeans k=5.
 :::
 
-## Cluster Scatter — Looker Studio
+## Cluster Results: 5 Archetypes {.compact}
+
+Per-90 metrics are prefixed `x_` in the dbt model (e.g. `x_goals`, `x_passes`, `x_pressures`).
+
+| Archetype | Defining `x_` features |
+|-----------|------------------------|
+| **Creative Winger** | `x_xg`, `x_dribbles`, `x_passes` (att. third) |
+| **Creative Playmaker** | `x_passes`, `x_carries`, `x_key_passes` |
+| **Pressing Forward** | `x_pressures`, `x_shots`, `x_tackles` |
+| **Defensive Anchor** | `x_interceptions`, `x_clearances`, `x_blocks` |
+| **Low Activity** | Below-cohort average across most features |
+
+::: {.notes}
+Five interpretable archetypes. The x_ prefix in our dbt intermediate layer marks per-90 transformed columns. Goalkeepers get cluster = -1 — excluded from the main five.
+:::
+
+## Cluster Scatter — What the Plot Shows
 
 ::: {.slide-image}
 ![](assets/looker-cluster-scatter.png)
 :::
 
 ::: {.slide-caption}
-PCA scatter · 5,759 player-seasons · 5 archetypes · PC1 = activity level · PC2 = attacking vs defensive profile
+PC1 = overall activity level (left = low, right = high) · PC2 = defensive vs attacking profile (top = defensive) · colour = archetype
 :::
 
 ::: {.notes}
-This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 captures overall activity level. PC2 separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, validating our k=5 choice.
+Same scatter as the teaser — but now with context on the axes. PC1 captures how involved a player is per 90. PC2 separates defensive from attacking profiles. The 5 clusters are well-separated, validating k=5.
 :::
 
 ## Player Archetypes Dashboard — Overview
@@ -164,21 +168,31 @@ This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 c
 :::
 
 ::: {.notes}
-This is the Player Archetype Explorer in Looker Studio. Low Activity and Defensive Anchor are the two largest groups. Analysts can filter by archetype, competition, or year.
+The Player Archetype Explorer in Looker Studio. Analysts can filter by archetype, competition, or season. Low Activity and Defensive Anchor are the two largest groups — consistent with football's positional mix.
 :::
 
-## Player Archetypes Dashboard — Explorer
+## Player Archetypes Dashboard — Explorer {.compact}
 
-::: {.slide-image}
-![](assets/looker-cluster-page2.png)
+:::: {.columns}
+
+::: {.column width="62%"}
+![](assets/looker-cluster-page2.png){style="max-height: 54vh; width: auto; display: block; margin: 0 auto; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.10);"}
 :::
 
-::: {.slide-caption}
-Messi classified as Creative Winger across 22 La Liga seasons · search any player to see their archetype history
+::: {.column width="38%"}
+*Messi: Creative Winger across 22 La Liga seasons*
+
+**What Trilemma can do with this:**
+
+- **Scouting** — filter by archetype to find undervalued players in lower-budget leagues
+- **Squad balance** — check archetype mix before a transfer window
+- **Player tracking** — monitor how a player's style evolves across seasons
 :::
+
+::::
 
 ::: {.notes}
-The explorer also supports player-level search. Here we've filtered to Messi — consistently classified as Creative Winger across 22 La Liga seasons. That wraps up RQ1 — Rabin will now cover RQ2.
+The practical application. The clustering turns a descriptive finding into a decision tool — which positions does a team lack? Which players fit a specific tactical role? The dashboard makes this self-serve for Trilemma's analysts. Rabin now covers RQ2.
 :::
 
 ## Consistency: The Question & Pipeline
@@ -191,177 +205,85 @@ The explorer also supports player-level search. Here we've filtered to Messi —
 </div>
 ```
 
-- **Eligibility:** ≥ 270 minutes in **both** contexts (~3 full matches)
+- **Eligibility:** ≥ 270 minutes in **both** contexts (~3 full matches each)
 - **Cohort:** 493 dual-context players across **58 countries**
-- Z-scores computed **within each context** (club peers vs club, national vs national)
+- **Method:** Z-scores computed **within each context** separately — club peers vs club, national vs national
 
 ::: {.notes}
-We built club-vs-national consistency scoring for RQ2. dbt builds int_player_club_vs_national, splitting stats by context and z-scoring 13 metrics within each. consistency.py weights z-scores with PCA loadings, computes scores and quadrants, and writes to BigQuery. Only players with 270+ minutes in both contexts qualify — 493 players across 58 countries.
+dbt builds int_player_club_vs_national, splitting statistics by context. 270+ minutes in both contexts gives us 493 players across 58 countries. Z-scores are calculated within each context so we compare apples to apples.
 :::
 
 ## Consistency Formulas & Results {.compact}
 
-**Formulas**
+**Z-score standardisation (within each context):**
 
-1. $z = (x - \mu_{\text{context}}) / \sigma_{\text{context}}$ within each context
-2. **Performance score** = Σ (z × PCA weight) — club & national axes on scatter plot
-3. **Consistency score** = $1 - \text{mean}(|z_{\text{club}} - z_{\text{nat}}|)$ — profile similarity, not quality
+$$Z\text{-score} = \frac{x - \mu_{\text{context}}}{\sigma_{\text{context}}}$$
 
-**Results**
+**Performance score** = Σ (Z-score × PCA weight) — club & national axes on the scatter
 
-- **493 players** · **58 countries** · ~25% per quadrant
-- **Most consistent** → profile barely changes between contexts
-- **Germany** leads national score · **Sweden** lowest in cohort
+**Consistency score** = $1 - \text{mean}(|Z_{\text{club}} - Z_{\text{national}}|)$ — profile similarity, not quality level
+
+**Results:** 493 players · 58 countries · ~25% per quadrant · **Germany** leads national score · **Sweden** lowest in cohort
 
 ::: {.notes}
-Three metrics: performance scores are the scatter axes; consistency measures profile similarity across contexts, not quality. 493 dual-context players, roughly even quadrant split, Germany leads on national performance.
+Three metrics. Performance scores give the X and Y axes. Consistency score measures how similar a player's profile is across the two contexts — a player can be consistently mediocre or consistently elite.
 :::
 
 ## Quadrant Definitions
 
-Split cohort at **medians** of club & national performance (~25% each)
+Split cohort at **medians** of club and national performance score (~25% each)
 
-| Quadrant | Rule |
-|----------|------|
-| **Elite** | ≥ median in **both** contexts |
-| **Club Specialist** | Club ≥ median, national < median |
-| **International Specialist** | Club < median, national ≥ median |
-| **Underperformer** | Below median in both |
-
-::: {.notes}
-Quadrants split at medians. Next slides show this in Looker — one screenshot per page.
-:::
-
-## Consistency Explorer — Overview
-
-::: {.slide-image}
-![](assets/looker-consistency-p1.png)
-:::
+| Quadrant | Definition |
+|----------|------------|
+| **Elite** | ≥ median performance in **both** contexts |
+| **Club Specialist** | Club ≥ median · national < median |
+| **International Specialist** | Club < median · national ≥ median |
+| **Underperformer** | Below median in both contexts |
 
 ::: {.notes}
-Page 1 — coverage and cohort size. 493 players and 58 countries.
+Quadrants are defined at the medians of club and national performance scores so each group has roughly equal size. The key insight is which quadrant a specific player or national squad falls into.
 :::
 
 ## Consistency Explorer — Quadrant View
+
+**RQ2:** Club score (x) vs national score (y) — each point = one player
 
 ::: {.slide-image}
 ![](assets/looker-quadrant-scatter.png)
 :::
 
-::: {.notes}
-Page 2 — the core scatter. Quadrant labels, axis titles, and a few player names must be readable from the back.
-:::
-
-## Consistency Explorer — Country Rankings
-
-::: {.slide-image}
-![](assets/looker-consistency-p2.png)
-:::
-
-::: {.notes}
-Page 3 — Germany leads in our cohort. Everything in Looker is also queryable through our chatbot — Teem covers that next.
-:::
-
-## System Architecture — Data to Serving
-
-```{=html}
-<div class="arch-diagram" style="font-size:0.95em; margin-top:0.9em; margin-bottom:1.1em;">
-
-  <div class="arch-row">
-    <span class="arch-node orange">StatsBomb API</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node blue">GCS</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node blue">BigQuery</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node green bold-italic">dbt</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node green">ML Scripts</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node purple">Django</span>
-  </div>
-
-  <div style="display:flex; flex-direction:column; align-items:center; margin-top:0.1em;">
-    <svg width="360" height="42" style="overflow:visible; display:block;">
-      <line x1="180" y1="0"  x2="180" y2="14" stroke="#90A4AE" stroke-width="1.5"/>
-      <line x1="90"  y1="14" x2="270" y2="14" stroke="#90A4AE" stroke-width="1.5"/>
-      <line x1="90"  y1="14" x2="90"  y2="42" stroke="#90A4AE" stroke-width="1.5"/>
-      <line x1="270" y1="14" x2="270" y2="42" stroke="#90A4AE" stroke-width="1.5"/>
-    </svg>
-    <div style="display:flex; gap:5.5em; margin-top:0;">
-      <span class="arch-node purple">Looker Studio</span>
-      <span class="arch-node purple">Chatbot / Groq</span>
-    </div>
-  </div>
-
-</div>
-```
-
 ::: {.slide-caption}
-StatsBomb → GCS → BigQuery → dbt → ML → Django (GCE) → Looker · Chatbot
+X-axis = club performance score · Y-axis = national performance score · quadrants split at medians · 493 players
 :::
 
 ::: {.notes}
-End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot. All compute runs on Google Compute Engine.
+The core scatter. Call out specific players in each quadrant during the demo if possible — it makes the quadrant system concrete for the audience.
 :::
 
-## Architecture — Components {.compact .center}
+## Consistency Explorer — Country Rankings {.compact}
 
-- **Ingestion:** StatsBomb API → Google Cloud Storage (GCS)
-- **Warehouse:** Centralized in Google BigQuery
-- **Transformation:** 3-layer dbt architecture
-- **Machine Learning:** Python scripts for PCA/KMeans and Consistency Scoring
-- **Serving:** Django web app · Looker Studio dashboard · LLM chatbot
+**RQ2:** National performance score by country
+
+:::: {.columns}
+
+::: {.column width="60%"}
+![](assets/looker-consistency-p2.png){style="max-height: 54vh; width: auto; display: block; margin: 0 auto; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.10);"}
+:::
+
+::: {.column width="40%"}
+*Germany leads · Sweden lowest · bar chart scaled to full range*
+
+**What Trilemma can do with this:**
+
+- **National selectors** — target International Specialists who outperform for country
+- **Club recruitment** — Club Specialists may be undervalued on the transfer market
+- **Next step** — extend to women's football; broaden international competition coverage
+:::
+
+::::
 
 ::: {.notes}
-Four layers. Quan covered dbt and Dagster earlier — here is how it connects to the products.
-:::
-
-## dbt Layers (Detail)
-
-```{=html}
-<div style="display:flex; align-items:center; justify-content:center; margin-top:1.4em; gap:0.5em; font-size:0.92em; font-family:'Calibri','Segoe UI',Arial,sans-serif;">
-  <span class="arch-node orange">raw_statsbomb</span>
-  <span class="arch-arrow">→</span>
-  <span class="arch-node blue">staging</span>
-  <span class="arch-arrow">→</span>
-  <span class="arch-node blue">intermediate</span>
-  <svg width="52" height="110" viewBox="0 0 52 110" style="flex-shrink:0; overflow:visible;">
-    <line x1="0"  y1="55" x2="22" y2="55" stroke="#90A4AE" stroke-width="1.5"/>
-    <line x1="22" y1="24" x2="22" y2="86" stroke="#90A4AE" stroke-width="1.5"/>
-    <line x1="22" y1="24" x2="52" y2="24" stroke="#90A4AE" stroke-width="1.5"/>
-    <line x1="22" y1="86" x2="52" y2="86" stroke="#90A4AE" stroke-width="1.5"/>
-  </svg>
-  <div style="display:flex; flex-direction:column; gap:0.9em; align-items:flex-start;">
-    <span class="arch-node green"><b>marts</b></span>
-    <span class="arch-node green"><b><i>ML models</i></b></span>
-  </div>
-</div>
-```
-
-- **Staging** — 3 models · type casts only, 1:1 mirror
-- **Intermediate** — 7 models · 270-min filter, per-90 metrics, men's only
-- **Marts** — 5 models · joined for Looker + chatbot
-- **ML models** — 2 models · cluster assignments + consistency scores
-
-::: {.notes}
-Three-layer dbt architecture. Staging cleans data types. Intermediate aggregates per-90 metrics, applies the 270-minute threshold, and scopes to men's competitions. Marts joins ML cluster assignments, producing the clean tables that Looker and the chatbot read from.
-:::
-
-## Dagster Asset Graph
-
-::: {.slide-image}
-![](assets/dagster.svg)
-:::
-
-::: {.slide-caption}
-Asset graph · ingestion → dbt → ML → marts
-:::
-
-- **Asset graph** — run in order: Ingestion → dbt → ML → mart refresh
-
-::: {.notes}
-Dagster asset graph screenshot. Quan already defined Dagster — here we show what it looks like in practice.
+Country-level aggregation. Germany leads in our cohort. Note: make sure the bottom chart is scaled to the full data range before presenting. Teem now covers RQ3.
 :::
 
 ## Chatbot Demo
@@ -371,11 +293,11 @@ Dagster asset graph screenshot. Quan already defined Dagster — here we show wh
 :::
 
 ::: {.slide-caption}
-Plain-English question → BigQuery answer
+Plain-English question → BigQuery SQL → formatted answer
 :::
 
 ::: {.notes}
-Chatbot in action. Show a real tactical question and the formatted response.
+Chatbot in action. Show a real tactical question and the formatted response. Advanced mode shows the generated SQL for analysts who want to verify.
 :::
 
 ## Chatbot — How It Works {.center}
@@ -385,29 +307,103 @@ Chatbot in action. Show a real tactical question and the formatted response.
 - **Advanced mode:** shows generated SQL for debugging
 
 ::: {.notes}
-Django + Groq tool-calling loop. Security layer blocks anything that isn't a SELECT. Advanced mode lets analysts verify the SQL.
+Django + Groq tool-calling loop. The chatbot democratises data access — right now single-step queries, next iteration could chain multiple reasoning steps.
+:::
+
+## System Architecture — End to End
+
+::: {.slide-image}
+![](assets/architecture.png)
+:::
+
+::: {.slide-caption}
+StatsBomb API → GCS → BigQuery → Dagster (dbt + ML) → Django (GCE) → Looker Studio · Chatbot
+:::
+
+::: {.notes}
+End-to-end architecture. StatsBomb data lands in Google Cloud Storage, then BigQuery. Dagster orchestrates dbt and ML scripts. Django on Google Compute Engine serves both the Looker embedded dashboard and the chatbot.
+:::
+
+## Data Transformation — dbt {.compact .center}
+
+**dbt** (data build tool) = **version-controlled SQL with automated testing** — like GitHub Actions for your data warehouse: define each transform as a SQL SELECT, declare dependencies, dbt runs them in order and tests each output.
+
+- **Staging** — 3 models · type casts only · 1:1 mirror of raw StatsBomb tables
+- **Intermediate** — 7 models · 270-min filter · compute `x_*` per-90 metrics · men's competitions only
+- **Marts** — 5 models · join ML outputs (cluster assignments + consistency scores) · final tables for Looker + chatbot
+
+```{=html}
+<div style="display:flex; align-items:center; justify-content:center; margin-top:0.8em; gap:0.5em; font-size:0.88em; font-family:'Calibri','Segoe UI',Arial,sans-serif;">
+  <span class="arch-node orange">raw_statsbomb</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">staging</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">intermediate</span>
+  <svg width="52" height="90" viewBox="0 0 52 90" style="flex-shrink:0; overflow:visible;">
+    <line x1="0"  y1="45" x2="22" y2="45" stroke="#90A4AE" stroke-width="1.5"/>
+    <line x1="22" y1="18" x2="22" y2="72" stroke="#90A4AE" stroke-width="1.5"/>
+    <line x1="22" y1="18" x2="52" y2="18" stroke="#90A4AE" stroke-width="1.5"/>
+    <line x1="22" y1="72" x2="52" y2="72" stroke="#90A4AE" stroke-width="1.5"/>
+  </svg>
+  <div style="display:flex; flex-direction:column; gap:0.7em; align-items:flex-start;">
+    <span class="arch-node green"><b>marts</b></span>
+    <span class="arch-node green"><b><i>ML models</i></b></span>
+  </div>
+</div>
+```
+
+::: {.notes}
+dbt lets us write modular, testable SQL. Every model has automated schema tests. The x_ prefix in intermediate marks per-90 computed columns. If a test fails, Dagster catches it before bad data reaches the dashboard.
+:::
+
+## Pipeline Orchestration — Dagster {.compact}
+
+**Dagster** = **automated scheduler + dependency graph** — like GitHub Actions job order for data: knows what must run before what, and surfaces failures visually.
+
+:::: {.columns}
+
+::: {.column width="38%"}
+- **Weekly schedule** — full pipeline every Monday 6:00 AM UTC
+- **Hourly sensor** — new GCS file → dbt + ML only (skips re-ingestion)
+- **Zero manual runs** — fully hands-off for Trilemma after handover
+- **Asset graph** — every step tracked; failures surface immediately with clear error messages
+:::
+
+::: {.column width="62%"}
+![](assets/dagster.svg){width="100%"}
+
+::: {.slide-caption}
+Asset graph · ingestion → dbt → ML → marts
+:::
+:::
+
+::::
+
+::: {.notes}
+Dagster is what makes the pipeline production-grade. Without it, someone would need to manually trigger each step in the right order. Each node in the asset graph is a dbt model or ML script. If ingestion fails, everything downstream is automatically skipped with a clear error.
 :::
 
 ## Limitations & Future Scope {.compact .center}
 
-- **Goalkeeper Filter** — excluded from PCA clustering (`cluster = -1`, archetype Goalkeeper)
-- **Data Asymmetry** — open-source event data is inherently incomplete and unbalanced; match volume varies
-- **Women's football** — men's filter at intermediate layer; needs parallel dbt models
+- **Goalkeeper Filter** — excluded from PCA clustering (`cluster = -1`, archetype = "Goalkeeper")
+- **Data Asymmetry** — open-source StatsBomb data is inherently unbalanced; match volume varies by competition and season
+- **Women's football** — intermediate layer filters to men's competitions; extending requires parallel dbt models
+- **Chatbot scope** — single-step queries only; complex multi-step reasoning not yet supported
 
 ::: {.notes}
-Three known limitations and future work items.
+Four honest limitations. Goalkeepers are methodologically excluded. Data coverage isn't uniform. Women's football needs a separate dbt branch. The chatbot handles well-formed single questions but can't yet chain reasoning steps.
 :::
 
 ## Partner Handover — What Trilemma Gets {.center}
 
 - Fully documented **GitHub repository**
 - **CI/CD Pipeline** → automated tests + automated deployment
-- **Quarto** final report
-- **`HANDOVER.md`** — component runbooks
-- **`docker compose up`** → Django app + Dagster UI
+- **Quarto** final report with methodology documentation
+- **`HANDOVER.md`** — component-level runbooks for each service
+- **`docker compose up`** → spins up Django app + Dagster UI locally
 
 ::: {.notes}
-What the partner receives.
+What the partner receives. The goal is that any new developer at Trilemma can pick up any component independently without reading the whole codebase.
 :::
 
 ## Partner Handover
@@ -417,7 +413,7 @@ What the partner receives.
 :::
 
 ::: {.notes}
-Screenshot of HANDOVER.md or README so the audience sees the partner can run this themselves. That concludes our presentation — we'll open the floor to questions.
+The HANDOVER.md structure — one section per component. That concludes our presentation — we'll open the floor to questions.
 :::
 
 ## Thank You {.title-slide}

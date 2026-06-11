@@ -159,93 +159,118 @@ Rabindranath Duran Pons
 
   <p class="date">June 12, 2026</p>
 </section>
-<section id="problem-roadmap" class="slide level2">
-<h2>Problem &amp; Roadmap</h2>
-<p><strong>The gap:</strong> StatsBomb event data exists, but analysts need complex SQL to use it.</p>
+<section id="trilemma-foundation-our-team" class="slide level2 center">
+<h2>Trilemma Foundation &amp; Our Team</h2>
+<p><strong>Partner:</strong> Trilemma Foundation — non-profit advancing <strong>evidence-based football development</strong> worldwide, partnering with clubs, federations, and analysts using StatsBomb event data.</p>
+<table class="caption-top">
+<thead>
+<tr class="header">
+<th>Name</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Quan Hoang</strong></td>
+<td>Data pipeline · dbt + Dagster</td>
+</tr>
+<tr class="even">
+<td><strong>Li Pu</strong></td>
+<td>RQ1 · Player archetypes · Clustering</td>
+</tr>
+<tr class="odd">
+<td><strong>Rabin Duran</strong></td>
+<td>RQ2 · Consistency scoring · Explorer</td>
+</tr>
+<tr class="even">
+<td><strong>Teem Kwong</strong></td>
+<td>RQ3 · Natural language chatbot</td>
+</tr>
+</tbody>
+</table>
+<aside class="notes">
+<p>Our team of four, each owning one research question and one deliverable. Trilemma Foundation is our industry partner — they work in football analytics and came to us with a data access problem.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="our-dataset-statsbomb-event-data" class="slide level2 compact center">
+<h2>Our Dataset — StatsBomb Event Data</h2>
+<ul>
+<li><strong>Source:</strong> StatsBomb open event data — every on-ball action (pass, shot, pressure, dribble, tackle) tracked per match</li>
+<li><strong>Scale:</strong> 15 competitions · ~3.5 M events · 5,800+ player-seasons across multiple seasons of La Liga, Premier League, Champions League, Bundesliga, and more</li>
+<li><strong>Aggregation for ML:</strong> player-season level · filtered to <strong>≥ 270 minutes</strong> (~3 full matches) to ensure statistically reliable samples</li>
+<li><strong>Scope:</strong> men’s competitions only · goalkeepers excluded from archetype clustering</li>
+</ul>
+<aside class="notes">
+<p>StatsBomb is the gold standard for granular football event data. We aggregate to player-season level for ML — the 270-minute threshold ensures we’re not clustering players on a handful of matches. Men’s competitions only for consistency; extending to women’s football is a noted future step.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="problem-research-questions" class="slide level2">
+<h2>Problem &amp; Research Questions</h2>
+<p><strong>The gap:</strong> StatsBomb event data exists, but analysts need complex SQL to extract meaning.</p>
 <table class="caption-top">
 <colgroup>
-<col style="width: 21%">
-<col style="width: 52%">
-<col style="width: 26%">
+<col style="width: 14%">
+<col style="width: 35%">
+<col style="width: 17%">
+<col style="width: 32%">
 </colgroup>
 <thead>
 <tr class="header">
 <th>RQ</th>
 <th>Question</th>
 <th>Who</th>
+<th>Product</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><strong>RQ1</strong></td>
 <td>What tactical archetypes exist across competitions?</td>
-<td><strong>Li</strong> · clustering + dashboard</td>
+<td><strong>Li</strong></td>
+<td>Clustering + Looker dashboard</td>
 </tr>
 <tr class="even">
 <td><strong>RQ2</strong></td>
 <td>Do players perform consistently club vs nationally?</td>
-<td><strong>Rabin</strong> · Consistency Explorer</td>
+<td><strong>Rabin</strong></td>
+<td>Consistency Explorer</td>
 </tr>
 <tr class="odd">
 <td><strong>RQ3</strong></td>
 <td>Can analysts query football data in plain English?</td>
-<td><strong>Teem</strong> · chatbot</td>
+<td><strong>Teem</strong></td>
+<td>LLM chatbot</td>
 </tr>
 <tr class="even">
 <td>—</td>
-<td>How does data get there?</td>
-<td><strong>Quan</strong> · dbt + Dagster</td>
+<td>How does data get there automatically?</td>
+<td><strong>Quan</strong></td>
+<td>dbt + Dagster pipeline</td>
 </tr>
 </tbody>
 </table>
 <aside class="notes">
-<p>Trilemma had rich StatsBomb data but no scalable way to answer these questions without writing complex SQL. This table is our map for the talk — three research questions, each answered by a different part of the product. I’ll walk you through how the data gets there first, then hand off to the rest of the team.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="data-pipeline-dbt" class="slide level2 compact center">
-<h2>Data Pipeline — dbt</h2>
-<p>StatsBomb API → GCS → BigQuery → <strong>dbt</strong> (3 layers) → chatbot + dashboard</p>
-<ul>
-<li><strong>Staging</strong> — type casts only, 1:1 mirror</li>
-<li><strong>Intermediate</strong> — 270-min filter, per-90 metrics, men’s only</li>
-<li><strong>Marts</strong> — ML outputs joined in</li>
-</ul>
-<p><strong>dbt</strong> = <strong>Makefile + git for SQL</strong> — version-controlled <code>SELECT</code>s with tests.</p>
-<p><em>Orchestrated by <strong>Dagster</strong> — next slide.</em></p>
-<aside class="notes">
-<p>Before the results: three ingestion scripts land StatsBomb data in BigQuery. dbt transforms it in three layers. If you’ve used Make or GitHub Actions, dbt is the same idea — define steps, declare dependencies, run tests. Dagster runs the whole thing automatically.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="pipeline-orchestration-dagster" class="slide level2 center">
-<h2>Pipeline Orchestration — Dagster</h2>
-<p><strong>Dagster</strong> = <strong>cron + Makefile dependency graph</strong> (like GitHub Actions job order)</p>
-<ul>
-<li><strong>Weekly</strong> — full pipeline, Monday 6:00 AM UTC</li>
-<li><strong>Hourly sensor</strong> — new GCS file → dbt + ML + marts only</li>
-<li>Hands-off for Trilemma — no manual runs</li>
-</ul>
-<aside class="notes">
-<p>Dagster is the scheduler and dependency manager on top of dbt. Think cron, but smarter: it knows ingestion must finish before dbt, clustering before consistency, and shows you a visual graph when something breaks.</p>
+<p>Three research questions, one shared automated pipeline. I’ll preview the headline result from each, then hand off to each person for the methodology deep-dive. I’ll cover the pipeline at the end.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -264,10 +289,10 @@ Rabindranath Duran Pons
 <p><img data-src="assets/looker-cluster-scatter.png"></p>
 </div>
 <div class="slide-caption">
-<p>5 archetypes · 5,800+ player-seasons · 15 competitions</p>
+<p>PCA scatter — 5 archetypes · 5,800+ player-seasons · 15 competitions · Li walks through the methodology</p>
 </div>
 <aside class="notes">
-<p>Before the deep dives — here’s what we found. This scatter is every outfield player-season in our dataset, coloured by archetype. Five distinct playing styles emerge from the data: Creative Wingers on the right, Defensive Anchors at the top, Pressing Forwards in the bottom middle, and Low Activity players on the far left. Li will walk through the methodology and dashboard in detail.</p>
+<p>Five distinct playing styles emerge from the data — data-driven labels, not hand-crafted categories. Li will cover the methodology and dashboard.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -286,10 +311,10 @@ Rabindranath Duran Pons
 <p><img data-src="assets/looker-quadrant-scatter.png"></p>
 </div>
 <div class="slide-caption">
-<p>493 players · Elite · Club Specialist · International Specialist · Underperformer</p>
+<p>Performance score = weighted sum of Z-scores across 13 per-90 metrics · 493 players · 4 quadrants · Rabin covers the method</p>
 </div>
 <aside class="notes">
-<p>Second result — consistency scoring. 493 players had enough minutes in both club and international football to compare. We put each player in one of four quadrants based on their performance in each context. Rabin will go deep on the methodology and findings.</p>
+<p>493 players had enough minutes in both contexts. The axes are performance scores — how a player compares to peers within that specific context, not raw stats. Rabin explains the scoring model.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -308,10 +333,10 @@ Rabindranath Duran Pons
 <p><img data-src="assets/chatbot_screenshot.png"></p>
 </div>
 <div class="slide-caption">
-<p>Plain English in · answers in &lt; 10 sec · no SQL</p>
+<p>Plain English → BigQuery SQL → formatted answer · under 10 sec · no SQL required · Teem demos live</p>
 </div>
 <aside class="notes">
-<p>Third result — the chatbot. Analysts type a question in plain English, and the system writes the BigQuery SQL, runs it, and returns a formatted answer in under 10 seconds. No SQL knowledge required. Li will now walk through RQ1 — the clustering methodology and player archetypes dashboard.</p>
+<p>Type any football question in plain English, get an answer in under 10 seconds. No SQL knowledge needed. Teem demos this live shortly.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -324,7 +349,7 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="clustering-pipeline" class="slide level2">
+<section id="clustering-pipeline" class="slide level2 compact">
 <h2>Clustering Pipeline</h2>
 <p><strong>RQ1:</strong> What player archetypes exist across European football?</p>
 <table class="caption-top">
@@ -345,7 +370,7 @@ Rabindranath Duran Pons
 </tr>
 <tr class="odd">
 <td>Features</td>
-<td>13 per-90 metrics (xG, passes, pressures, …)</td>
+<td>13 per-90 metrics — see below</td>
 </tr>
 <tr class="even">
 <td>Model</td>
@@ -357,8 +382,11 @@ Rabindranath Duran Pons
 </tr>
 </tbody>
 </table>
+<div style="font-size:0.62em; color:#5E7A8A; margin-top:0.5em; line-height:1.5;">
+<p><strong>13 per-90 features:</strong> goals · xG · shots · passes · key passes · dribbles completed · pressures · tackles · interceptions · clearances · blocks · carries · aerial duels won</p>
+</div>
 <aside class="notes">
-<p>Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt’s intermediate layer — only outfield players with at least 270 minutes played. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output lands in BigQuery and feeds both the dashboard and the chatbot.</p>
+<p>13 per-90 metrics listed at the bottom. These capture attacking output, defensive contribution, and ball-carrying. Median imputation handles missing values, then scale, PCA, and KMeans k=5.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -371,40 +399,41 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="cluster-results-5-archetypes" class="slide level2">
+<section id="cluster-results-5-archetypes" class="slide level2 compact">
 <h2>Cluster Results: 5 Archetypes</h2>
+<p>Per-90 metrics are prefixed <code>x_</code> in the dbt model (e.g.&nbsp;<code>x_goals</code>, <code>x_passes</code>, <code>x_pressures</code>).</p>
 <table class="caption-top">
 <thead>
 <tr class="header">
 <th>Archetype</th>
-<th>Style</th>
+<th>Defining <code>x_</code> features</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><strong>Creative Winger</strong></td>
-<td>xG, dribbles, att. third passes</td>
+<td><code>x_xg</code>, <code>x_dribbles</code>, <code>x_passes</code> (att. third)</td>
 </tr>
 <tr class="even">
 <td><strong>Creative Playmaker</strong></td>
-<td>Passes, carries, chance creation</td>
+<td><code>x_passes</code>, <code>x_carries</code>, <code>x_key_passes</code></td>
 </tr>
 <tr class="odd">
 <td><strong>Pressing Forward</strong></td>
-<td>Pressures, shots, defensive actions</td>
+<td><code>x_pressures</code>, <code>x_shots</code>, <code>x_tackles</code></td>
 </tr>
 <tr class="even">
 <td><strong>Defensive Anchor</strong></td>
-<td>Interceptions, clearances, blocks</td>
+<td><code>x_interceptions</code>, <code>x_clearances</code>, <code>x_blocks</code></td>
 </tr>
 <tr class="odd">
 <td><strong>Low Activity</strong></td>
-<td>Below-cohort activity</td>
+<td>Below-cohort average across most features</td>
 </tr>
 </tbody>
 </table>
 <aside class="notes">
-<p>KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely.</p>
+<p>Five interpretable archetypes. The x_ prefix in our dbt intermediate layer marks per-90 transformed columns. Goalkeepers get cluster = -1 — excluded from the main five.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -417,16 +446,16 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="cluster-scatter-looker-studio" class="slide level2">
-<h2>Cluster Scatter — Looker Studio</h2>
+<section id="cluster-scatter-what-the-plot-shows" class="slide level2">
+<h2>Cluster Scatter — What the Plot Shows</h2>
 <div class="slide-image">
 <p><img data-src="assets/looker-cluster-scatter.png"></p>
 </div>
 <div class="slide-caption">
-<p>PCA scatter · 5,759 player-seasons · 5 archetypes · PC1 = activity level · PC2 = attacking vs defensive profile</p>
+<p>PC1 = overall activity level (left = low, right = high) · PC2 = defensive vs attacking profile (top = defensive) · colour = archetype</p>
 </div>
 <aside class="notes">
-<p>This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 captures overall activity level. PC2 separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, validating our k=5 choice.</p>
+<p>Same scatter as the teaser — but now with context on the axes. PC1 captures how involved a player is per 90. PC2 separates defensive from attacking profiles. The 5 clusters are well-separated, validating k=5.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -448,7 +477,7 @@ Rabindranath Duran Pons
 <p>5,759 player-seasons · 15 competitions · Low Activity and Defensive Anchor are the largest groups · filter by archetype, year, or competition</p>
 </div>
 <aside class="notes">
-<p>This is the Player Archetype Explorer in Looker Studio. Low Activity and Defensive Anchor are the two largest groups. Analysts can filter by archetype, competition, or year.</p>
+<p>The Player Archetype Explorer in Looker Studio. Analysts can filter by archetype, competition, or season. Low Activity and Defensive Anchor are the two largest groups — consistent with football’s positional mix.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -461,16 +490,22 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="player-archetypes-dashboard-explorer" class="slide level2">
+<section id="player-archetypes-dashboard-explorer" class="slide level2 compact">
 <h2>Player Archetypes Dashboard — Explorer</h2>
-<div class="slide-image">
-<p><img data-src="assets/looker-cluster-page2.png"></p>
-</div>
-<div class="slide-caption">
-<p>Messi classified as Creative Winger across 22 La Liga seasons · search any player to see their archetype history</p>
-</div>
+<div class="columns">
+<div class="column" style="width:62%;">
+<p><img data-src="assets/looker-cluster-page2.png" style="max-height: 54vh; width: auto; display: block; margin: 0 auto; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.10);"></p>
+</div><div class="column" style="width:38%;">
+<p><em>Messi: Creative Winger across 22 La Liga seasons</em></p>
+<p><strong>What Trilemma can do with this:</strong></p>
+<ul>
+<li><strong>Scouting</strong> — filter by archetype to find undervalued players in lower-budget leagues</li>
+<li><strong>Squad balance</strong> — check archetype mix before a transfer window</li>
+<li><strong>Player tracking</strong> — monitor how a player’s style evolves across seasons</li>
+</ul>
+</div></div>
 <aside class="notes">
-<p>The explorer also supports player-level search. Here we’ve filtered to Messi — consistently classified as Creative Winger across 22 La Liga seasons. That wraps up RQ1 — Rabin will now cover RQ2.</p>
+<p>The practical application. The clustering turns a descriptive finding into a decision tool — which positions does a team lack? Which players fit a specific tactical role? The dashboard makes this self-serve for Trilemma’s analysts. Rabin now covers RQ2.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -490,12 +525,12 @@ Rabindranath Duran Pons
   int_player_club_vs_national → consistency.py → consistency_scores → Looker Explorer
 </div>
 <ul>
-<li><strong>Eligibility:</strong> ≥ 270 minutes in <strong>both</strong> contexts (~3 full matches)</li>
+<li><strong>Eligibility:</strong> ≥ 270 minutes in <strong>both</strong> contexts (~3 full matches each)</li>
 <li><strong>Cohort:</strong> 493 dual-context players across <strong>58 countries</strong></li>
-<li>Z-scores computed <strong>within each context</strong> (club peers vs club, national vs national)</li>
+<li><strong>Method:</strong> Z-scores computed <strong>within each context</strong> separately — club peers vs club, national vs national</li>
 </ul>
 <aside class="notes">
-<p>We built club-vs-national consistency scoring for RQ2. dbt builds int_player_club_vs_national, splitting stats by context and z-scoring 13 metrics within each. consistency.py weights z-scores with PCA loadings, computes scores and quadrants, and writes to BigQuery. Only players with 270+ minutes in both contexts qualify — 493 players across 58 countries.</p>
+<p>dbt builds int_player_club_vs_national, splitting statistics by context. 270+ minutes in both contexts gives us 493 players across 58 countries. Z-scores are calculated within each context so we compare apples to apples.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -510,20 +545,13 @@ Rabindranath Duran Pons
 </section>
 <section id="consistency-formulas-results" class="slide level2 compact">
 <h2>Consistency Formulas &amp; Results</h2>
-<p><strong>Formulas</strong></p>
-<ol type="1">
-<li><span class="math inline">\(z = (x - \mu_{\text{context}}) / \sigma_{\text{context}}\)</span> within each context</li>
-<li><strong>Performance score</strong> = Σ (z × PCA weight) — club &amp; national axes on scatter plot</li>
-<li><strong>Consistency score</strong> = <span class="math inline">\(1 - \text{mean}(|z_{\text{club}} - z_{\text{nat}}|)\)</span> — profile similarity, not quality</li>
-</ol>
-<p><strong>Results</strong></p>
-<ul>
-<li><strong>493 players</strong> · <strong>58 countries</strong> · ~25% per quadrant</li>
-<li><strong>Most consistent</strong> → profile barely changes between contexts</li>
-<li><strong>Germany</strong> leads national score · <strong>Sweden</strong> lowest in cohort</li>
-</ul>
+<p><strong>Z-score standardisation (within each context):</strong></p>
+<p><span class="math display">\[Z\text{-score} = \frac{x - \mu_{\text{context}}}{\sigma_{\text{context}}}\]</span></p>
+<p><strong>Performance score</strong> = Σ (Z-score × PCA weight) — club &amp; national axes on the scatter</p>
+<p><strong>Consistency score</strong> = <span class="math inline">\(1 - \text{mean}(|Z_{\text{club}} - Z_{\text{national}}|)\)</span> — profile similarity, not quality level</p>
+<p><strong>Results:</strong> 493 players · 58 countries · ~25% per quadrant · <strong>Germany</strong> leads national score · <strong>Sweden</strong> lowest in cohort</p>
 <aside class="notes">
-<p>Three metrics: performance scores are the scatter axes; consistency measures profile similarity across contexts, not quality. 493 dual-context players, roughly even quadrant split, Germany leads on national performance.</p>
+<p>Three metrics. Performance scores give the X and Y axes. Consistency score measures how similar a player’s profile is across the two contexts — a player can be consistently mediocre or consistently elite.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -538,54 +566,35 @@ Rabindranath Duran Pons
 </section>
 <section id="quadrant-definitions" class="slide level2">
 <h2>Quadrant Definitions</h2>
-<p>Split cohort at <strong>medians</strong> of club &amp; national performance (~25% each)</p>
+<p>Split cohort at <strong>medians</strong> of club and national performance score (~25% each)</p>
 <table class="caption-top">
 <thead>
 <tr class="header">
 <th>Quadrant</th>
-<th>Rule</th>
+<th>Definition</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td><strong>Elite</strong></td>
-<td>≥ median in <strong>both</strong> contexts</td>
+<td>≥ median performance in <strong>both</strong> contexts</td>
 </tr>
 <tr class="even">
 <td><strong>Club Specialist</strong></td>
-<td>Club ≥ median, national &lt; median</td>
+<td>Club ≥ median · national &lt; median</td>
 </tr>
 <tr class="odd">
 <td><strong>International Specialist</strong></td>
-<td>Club &lt; median, national ≥ median</td>
+<td>Club &lt; median · national ≥ median</td>
 </tr>
 <tr class="even">
 <td><strong>Underperformer</strong></td>
-<td>Below median in both</td>
+<td>Below median in both contexts</td>
 </tr>
 </tbody>
 </table>
 <aside class="notes">
-<p>Quadrants split at medians. Next slides show this in Looker — one screenshot per page.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="consistency-explorer-overview" class="slide level2">
-<h2>Consistency Explorer — Overview</h2>
-<div class="slide-image">
-<p><img data-src="assets/looker-consistency-p1.png"></p>
-</div>
-<aside class="notes">
-<p>Page 1 — coverage and cohort size. 493 players and 58 countries.</p>
+<p>Quadrants are defined at the medians of club and national performance scores so each group has roughly equal size. The key insight is which quadrant a specific player or national squad falls into.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -600,11 +609,15 @@ Rabindranath Duran Pons
 </section>
 <section id="consistency-explorer-quadrant-view" class="slide level2">
 <h2>Consistency Explorer — Quadrant View</h2>
+<p><strong>RQ2:</strong> Club score (x) vs national score (y) — each point = one player</p>
 <div class="slide-image">
 <p><img data-src="assets/looker-quadrant-scatter.png"></p>
 </div>
+<div class="slide-caption">
+<p>X-axis = club performance score · Y-axis = national performance score · quadrants split at medians · 493 players</p>
+</div>
 <aside class="notes">
-<p>Page 2 — the core scatter. Quadrant labels, axis titles, and a few player names must be readable from the back.</p>
+<p>The core scatter. Call out specific players in each quadrant during the demo if possible — it makes the quadrant system concrete for the audience.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -617,149 +630,23 @@ Rabindranath Duran Pons
           display:block!important;
       }</style></aside>
 </section>
-<section id="consistency-explorer-country-rankings" class="slide level2">
+<section id="consistency-explorer-country-rankings" class="slide level2 compact">
 <h2>Consistency Explorer — Country Rankings</h2>
-<div class="slide-image">
-<p><img data-src="assets/looker-consistency-p2.png"></p>
-</div>
-<aside class="notes">
-<p>Page 3 — Germany leads in our cohort. Everything in Looker is also queryable through our chatbot — Teem covers that next.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="system-architecture-data-to-serving" class="slide level2">
-<h2>System Architecture — Data to Serving</h2>
-<div class="arch-diagram" style="font-size:0.95em; margin-top:0.9em; margin-bottom:1.1em;">
-
-  <div class="arch-row">
-    <span class="arch-node orange">StatsBomb API</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node blue">GCS</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node blue">BigQuery</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node green bold-italic">dbt</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node green">ML Scripts</span>
-    <span class="arch-arrow">→</span>
-    <span class="arch-node purple">Django</span>
-  </div>
-
-  <div style="display:flex; flex-direction:column; align-items:center; margin-top:0.1em;">
-    <svg width="360" height="42" style="overflow:visible; display:block;">
-      <line x1="180" y1="0" x2="180" y2="14" stroke="#90A4AE" stroke-width="1.5"></line>
-      <line x1="90" y1="14" x2="270" y2="14" stroke="#90A4AE" stroke-width="1.5"></line>
-      <line x1="90" y1="14" x2="90" y2="42" stroke="#90A4AE" stroke-width="1.5"></line>
-      <line x1="270" y1="14" x2="270" y2="42" stroke="#90A4AE" stroke-width="1.5"></line>
-    </svg>
-    <div style="display:flex; gap:5.5em; margin-top:0;">
-      <span class="arch-node purple">Looker Studio</span>
-      <span class="arch-node purple">Chatbot / Groq</span>
-    </div>
-  </div>
-
-</div>
-<div class="slide-caption">
-<p>StatsBomb → GCS → BigQuery → dbt → ML → Django (GCE) → Looker · Chatbot</p>
-</div>
-<aside class="notes">
-<p>End-to-end architecture: StatsBomb to GCS to BigQuery, dbt transforms, ML enriches, Django serves Looker and the chatbot. All compute runs on Google Compute Engine.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="architecture-components" class="slide level2 compact center">
-<h2>Architecture — Components</h2>
+<p><strong>RQ2:</strong> National performance score by country</p>
+<div class="columns">
+<div class="column" style="width:60%;">
+<p><img data-src="assets/looker-consistency-p2.png" style="max-height: 54vh; width: auto; display: block; margin: 0 auto; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.10);"></p>
+</div><div class="column" style="width:40%;">
+<p><em>Germany leads · Sweden lowest · bar chart scaled to full range</em></p>
+<p><strong>What Trilemma can do with this:</strong></p>
 <ul>
-<li><strong>Ingestion:</strong> StatsBomb API → Google Cloud Storage (GCS)</li>
-<li><strong>Warehouse:</strong> Centralized in Google BigQuery</li>
-<li><strong>Transformation:</strong> 3-layer dbt architecture</li>
-<li><strong>Machine Learning:</strong> Python scripts for PCA/KMeans and Consistency Scoring</li>
-<li><strong>Serving:</strong> Django web app · Looker Studio dashboard · LLM chatbot</li>
+<li><strong>National selectors</strong> — target International Specialists who outperform for country</li>
+<li><strong>Club recruitment</strong> — Club Specialists may be undervalued on the transfer market</li>
+<li><strong>Next step</strong> — extend to women’s football; broaden international competition coverage</li>
 </ul>
+</div></div>
 <aside class="notes">
-<p>Four layers. Quan covered dbt and Dagster earlier — here is how it connects to the products.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="dbt-layers-detail" class="slide level2">
-<h2>dbt Layers (Detail)</h2>
-<div style="display:flex; align-items:center; justify-content:center; margin-top:1.4em; gap:0.5em; font-size:0.92em; font-family:'Calibri','Segoe UI',Arial,sans-serif;">
-  <span class="arch-node orange">raw_statsbomb</span>
-  <span class="arch-arrow">→</span>
-  <span class="arch-node blue">staging</span>
-  <span class="arch-arrow">→</span>
-  <span class="arch-node blue">intermediate</span>
-  <svg width="52" height="110" viewbox="0 0 52 110" style="flex-shrink:0; overflow:visible;">
-    <line x1="0" y1="55" x2="22" y2="55" stroke="#90A4AE" stroke-width="1.5"></line>
-    <line x1="22" y1="24" x2="22" y2="86" stroke="#90A4AE" stroke-width="1.5"></line>
-    <line x1="22" y1="24" x2="52" y2="24" stroke="#90A4AE" stroke-width="1.5"></line>
-    <line x1="22" y1="86" x2="52" y2="86" stroke="#90A4AE" stroke-width="1.5"></line>
-  </svg>
-  <div style="display:flex; flex-direction:column; gap:0.9em; align-items:flex-start;">
-    <span class="arch-node green"><b>marts</b></span>
-    <span class="arch-node green"><b><i>ML models</i></b></span>
-  </div>
-</div>
-<ul>
-<li><strong>Staging</strong> — 3 models · type casts only, 1:1 mirror</li>
-<li><strong>Intermediate</strong> — 7 models · 270-min filter, per-90 metrics, men’s only</li>
-<li><strong>Marts</strong> — 5 models · joined for Looker + chatbot</li>
-<li><strong>ML models</strong> — 2 models · cluster assignments + consistency scores</li>
-</ul>
-<aside class="notes">
-<p>Three-layer dbt architecture. Staging cleans data types. Intermediate aggregates per-90 metrics, applies the 270-minute threshold, and scopes to men’s competitions. Marts joins ML cluster assignments, producing the clean tables that Looker and the chatbot read from.</p>
-<style type="text/css">
-        span.MJX_Assistive_MathML {
-          position:absolute!important;
-          clip: rect(1px, 1px, 1px, 1px);
-          padding: 1px 0 0 0!important;
-          border: 0!important;
-          height: 1px!important;
-          width: 1px!important;
-          overflow: hidden!important;
-          display:block!important;
-      }</style></aside>
-</section>
-<section id="dagster-asset-graph" class="slide level2">
-<h2>Dagster Asset Graph</h2>
-<div class="slide-image">
-<p><img data-src="assets/dagster.svg"></p>
-</div>
-<div class="slide-caption">
-<p>Asset graph · ingestion → dbt → ML → marts</p>
-</div>
-<ul>
-<li><strong>Asset graph</strong> — run in order: Ingestion → dbt → ML → mart refresh</li>
-</ul>
-<aside class="notes">
-<p>Dagster asset graph screenshot. Quan already defined Dagster — here we show what it looks like in practice.</p>
+<p>Country-level aggregation. Germany leads in our cohort. Note: make sure the bottom chart is scaled to the full data range before presenting. Teem now covers RQ3.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -778,10 +665,10 @@ Rabindranath Duran Pons
 <p><a href="http://34.11.235.252/"><img data-src="assets/chatbot_screenshot.png"></a></p>
 </div>
 <div class="slide-caption">
-<p>Plain-English question → BigQuery answer</p>
+<p>Plain-English question → BigQuery SQL → formatted answer</p>
 </div>
 <aside class="notes">
-<p>Chatbot in action. Show a real tactical question and the formatted response.</p>
+<p>Chatbot in action. Show a real tactical question and the formatted response. Advanced mode shows the generated SQL for analysts who want to verify.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -802,7 +689,99 @@ Rabindranath Duran Pons
 <li><strong>Advanced mode:</strong> shows generated SQL for debugging</li>
 </ul>
 <aside class="notes">
-<p>Django + Groq tool-calling loop. Security layer blocks anything that isn’t a SELECT. Advanced mode lets analysts verify the SQL.</p>
+<p>Django + Groq tool-calling loop. The chatbot democratises data access — right now single-step queries, next iteration could chain multiple reasoning steps.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="system-architecture-end-to-end" class="slide level2">
+<h2>System Architecture — End to End</h2>
+<div class="slide-image">
+<p><img data-src="assets/architecture.png"></p>
+</div>
+<div class="slide-caption">
+<p>StatsBomb API → GCS → BigQuery → Dagster (dbt + ML) → Django (GCE) → Looker Studio · Chatbot</p>
+</div>
+<aside class="notes">
+<p>End-to-end architecture. StatsBomb data lands in Google Cloud Storage, then BigQuery. Dagster orchestrates dbt and ML scripts. Django on Google Compute Engine serves both the Looker embedded dashboard and the chatbot.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="data-transformation-dbt" class="slide level2 compact center">
+<h2>Data Transformation — dbt</h2>
+<p><strong>dbt</strong> (data build tool) = <strong>version-controlled SQL with automated testing</strong> — like GitHub Actions for your data warehouse: define each transform as a SQL SELECT, declare dependencies, dbt runs them in order and tests each output.</p>
+<ul>
+<li><strong>Staging</strong> — 3 models · type casts only · 1:1 mirror of raw StatsBomb tables</li>
+<li><strong>Intermediate</strong> — 7 models · 270-min filter · compute <code>x_*</code> per-90 metrics · men’s competitions only</li>
+<li><strong>Marts</strong> — 5 models · join ML outputs (cluster assignments + consistency scores) · final tables for Looker + chatbot</li>
+</ul>
+<div style="display:flex; align-items:center; justify-content:center; margin-top:0.8em; gap:0.5em; font-size:0.88em; font-family:'Calibri','Segoe UI',Arial,sans-serif;">
+  <span class="arch-node orange">raw_statsbomb</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">staging</span>
+  <span class="arch-arrow">→</span>
+  <span class="arch-node blue">intermediate</span>
+  <svg width="52" height="90" viewbox="0 0 52 90" style="flex-shrink:0; overflow:visible;">
+    <line x1="0" y1="45" x2="22" y2="45" stroke="#90A4AE" stroke-width="1.5"></line>
+    <line x1="22" y1="18" x2="22" y2="72" stroke="#90A4AE" stroke-width="1.5"></line>
+    <line x1="22" y1="18" x2="52" y2="18" stroke="#90A4AE" stroke-width="1.5"></line>
+    <line x1="22" y1="72" x2="52" y2="72" stroke="#90A4AE" stroke-width="1.5"></line>
+  </svg>
+  <div style="display:flex; flex-direction:column; gap:0.7em; align-items:flex-start;">
+    <span class="arch-node green"><b>marts</b></span>
+    <span class="arch-node green"><b><i>ML models</i></b></span>
+  </div>
+</div>
+<aside class="notes">
+<p>dbt lets us write modular, testable SQL. Every model has automated schema tests. The x_ prefix in intermediate marks per-90 computed columns. If a test fails, Dagster catches it before bad data reaches the dashboard.</p>
+<style type="text/css">
+        span.MJX_Assistive_MathML {
+          position:absolute!important;
+          clip: rect(1px, 1px, 1px, 1px);
+          padding: 1px 0 0 0!important;
+          border: 0!important;
+          height: 1px!important;
+          width: 1px!important;
+          overflow: hidden!important;
+          display:block!important;
+      }</style></aside>
+</section>
+<section id="pipeline-orchestration-dagster" class="slide level2 compact">
+<h2>Pipeline Orchestration — Dagster</h2>
+<p><strong>Dagster</strong> = <strong>automated scheduler + dependency graph</strong> — like GitHub Actions job order for data: knows what must run before what, and surfaces failures visually.</p>
+<div class="columns">
+<div class="column" style="width:38%;">
+<ul>
+<li><strong>Weekly schedule</strong> — full pipeline every Monday 6:00 AM UTC</li>
+<li><strong>Hourly sensor</strong> — new GCS file → dbt + ML only (skips re-ingestion)</li>
+<li><strong>Zero manual runs</strong> — fully hands-off for Trilemma after handover</li>
+<li><strong>Asset graph</strong> — every step tracked; failures surface immediately with clear error messages</li>
+</ul>
+</div><div class="column" style="width:62%;">
+<p><img data-src="assets/dagster.svg" style="width:100.0%"></p>
+<div class="slide-caption">
+<p>Asset graph · ingestion → dbt → ML → marts</p>
+</div>
+</div></div>
+<aside class="notes">
+<p>Dagster is what makes the pipeline production-grade. Without it, someone would need to manually trigger each step in the right order. Each node in the asset graph is a dbt model or ML script. If ingestion fails, everything downstream is automatically skipped with a clear error.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -818,12 +797,13 @@ Rabindranath Duran Pons
 <section id="limitations-future-scope" class="slide level2 compact center">
 <h2>Limitations &amp; Future Scope</h2>
 <ul>
-<li><strong>Goalkeeper Filter</strong> — excluded from PCA clustering (<code>cluster = -1</code>, archetype Goalkeeper)</li>
-<li><strong>Data Asymmetry</strong> — open-source event data is inherently incomplete and unbalanced; match volume varies</li>
-<li><strong>Women’s football</strong> — men’s filter at intermediate layer; needs parallel dbt models</li>
+<li><strong>Goalkeeper Filter</strong> — excluded from PCA clustering (<code>cluster = -1</code>, archetype = “Goalkeeper”)</li>
+<li><strong>Data Asymmetry</strong> — open-source StatsBomb data is inherently unbalanced; match volume varies by competition and season</li>
+<li><strong>Women’s football</strong> — intermediate layer filters to men’s competitions; extending requires parallel dbt models</li>
+<li><strong>Chatbot scope</strong> — single-step queries only; complex multi-step reasoning not yet supported</li>
 </ul>
 <aside class="notes">
-<p>Three known limitations and future work items.</p>
+<p>Four honest limitations. Goalkeepers are methodologically excluded. Data coverage isn’t uniform. Women’s football needs a separate dbt branch. The chatbot handles well-formed single questions but can’t yet chain reasoning steps.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -841,12 +821,12 @@ Rabindranath Duran Pons
 <ul>
 <li>Fully documented <strong>GitHub repository</strong></li>
 <li><strong>CI/CD Pipeline</strong> → automated tests + automated deployment</li>
-<li><strong>Quarto</strong> final report</li>
-<li><strong><code>HANDOVER.md</code></strong> — component runbooks</li>
-<li><strong><code>docker compose up</code></strong> → Django app + Dagster UI</li>
+<li><strong>Quarto</strong> final report with methodology documentation</li>
+<li><strong><code>HANDOVER.md</code></strong> — component-level runbooks for each service</li>
+<li><strong><code>docker compose up</code></strong> → spins up Django app + Dagster UI locally</li>
 </ul>
 <aside class="notes">
-<p>What the partner receives.</p>
+<p>What the partner receives. The goal is that any new developer at Trilemma can pick up any component independently without reading the whole codebase.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
@@ -865,7 +845,7 @@ Rabindranath Duran Pons
 <p><img data-src="assets/handover.png"></p>
 </div>
 <aside class="notes">
-<p>Screenshot of HANDOVER.md or README so the audience sees the partner can run this themselves. That concludes our presentation — we’ll open the floor to questions.</p>
+<p>The HANDOVER.md structure — one section per component. That concludes our presentation — we’ll open the floor to questions.</p>
 <style type="text/css">
         span.MJX_Assistive_MathML {
           position:absolute!important;
