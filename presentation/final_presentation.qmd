@@ -24,7 +24,7 @@ format:
     center: false
 ---
 
-## Trilemma Foundation & Our Team {.center}
+## Trilemma Foundation & Our Team
 
 **Partner:** Trilemma Foundation — non-profit advancing **evidence-based football development** worldwide, partnering with clubs, federations, and analysts using StatsBomb event data.
 
@@ -39,7 +39,7 @@ format:
 Our team of four, each owning one research question and one deliverable. Trilemma Foundation is our industry partner — they work in football analytics and came to us with a data access problem.
 :::
 
-## Our Dataset — StatsBomb Event Data {.compact .center}
+## Our Dataset — StatsBomb Event Data
 
 - **Source:** StatsBomb open event data — every on-ball action (pass, shot, pressure, dribble, tackle) tracked per match
 - **Scale:** 15 competitions · ~3.5 M events · 5,800+ player-seasons across multiple seasons of La Liga, Premier League, Champions League, Bundesliga, and more
@@ -287,10 +287,12 @@ The core scatter. Call out specific players in each quadrant during the demo if 
 Country-level aggregation. Germany leads in our cohort. Note: make sure the bottom chart is scaled to the full data range before presenting. Teem now covers RQ3.
 :::
 
-## Chatbot Demo
+## LLM chatbot
+
+**RQ3:** Can analysts query football data in plain English?
 
 ::: {.slide-image}
-[![](assets/chatbot_screenshot.png)](http://34.11.235.252/)
+[![](assets/chatbot.gif)](http://34.11.235.252/)
 :::
 
 ::: {.slide-caption}
@@ -301,7 +303,7 @@ Plain-English question → BigQuery SQL → formatted answer
 Chatbot in action. Show a real tactical question and the formatted response. Advanced mode shows the generated SQL for analysts who want to verify.
 :::
 
-## Chatbot — How It Works {.center}
+## LLM chatbot — How It Works
 
 - **Engine:** Groq `llama-3.3-70b-versatile`
 - **Tool-calling:** English → BigQuery SQL → formatted answer
@@ -325,7 +327,19 @@ StatsBomb API → GCS → BigQuery → Dagster (dbt + ML) → Django (GCE) → L
 End-to-end architecture. StatsBomb data lands in Google Cloud Storage, then BigQuery. Dagster orchestrates dbt and ML scripts. Django on Google Compute Engine serves both the Looker embedded dashboard and the chatbot.
 :::
 
-## Data Transformation — dbt {.compact .center}
+## Architecture — Components
+
+- **Ingestion:** StatsBomb API → Google Cloud Storage (GCS)
+- **Warehouse:** Centralized in Google BigQuery
+- **Transformation:** 3-layer dbt architecture
+- **Machine Learning:** Python scripts for PCA/KMeans and Consistency Scoring
+- **Serving:** Django web app · Looker Studio dashboard · LLM chatbot
+
+::: {.notes}
+5 layers. Quan covered dbt and Dagster earlier — here is how it connects to the products.
+:::
+
+## Data Transformation — dbt
 
 **dbt** (data build tool) = **version-controlled SQL with automated testing** — like GitHub Actions for your data warehouse: define each transform as a SQL SELECT, declare dependencies, dbt runs them in order and tests each output.
 
@@ -357,7 +371,7 @@ End-to-end architecture. StatsBomb data lands in Google Cloud Storage, then BigQ
 dbt lets us write modular, testable SQL. Every model has automated schema tests. The x_ prefix in intermediate marks per-90 computed columns. If a test fails, Dagster catches it before bad data reaches the dashboard.
 :::
 
-## Pipeline Orchestration — Dagster {.compact}
+## Pipeline Orchestration — Dagster
 
 **Dagster** = **automated scheduler + dependency graph** — like GitHub Actions job order for data: knows what must run before what, and surfaces failures visually.
 
@@ -384,7 +398,7 @@ Asset graph · ingestion → dbt → ML → marts
 Dagster is what makes the pipeline production-grade. Without it, someone would need to manually trigger each step in the right order. Each node in the asset graph is a dbt model or ML script. If ingestion fails, everything downstream is automatically skipped with a clear error.
 :::
 
-## Limitations & Future Scope {.compact .center}
+## Limitations & Future Scope
 
 - **Goalkeeper Filter** — excluded from PCA clustering (`cluster = -1`, archetype = "Goalkeeper")
 - **Data Asymmetry** — open-source StatsBomb data is inherently unbalanced; match volume varies by competition and season
@@ -395,7 +409,7 @@ Dagster is what makes the pipeline production-grade. Without it, someone would n
 Four honest limitations. Goalkeepers are methodologically excluded. Data coverage isn't uniform. Women's football needs a separate dbt branch. The chatbot handles well-formed single questions but can't yet chain reasoning steps.
 :::
 
-## Partner Handover — What Trilemma Gets {.center}
+## Partner Handover — What Trilemma Gets
 
 - Fully documented **GitHub repository**
 - **CI/CD Pipeline** → automated tests + automated deployment
