@@ -124,7 +124,7 @@ Type any football question in plain English, get an answer in under 10 seconds. 
 :::
 
 ::: {.notes}
-13 per-90 metrics listed at the bottom. These capture attacking output, defensive contribution, and ball-carrying. Median imputation handles missing values, then scale, PCA, and KMeans k=5.
+Our first question: what tactical archetypes exist across European football? We take player-season stats from dbt's intermediate layer — only outfield players with at least 270 minutes played, which filters out players with too few appearances to be statistically meaningful. We run 13 per-90 metrics through a standard ML pipeline: median imputation, outlier clipping, scaling, then PCA to reduce dimensions, and finally KMeans with k=5. The output — cluster assignments for every player-season — lands in BigQuery and feeds both the dashboard and the chatbot.
 :::
 
 ## Cluster Results: 5 Archetypes {.compact}
@@ -140,7 +140,7 @@ Per-90 metrics are prefixed `x_` in the dbt model (e.g. `x_goals`, `x_passes`, `
 | **Low Activity** | Below-cohort average across most features |
 
 ::: {.notes}
-Five interpretable archetypes. The x_ prefix in our dbt intermediate layer marks per-90 transformed columns. Goalkeepers get cluster = -1 — excluded from the main five.
+KMeans produces 5 interpretable archetypes. Creative Wingers are defined by high xG and dribbling. Creative Playmakers by passing volume and chance creation. Pressing Forwards by high pressure counts and shots. Defensive Anchors by interceptions and clearances. And Low Activity players fall below the cohort average across most metrics. Goalkeepers are excluded from clustering entirely and assigned a separate label directly from their position — their statistical profile is fundamentally different from outfield players.
 :::
 
 ## Cluster Scatter — What the Plot Shows
@@ -154,7 +154,7 @@ PC1 = overall activity level (left = low, right = high) · PC2 = defensive vs at
 :::
 
 ::: {.notes}
-Same scatter as the teaser — but now with context on the axes. PC1 captures how involved a player is per 90. PC2 separates defensive from attacking profiles. The 5 clusters are well-separated, validating k=5.
+This is the PCA scatter from Looker Studio. Each dot is one player-season. PC1 on the horizontal axis captures overall activity level — players on the right are more active. PC2 on the vertical axis separates attacking from defensive profiles. The 5 colour-coded clusters are clearly separated in PCA space, which validates that our features and k=5 choice are capturing real tactical differences.
 :::
 
 ## Player Archetypes Dashboard — Overview
@@ -168,7 +168,7 @@ Same scatter as the teaser — but now with context on the axes. PC1 captures ho
 :::
 
 ::: {.notes}
-The Player Archetype Explorer in Looker Studio. Analysts can filter by archetype, competition, or season. Low Activity and Defensive Anchor are the two largest groups — consistent with football's positional mix.
+This is the Player Archetype Explorer in Looker Studio. Across 5,759 player-seasons from 15 competitions, Low Activity and Defensive Anchor are the two largest groups — consistent with football's positional mix. Analysts can filter by archetype, competition, or year to explore how the distribution shifts across different leagues and seasons.
 :::
 
 ## Player Archetypes Dashboard — Explorer {.compact}
@@ -192,7 +192,8 @@ The Player Archetype Explorer in Looker Studio. Analysts can filter by archetype
 ::::
 
 ::: {.notes}
-The practical application. The clustering turns a descriptive finding into a decision tool — which positions does a team lack? Which players fit a specific tactical role? The dashboard makes this self-serve for Trilemma's analysts. Rabin now covers RQ2.
+The explorer also supports player-level search. Here we've filtered to Messi — across 21 seasons he is consistently classified as Creative Winger, which aligns with his dribbling and xG profile. But there's one outlier season where he's classified as Pressing Forward — showing that even the same player can shift archetypes depending on how their role evolves. Any analyst can search any player to see their full archetype history. That wraps up RQ1 — Rabin will now cover RQ2, club vs national consistency.
+
 :::
 
 ## Consistency: The Question & Pipeline
