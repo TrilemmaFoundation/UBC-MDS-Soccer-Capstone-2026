@@ -226,7 +226,7 @@ git --version            # git version 2.x.x
 
 ## 5. GCP Setup (First Time Only)
 
-> Skip this section if you received a `service-account-key.json` from the outgoing team and the GCP project already exists.
+> Skip this section if you received `dagster-service-account-key.json` and `chatbot-service-account-key.json` from the outgoing team and the GCP project already exists.
 
 ### 5a. Enable required APIs
 In the [GCP Console](https://console.cloud.google.com) for your project, enable:
@@ -263,24 +263,40 @@ bq mk --dataset --location=US YOUR_PROJECT_ID:dbt_marts
 bq mk --dataset --location=US YOUR_PROJECT_ID:analytics
 ```
 
-### 5d. Create a service account and download the key
+### 5d. Create service accounts and download the keys
 ```bash
-# Create service account
-gcloud iam service-accounts create football-analytics-sa \
-  --display-name="Football Analytics Service Account"
+# Create Dagster service account
+gcloud iam service-accounts create dagster-sa \
+  --display-name="Dagster Pipeline Service Account"
 
-# Grant required roles
+# Grant Dagster required roles
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/bigquery.admin"
-
+  --member="serviceAccount:dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataEditor"
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.jobUser"
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.admin"
 
-# Download the key — place it in the project root
-gcloud iam service-accounts keys create service-account-key.json \
-  --iam-account=football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+# Create Chatbot service account
+gcloud iam service-accounts create chatbot-sa \
+  --display-name="Django Chatbot Service Account"
+
+# Grant Chatbot required roles
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:chatbot-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataViewer"
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:chatbot-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.jobUser"
+
+# Download the keys — place them in the project root
+gcloud iam service-accounts keys create dagster-service-account-key.json \
+  --iam-account=dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+gcloud iam service-accounts keys create chatbot-service-account-key.json \
+  --iam-account=chatbot-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
 ```
 
 > ⚠️ **Never commit `service-account-key.json` to Git.** It is already in `.gitignore`.
