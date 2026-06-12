@@ -309,6 +309,12 @@ Chatbot in action. Show a real tactical question and the formatted response. Adv
 - **Tool-calling:** English → BigQuery SQL → formatted answer
 - **Advanced mode:** shows generated SQL for debugging
 
+**What Trilemma can do with this:**
+
+- **Self-serve analytics** — any analyst can get data-driven answers without writing SQL
+- **Reduces bottleneck** — no need to queue a request to a data engineer for a simple question
+- **Next step** — multi-step reasoning for complex queries; integrate with Looker for natural-language drill-downs
+
 ::: {.notes}
 Django + Groq tool-calling loop. The chatbot democratises data access — right now single-step queries, next iteration could chain multiple reasoning steps.
 :::
