@@ -40,8 +40,8 @@ The integration of these tools creates a powerful, end-to-end workflow for a foo
 
 *(Screenshots of the application in action are provided below)*
 
-![Chatbot Interface Placeholder - Showcasing a user query and the LLM response with Advanced Mode toggled on](./chatbot_screenshot.png)
+![Chatbot Interface Placeholder - Showcasing a user query and the LLM response with Advanced Mode toggled on](../../presentation/assets/chatbot_screenshot.png)
 *Figure 1: The Football Analytics Chatbot interface, demonstrating the natural language query processing and the Advanced Mode debugging panels.*
 
-![Dashboard Interface Placeholder - Showcasing the Looker Studio iframe within the Django wrapper](./dashboard_screenshot.png)
+![Dashboard Interface Placeholder - Showcasing the Looker Studio iframe within the Django wrapper](../../presentation/assets/dashboard_screenshot.png)
 *Figure 2: The embedded Looker Studio Dashboard, providing high-level visual exploratory data analysis.*
