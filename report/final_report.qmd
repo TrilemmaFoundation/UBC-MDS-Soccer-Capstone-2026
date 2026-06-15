@@ -7,6 +7,7 @@ author:
   - Rabindranath Duran Pons
   - Li Pu
 date: "June 2026"
+bibliography: references.bib
 format:
   pdf:
     documentclass: article
@@ -23,15 +24,15 @@ format:
 
 # Executive Summary
 
-<!-- TODO: Team to complete -->
+{{< include final_report/executive_summary.md >}}
 
 # Introduction
 
-<!-- TODO: Team to complete — refine from proposal report based on actual project outcomes -->
+{{< include final_report/introduction.md >}}
 
 # Data
 
-<!-- TODO: Team to complete — can reuse and expand EDA section from proposal report -->
+{{< include final_report/data.md >}}
 
 # Data Science Methods
 
@@ -109,9 +110,6 @@ The archetype framework captures genuine tactical variation both within and acro
 
 At the competition level, archetype distributions differ across leagues. The Bundesliga shows a higher share of Pressing Forwards relative to Serie A, where Low Activity is the largest single bucket among the top-five European leagues. These differences are secondary to position effects (see RQ1 analysis), but confirm that league context influences tactical role assignment at the margins.
 
-  
-<!-- TODO: Team to complete — clustering, consistency scoring, chatbot, dashboard methods -->
-
 # Data Engineering
 
 ## Overview
@@ -120,8 +118,16 @@ The data product is underpinned by a fully automated ELT pipeline that moves raw
 
 ::: {#fig-architecture fig-pos="H"}
 
-<!-- TODO: Insert architecture diagram (draw.io export) -->
-*[Architecture diagram: GCS → BigQuery → dbt → ML scripts → Dagster → Looker / Chatbot]*
+```{mermaid}
+flowchart LR
+    SB([StatsBomb API]) -- Extract --> GCS[(GCS)]
+    GCS -- Load --> BQ[(BigQuery\nraw_statsbomb)]
+    BQ -- dbt --> MART[(BigQuery\ndbt marts)]
+    MART -- cluster.py\nconsistency.py --> ML[(BigQuery\nanalytics)]
+    ML --> APP[Django App]
+    APP --> LOOKER[Looker Studio\nDashboard]
+    APP --> CHAT[LLM Chatbot\nGroq]
+```
 
 Pipeline architecture: StatsBomb open data flows through GCS and BigQuery, is transformed by dbt into analytics-ready marts, enriched by ML scripts, and served to end-users via Looker Studio and the Django chatbot.
 :::
@@ -413,4 +419,5 @@ Competition availability follows StatsBomb Open releases. Not every competition-
 
 # References
 
-<!-- TODO: Add references as needed -->
+::: {#refs}
+:::
