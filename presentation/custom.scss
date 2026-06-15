@@ -1,0 +1,353 @@
+/*-- scss:defaults --*/
+
+// ── Palette ────────────────────────────────────────────────────────────────
+$primary:    #065A82;   // deep blue — main headers, title bg
+$secondary:  #1C7293;   // teal — accents, table headers
+$accent:     #0891B2;   // bright teal — highlights, code bg border
+$light:      #F0F7FA;   // near-white with a cool tint — code/callout bg
+$dark:       #1E2D3D;   // near-black — body text
+$muted:      #5E7A8A;   // muted blue-grey — captions, footnotes
+$white:      #FFFFFF;
+$border:     #C8DDE8;   // subtle border color
+
+// ── Typography ─────────────────────────────────────────────────────────────
+$font-family-sans-serif: "Calibri", "Segoe UI", Arial, sans-serif;
+$font-family-monospace:  "Courier New", Courier, monospace;
+$presentation-font-size-root: 32px;
+$presentation-h1-font-size: 2.0em;
+$presentation-h2-font-size: 1.45em;
+$presentation-h3-font-size: 1.15em;
+
+// ── Slide background ───────────────────────────────────────────────────────
+$body-bg: #FFFFFF;
+$body-color: $dark;
+$link-color: $secondary;
+
+
+/*-- scss:rules --*/
+
+// ── Slide base ─────────────────────────────────────────────────────────────
+.reveal .slides section {
+  padding: 0.6em 1.1em 0.5em 1.1em;
+  text-align: left;
+}
+
+// ── Headings ───────────────────────────────────────────────────────────────
+.reveal h2 {
+  color: $primary;
+  font-weight: 700;
+  font-size: 1.35em;
+  margin-bottom: 0.45em;
+  padding-bottom: 0;
+  border-bottom: none;
+  letter-spacing: -0.01em;
+}
+
+.reveal h3 {
+  color: $secondary;
+  font-weight: 600;
+  font-size: 1.05em;
+  margin-bottom: 0.3em;
+}
+
+// ── Body text ──────────────────────────────────────────────────────────────
+.reveal p, .reveal li {
+  font-size: 0.82em;
+  line-height: 1.55;
+  color: $dark;
+}
+
+.reveal ul, .reveal ol {
+  margin-left: 1.4em;
+  margin-top: 0.25em;
+  margin-bottom: 0.25em;
+}
+
+.reveal li {
+  margin-bottom: 0.22em;
+}
+
+// ── Footer ─────────────────────────────────────────────────────────────────
+.reveal .footer {
+  font-size: 0.42em;
+  color: $muted;
+  letter-spacing: 0.02em;
+}
+
+// ── Slide number ───────────────────────────────────────────────────────────
+.reveal .slide-number {
+  font-size: 0.42em;
+  color: $muted;
+  background: transparent;
+}
+
+// ── Tables ─────────────────────────────────────────────────────────────────
+.reveal table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.75em;
+  margin-top: 0.4em;
+}
+
+.reveal table th {
+  background: $primary;
+  color: $white;
+  font-weight: 600;
+  padding: 0.45em 0.75em;
+  text-align: left;
+  border: none;
+}
+
+.reveal table td {
+  padding: 0.38em 0.75em;
+  border-bottom: 1px solid $border;
+  color: $dark;
+  vertical-align: top;
+}
+
+.reveal table tr:nth-child(even) td {
+  background: $light;
+}
+
+.reveal table tr:last-child td {
+  border-bottom: none;
+}
+
+// ── Code / monospace blocks ────────────────────────────────────────────────
+.reveal code {
+  font-family: $font-family-monospace;
+  font-size: 0.82em;
+  color: $primary;
+  background: $light;
+  padding: 0.05em 0.25em;
+  border-radius: 3px;
+}
+
+.reveal pre {
+  background: $light;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 0.6em 1em;
+  font-size: 0.72em;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+  word-wrap: normal;
+  box-shadow: none;
+}
+
+.reveal pre code {
+  background: transparent;
+  padding: 0;
+  font-size: 1em;
+  color: $dark;
+}
+
+// ── Pipeline / monospace callout box ──────────────────────────────────────
+.pipeline-box {
+  font-family: $font-family-monospace;
+  font-size: 0.72em;
+  background: $light;
+  border: 1.5px solid $border;
+  border-radius: 6px;
+  padding: 0.55em 1.1em;
+  margin: 0.4em 0 0.55em 0;
+  color: $accent;
+  white-space: nowrap;
+  overflow-x: auto;
+  display: block;
+  line-height: 1.5;
+}
+
+// ── Slide captions ─────────────────────────────────────────────────────────
+.slide-caption {
+  font-size: 0.6em;
+  color: $muted;
+  text-align: center;
+  margin-top: 0.4em;
+  font-style: italic;
+}
+
+// ── Image slides ───────────────────────────────────────────────────────────
+.slide-image img {
+  max-width: 100%;
+  max-height: 68vh;
+  display: block;
+  margin: 0 auto;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+}
+
+// ── Title slide ────────────────────────────────────────────────────────────
+.reveal .title-slide,
+.reveal section.title-slide {
+  background: $primary !important;
+  color: $white !important;
+}
+
+.reveal .title-slide h1,
+.reveal .title-slide .title {
+  color: $white !important;
+  font-size: 1.7em;
+  font-weight: 700;
+}
+
+.reveal .title-slide .subtitle {
+  color: lighten($secondary, 35%) !important;
+  font-size: 1.0em;
+  font-weight: 400;
+  margin-top: 0.2em;
+}
+
+.reveal .title-slide .author,
+.reveal .title-slide .date {
+  color: rgba(255,255,255,0.8) !important;
+  font-size: 0.72em;
+  margin-top: 0.15em;
+}
+
+// ── Thank You / closing slide ──────────────────────────────────────────────
+.reveal section.title-slide {
+  background: $primary !important;
+}
+
+// ── Stat callout cards ─────────────────────────────────────────────────────
+.stat-card {
+  display: inline-block;
+  background: $light;
+  border: 1.5px solid $border;
+  border-radius: 8px;
+  padding: 0.5em 1.2em;
+  margin: 0.2em 0.4em;
+  text-align: center;
+  min-width: 5em;
+}
+.stat-card .stat-num {
+  font-size: 1.6em;
+  font-weight: 700;
+  color: $primary;
+  display: block;
+}
+.stat-card .stat-lbl {
+  font-size: 0.6em;
+  color: $muted;
+}
+
+// ── Architecture diagram ───────────────────────────────────────────────────
+.arch-diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7em;
+  font-size: 0.82em;
+  font-family: $font-family-sans-serif;
+  margin-top: 0.6em;
+}
+
+.arch-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  flex-wrap: nowrap;
+  justify-content: center;
+}
+
+.arch-node {
+  border-radius: 6px;
+  padding: 0.4em 0.85em;
+  font-weight: 500;
+  white-space: nowrap;
+  font-size: 0.95em;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.arch-node.orange {
+  background: #FFF3E0;
+  border: 2px solid #F57C00;
+  border-radius: 20px;
+}
+
+.arch-node.blue {
+  background: #E1F5FE;
+  border: 2px solid #0288D1;
+}
+
+.arch-node.green {
+  background: #E8F5E9;
+  border: 2px solid #388E3C;
+}
+
+.arch-node.green.bold-italic {
+  font-style: italic;
+  font-weight: 700;
+}
+
+.arch-node.purple {
+  background: #F3E5F5;
+  border: 2px solid #7B1FA2;
+}
+
+.arch-arrow {
+  color: #90A4AE;
+  font-size: 1.2em;
+  font-weight: 300;
+}
+
+.arch-branch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25em;
+}
+
+.arch-branch-arms {
+  display: flex;
+  gap: 2.5em;
+  align-items: flex-start;
+  position: relative;
+}
+
+.arch-branch-line {
+  width: 100%;
+  height: 1px;
+  position: relative;
+}
+
+// ── Mermaid diagrams ───────────────────────────────────────────────────────
+.reveal .mermaid svg {
+  max-width: 100%;
+}
+
+// ── Compact class — tighten spacing ────────────────────────────────────────
+.reveal .compact p,
+.reveal .compact li {
+  font-size: 0.78em;
+  line-height: 1.45;
+}
+
+.reveal .compact ul {
+  margin-top: 0.15em;
+}
+
+// ── Center-only slides — larger font + more breathing room between items ────
+.reveal section.center:not(.compact) li {
+  font-size: 1.05em;
+  line-height: 1.9;
+  margin-bottom: 0.35em;
+}
+
+.reveal section.center:not(.compact) p {
+  font-size: 1.05em;
+  line-height: 1.9;
+}
+
+// ── Strong / emphasis ──────────────────────────────────────────────────────
+.reveal strong {
+  color: $primary;
+  font-weight: 700;
+}
+
+.reveal em {
+  color: $secondary;
+}
