@@ -36,7 +36,20 @@ format:
 
 # Data Science Methods
 
-Our analytical work addresses *how* players play, not just output volume. Two models sit on the same 13 per-90 StatsBomb features (attack, progression, defending, efficiency): **PCA + K-Means** for tactical archetypes and **within-context z-score scoring** for club vs national consistency. Full feature definitions, preprocessing steps, and formulas are in [`docs/appendix/`](../docs/appendix/) and [`docs/consistency.md`](../docs/consistency.md).
+Our analytical work addresses *how* players play, not just output volume. Two models sit on the same 13 per-90 StatsBomb features (attack, progression, defending, efficiency): **PCA + K-Means** for tactical archetypes and **within-context z-score scoring** for club vs national consistency. Both run on a shared automated pipeline (@fig-architecture). Full feature definitions, preprocessing steps, and formulas are in [`docs/appendix/`](../docs/appendix/) and [`docs/consistency.md`](../docs/consistency.md).
+
+## Data Pipeline
+
+StatsBomb open data is ingested through GCS into BigQuery, transformed with dbt (staging, intermediate, marts), enriched by Python ML scripts (`cluster.py`, `consistency.py`), and served through a Django app embedding Looker Studio and a Groq chatbot. Dagster orchestrates weekly full runs and hourly refreshes when new files land in GCS. Deployment and maintenance details are in [`HANDOVER.md`](../HANDOVER.md).
+
+::: {#fig-architecture fig-pos="H"}
+
+![](../presentation/assets/architecture.png){width=100%}
+
+Automated ELT pipeline: StatsBomb API through BigQuery and dbt to analytics marts, ML outputs, and end-user interfaces.
+:::
+
+End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). Mart schemas: [`docs/marts_data_dict.md`](../docs/marts_data_dict.md).
 
 ## Player Archetype Clustering
 
@@ -76,28 +89,6 @@ Progressive passing into the attacking third best separates club-focused from na
 
 **Evaluation, scope, and ethics.** RQ1 is evaluated with chi-square tests and Cramér's V on categorical cluster assignments. RQ2 quadrants use cohort median splits so labels reflect standing vs peers in each context. The 270-minute rule excludes rotation players. That trade-off stabilises per-90 rates but affects scouts reviewing low-minute prospects. Proposal RQ4 (match-outcome prediction) was deferred to prioritise the pipeline and core product. All scores are peer-relative, not absolute quality rankings. Men's-only data limits generalisation. LLM-generated SQL requires read-only guards and audit via Advanced Mode.
 
-## Data Pipeline
-
-The product runs on a fully automated ELT stack: StatsBomb API → GCS → BigQuery → dbt (staging / intermediate / marts) → Python ML scripts → Django app serving Looker Studio and the Groq chatbot. Dagster orchestrates weekly full runs and hourly refreshes when new data lands in GCS (@fig-architecture). Pipeline architecture, deployment, and maintenance: [`HANDOVER.md`](../HANDOVER.md).
-
-::: {#fig-architecture fig-pos="H"}
-
-```{mermaid}
-flowchart LR
-    SB([StatsBomb API]) -- Extract --> GCS[(GCS)]
-    GCS -- Load --> BQ[(BigQuery\nraw_statsbomb)]
-    BQ -- dbt --> MART[(BigQuery\ndbt marts)]
-    MART -- cluster.py\nconsistency.py --> ML[(BigQuery\nanalytics)]
-    ML --> APP[Django App]
-    APP --> LOOKER[Looker Studio\nDashboard]
-    APP --> CHAT[LLM Chatbot\nGroq]
-```
-
-Pipeline architecture: StatsBomb open data flows through GCS and BigQuery, is transformed by dbt into analytics-ready marts, enriched by ML scripts, and served to end-users via Looker Studio and the Django chatbot.
-:::
-
-End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). dbt follows staging → intermediate → marts layers with the 270-minute filter applied in intermediate models. Mart schemas: [`docs/marts_data_dict.md`](../docs/marts_data_dict.md).
-
 # Data Product and Results
 
 The data product is a unified Django web application combining an embedded Looker Studio dashboard and a natural language chatbot. These forms were chosen because Trilemma's analysts operate at two levels of inquiry that no single tool handles alone: broad visual exploration and specific ad-hoc questions. A notebooks-only workflow was rejected as inaccessible to non-technical partner staff. A dashboard alone could not replace flexible querying without Looker edit access.
@@ -123,6 +114,13 @@ League effects are secondary but visible (@tbl-rq1-competition). Serie A has the
 
 : Outfield cluster counts by competition in `mart_player_clusters` (BigQuery). Goalkeepers excluded. {#tbl-rq1-competition}
 
+::: {#fig-messi-archetypes fig-pos="H"}
+
+![](../presentation/assets/looker-cluster-page2.png){width=95%}
+
+Looker cluster explorer filtered to Lionel Messi. Most seasons are classified as Creative Winger, with Pressing Forward appearing in Copa América 2024.
+:::
+
 **RQ2 (Club vs national consistency).** Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see @tbl-quadrant-dist). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
 
 A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (Notebook 08), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see [`docs/appendix/`](../docs/appendix/)).
@@ -136,7 +134,21 @@ A stable profile is not the same as a strong one. Many players look similar acro
 
 : Observed quadrant counts in `analytics.consistency_scores` (BigQuery). {#tbl-quadrant-dist}
 
+::: {#fig-gnabry-quadrant fig-pos="H"}
+
+![](../presentation/assets/looker-quadrant-scatter.png){width=95%}
+
+Looker Consistency Explorer with Germany selected. Serge Gnabry appears as an International Specialist (stronger vs national-team peers than club peers).
+:::
+
 **RQ3 (Natural language access).** The chatbot returns BigQuery-backed answers to plain-English questions in under ten seconds. It was evaluated informally against representative analyst questions (player rankings by archetype, cross-context comparisons, competition filters) and consistently applied the same eligibility rules as the dashboard, including the 270-minute threshold. Advanced Mode exposes generated SQL for audit. A read-only SQL guard blocks destructive queries.
+
+::: {#fig-chatbot fig-pos="H"}
+
+![](../presentation/assets/chatbot_screenshot.png){width=95%}
+
+Django chatbot with Advanced Mode enabled, showing a natural language query, generated BigQuery SQL, and formatted results.
+:::
 
 ## Product design
 
@@ -147,10 +159,6 @@ The **chatbot** covers ad-hoc questions outside fixed dashboard charts, returnin
 **Strengths:** the Dagster-automated pipeline refreshes all data weekly with zero manual intervention, so both interfaces always reflect current StatsBomb releases.
 
 **Limitations:** the chatbot handles single-step queries. Multi-step reasoning (e.g., "track this player's archetype across five seasons and then compare against their national team peers") is not yet supported. Both interfaces are scoped to men's competitions only. A women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customized without Looker Studio access. Highly specific visual analyses still require a technical user.
-
-![Chatbot interface demonstrating a natural language query and Advanced Mode SQL output.](../presentation/assets/chatbot_screenshot.png){width=90%}
-
-![Embedded Looker Studio dashboard providing archetype and consistency explorer views.](../presentation/assets/dashboard_screenshot.png){width=90%}
 
 # Conclusions and Recommendations
 
