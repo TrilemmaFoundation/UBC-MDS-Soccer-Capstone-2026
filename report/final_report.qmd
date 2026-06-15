@@ -40,28 +40,28 @@ Our analytical work addresses *how* players play, not just output volume. Two mo
 
 ## Player Archetype Clustering
 
-We cluster player-seasons from `int_player_season_stats` after applying a **270-minute** minimum per season (*n* = 5,469 outfield; 5,759 including goalkeepers). **Goalkeepers** are excluded from K-Means and assigned a fixed label because their event profiles are structurally unlike outfield players.
+We cluster player-seasons from `int_player_season_stats` after applying a **270-minute** minimum per season (*n* = 5,469 outfield, 5,759 including goalkeepers). **Goalkeepers** are excluded from K-Means and assigned a fixed label because their event profiles are structurally unlike outfield players.
 
 **Feature selection.** Thirteen per-90 metrics span attacking output (`xg_per_90`, `shots_per_90`), ball progression (`passes_per_90`, `passes_att_third_per_90`, `pass_completion_pct`, `carries_per_90`, `dribbles_per_90`), defensive work (`pressures_per_90`, `interceptions_per_90`, `blocks_per_90`, `clearances_per_90`, `duels_per_90`), and shot efficiency (`xg_per_shot`). The same 13 features are used in clustering, consistency scoring, and the dashboard so labels stay aligned across the product.
 
-**Preprocessing and modelling:** missing values are median-imputed to preserve the zero-skewed shape of defensive counts; values above the 99th percentile are clipped column-wise to limit outlier influence; features are then standardised. PCA retains components explaining 80% of variance (typically six). **PC1** captures overall involvement volume; **PC2** contrasts defensive actions against attacking output. K-Means with **k = 5** is applied to the PCA-reduced space. We chose five outfield clusters over slightly tighter statistical fits with fewer groups (Notebook 05) because five labels are easier for coaches to interpret. K-Means was preferred over hierarchical methods for scale and reproducibility on 5,000+ player-seasons.
+**Preprocessing and modelling:** missing values are median-imputed to preserve the zero-skewed shape of defensive counts. Values above the 99th percentile are clipped column-wise to limit outlier influence, then features are standardised. PCA retains components explaining 80% of variance (typically six). **PC1** captures overall involvement volume. **PC2** contrasts defensive actions against attacking output. K-Means with **k = 5** is applied to the PCA-reduced space. We chose five outfield clusters over slightly tighter statistical fits with fewer groups (Notebook 05) because five labels are easier for coaches to interpret. K-Means was preferred over hierarchical methods for scale and reproducibility on 5,000+ player-seasons.
 
-The resulting archetypes (@tbl-cluster-dist) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity — for example, Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament.
+The resulting archetypes (@tbl-cluster-dist) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity. Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament.
 
 | Archetype | Player-seasons | Tactical profile |
 |---|---|---|
-| Low Activity | 1,963 | Low volume across all metrics; squad players and limited roles |
-| Defensive Anchor | 1,470 | High clearances, interceptions, duels; low attacking output |
-| Creative Playmaker | 807 | High pass completion, progressive passes, carries; attacking midfielders |
-| Pressing Forward | 766 | High pressures, shots, and xG; high-energy forwards and pressing wingers |
-| Creative Winger | 463 | High dribbles, carries, shots; direct wide attackers |
-| Goalkeeper | 290 | Assigned by position; excluded from K-Means |
+| Low Activity | 1,963 | Low volume across all metrics. Typical of squad players and limited roles |
+| Defensive Anchor | 1,470 | High clearances, interceptions, duels. Low attacking output |
+| Creative Playmaker | 807 | High pass completion, progressive passes, carries. Attacking midfielders |
+| Pressing Forward | 766 | High pressures, shots, and xG. High-energy forwards and pressing wingers |
+| Creative Winger | 463 | High dribbles, carries, shots. Direct wide attackers |
+| Goalkeeper | 290 | Assigned by position. Excluded from K-Means |
 
 : Player archetype distribution across all player-seasons. {#tbl-cluster-dist}
 
 ## Club vs National Consistency Scoring
 
-For **489 dual-context players** with ≥270 minutes in both club and national football, we standardise each of the 13 features **within context**: club z-scores compare a player only to other club players; national z-scores only to other national-team players. We then compute PCA-weighted **performance scores** (strength vs peers in each setting), a **consistency score** (1 minus the mean absolute z-gap across features — profile similarity, not quality), and four **performance quadrants** by median splits on club and national performance scores (@tbl-quadrants).
+For **489 dual-context players** with ≥270 minutes in both club and national football, we standardise each of the 13 features **within context**. Club z-scores compare a player only to other club players. National z-scores compare only to other national-team players. We then compute PCA-weighted **performance scores** (strength vs peers in each setting), a **consistency score** (1 minus the mean absolute z-gap across features, measuring profile similarity rather than quality), and four **performance quadrants** by median splits on club and national performance scores (@tbl-quadrants).
 
 | Club vs median | National vs median | Quadrant |
 |----------------|-------------------|----------|
@@ -73,6 +73,8 @@ For **489 dual-context players** with ≥270 minutes in both club and national f
 : Quadrant assignment logic from `src/ml/consistency.py`. {#tbl-quadrants}
 
 Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Complete formulas and dashboard field definitions: [`docs/appendix/consistency-explorer.md`](../docs/appendix/consistency-explorer.md).
+
+**Evaluation, scope, and ethics.** RQ1 is evaluated with chi-square tests and Cramér's V on categorical cluster assignments. RQ2 quadrants use cohort median splits so labels reflect standing vs peers in each context. The 270-minute rule excludes rotation players. That trade-off stabilises per-90 rates but affects scouts reviewing low-minute prospects. Proposal RQ4 (match-outcome prediction) was deferred to prioritise the pipeline and core product. All scores are peer-relative, not absolute quality rankings. Men's-only data limits generalisation. LLM-generated SQL requires read-only guards and audit via Advanced Mode.
 
 ## Data Pipeline
 
@@ -94,36 +96,36 @@ flowchart LR
 Pipeline architecture: StatsBomb open data flows through GCS and BigQuery, is transformed by dbt into analytics-ready marts, enriched by ML scripts, and served to end-users via Looker Studio and the Django chatbot.
 :::
 
-End-to-end validation confirmed aligned row counts (5,759 player-seasons; 489 dual-context players scored). The dbt project follows a three-layer pattern: **staging** cleans and types raw StatsBomb tables; **intermediate** aggregates events to player-match, player-season, and dual-context tables with the 270-minute filter; **marts** join ML outputs for Looker and the chatbot. Materialising marts as BigQuery tables (not views) keeps dashboard and LLM queries fast. Mart schemas: [`docs/marts_data_dict.md`](../docs/marts_data_dict.md).
+End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). dbt follows staging → intermediate → marts layers with the 270-minute filter applied in intermediate models. Mart schemas: [`docs/marts_data_dict.md`](../docs/marts_data_dict.md).
 
 # Data Product and Results
 
-The data product is a unified Django web application combining an embedded Looker Studio dashboard and a natural language chatbot. These forms were chosen because Trilemma's analysts operate at two levels of inquiry that no single tool handles alone: broad visual exploration and specific ad-hoc questions.
+The data product is a unified Django web application combining an embedded Looker Studio dashboard and a natural language chatbot. These forms were chosen because Trilemma's analysts operate at two levels of inquiry that no single tool handles alone: broad visual exploration and specific ad-hoc questions. A notebooks-only workflow was rejected as inaccessible to non-technical partner staff. A dashboard alone could not replace flexible querying without Looker edit access.
 
 ## Results
 
-**RQ1 — Role distribution.** Chi-square tests on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07; full heatmaps and statistics in [`docs/notebooks.md`](../docs/notebooks.md)). Cramér's V for position × cluster is materially larger than for competition × cluster. In row-normalised heatmaps:
+**RQ1 (Role distribution).** Chi-square tests on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07, full heatmaps and statistics in [`docs/notebooks.md`](../docs/notebooks.md)). Cramér's V for position × cluster is materially larger than for competition × cluster. In row-normalised heatmaps:
 
-- **Center backs** concentrate in Defensive Anchor and Low Activity; attacking clusters are rare.
+- **Center backs** concentrate in Defensive Anchor and Low Activity. Attacking clusters are rare.
 - **Forwards and attacking mids** skew toward Pressing Forward and Creative Winger.
 - **Central mids** spread across Creative Playmaker, Pressing Forward, and Low Activity, reflecting overlapping box-to-box roles.
 - **Full backs** often land in Creative Winger or Creative Playmaker when their profiles emphasise carries and progressive passing.
 
-League effects are secondary but visible (@tbl-rq1-competition): Serie A has the largest Low Activity share among the top five; Bundesliga and La Liga show relatively more Pressing Forwards. The same position can shift ±5–15 percentage points in archetype share between leagues. Dashboard users should filter by position before comparing leagues.
+League effects are secondary but visible (@tbl-rq1-competition). Serie A has the largest Low Activity share among the top five. Bundesliga and La Liga show relatively more Pressing Forwards. The same position can shift ±5–15 percentage points in archetype share between leagues. Dashboard users should filter by position before comparing leagues.
 
 | Competition | Largest archetype (player-seasons) | Second largest | Notable pattern |
 |-------------|-----------------------------------|----------------|-----------------|
-| La Liga | Defensive Anchor (304) | Low Activity (167) | Highest volume; anchors lead |
+| La Liga | Defensive Anchor (304) | Low Activity (167) | Highest volume. Anchors lead |
 | Serie A | Low Activity (240) | Defensive Anchor (138) | Most Low Activity share among top five |
 | Ligue 1 | Defensive Anchor (175) | Low Activity (148) | Similar anchor vs low-activity mix |
 | Premier League | Defensive Anchor (169) | Low Activity (163) | Near-even top two clusters |
-| Bundesliga | Defensive Anchor (145) | Low Activity (121) | Smallest top-five sample; more Pressing Forward (83) |
+| Bundesliga | Defensive Anchor (145) | Low Activity (121) | Smallest top-five sample. More Pressing Forward (83) |
 
 : Outfield cluster counts by competition in `mart_player_clusters` (BigQuery). Goalkeepers excluded. {#tbl-rq1-competition}
 
-**RQ2 — Club vs national consistency.** Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only; @tbl-quadrant-dist). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90** — system and role differences, not raw goal output, drive the split.
+**RQ2 (Club vs national consistency).** Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see @tbl-quadrant-dist). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
 
-A stable profile is not the same as a strong one: many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (Notebook 08), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things; see [`docs/appendix/`](../docs/appendix/).
+A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (Notebook 08), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see [`docs/appendix/`](../docs/appendix/)).
 
 | Quadrant | Players | Share |
 |----------|---------|-------|
@@ -134,17 +136,17 @@ A stable profile is not the same as a strong one: many players look similar acro
 
 : Observed quadrant counts in `analytics.consistency_scores` (BigQuery). {#tbl-quadrant-dist}
 
-**RQ3 — Natural language access.** The chatbot returns BigQuery-backed answers to plain-English questions in under ten seconds. It was evaluated informally against representative analyst questions (player rankings by archetype, cross-context comparisons, competition filters) and consistently applied the same eligibility rules as the dashboard, including the 270-minute threshold. Advanced Mode exposes generated SQL for audit; a read-only SQL guard blocks destructive queries.
+**RQ3 (Natural language access).** The chatbot returns BigQuery-backed answers to plain-English questions in under ten seconds. It was evaluated informally against representative analyst questions (player rankings by archetype, cross-context comparisons, competition filters) and consistently applied the same eligibility rules as the dashboard, including the 270-minute threshold. Advanced Mode exposes generated SQL for audit. A read-only SQL guard blocks destructive queries.
 
 ## Product design
 
-The **dashboard** provides visual access to pre-computed results — archetype distributions, consistency quadrants, and player rankings — filterable by position, competition, and archetype without writing code. It is appropriate for regular reporting and for communicating findings to non-technical stakeholders within Trilemma's partner organizations.
+The **dashboard** provides visual access to pre-computed results (archetype distributions, consistency quadrants, and player rankings) filterable by position, competition, and archetype without writing code. It is appropriate for regular reporting and for communicating findings to non-technical stakeholders within Trilemma's partner organizations.
 
-The **chatbot** (Groq `llama-3.3-70b-versatile`) addresses questions that fall outside the dashboard's fixed charts. Analysts type a question in plain English; the LLM generates BigQuery SQL, executes it against the mart layer, and returns a formatted answer in under ten seconds. An Advanced Mode panel exposes the generated SQL, allowing technical users to audit the LLM's reasoning and verify that correct filters (e.g., the 270-minute minimum, per-90 normalizations) were applied. A custom `is_safe_sql` guard restricts all LLM output to read-only SELECT statements, preventing prompt injection and unauthorised database writes — an important safeguard when non-technical users interact with production data through natural language.
+The **chatbot** covers ad-hoc questions outside fixed dashboard charts, returning mart-backed answers with SQL audit and read-only guards for trust.
 
-**Strengths:** the Dagster-automated pipeline refreshes all data weekly with zero manual intervention, so both interfaces always reflect current StatsBomb releases. The product is fully reproducible from a single `docker compose up` and documented for independent use by a new Trilemma team member.
+**Strengths:** the Dagster-automated pipeline refreshes all data weekly with zero manual intervention, so both interfaces always reflect current StatsBomb releases.
 
-**Limitations:** the chatbot handles single-step queries; multi-step reasoning (e.g., "track this player's archetype across five seasons and then compare against their national team peers") is not yet supported. Both interfaces are scoped to men's competitions only — a women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customized without Looker Studio access; highly specific visual analyses still require a technical user.
+**Limitations:** the chatbot handles single-step queries. Multi-step reasoning (e.g., "track this player's archetype across five seasons and then compare against their national team peers") is not yet supported. Both interfaces are scoped to men's competitions only. A women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customized without Looker Studio access. Highly specific visual analyses still require a technical user.
 
 ![Chatbot interface demonstrating a natural language query and Advanced Mode SQL output.](../presentation/assets/chatbot_screenshot.png){width=90%}
 
@@ -154,11 +156,11 @@ The **chatbot** (Groq `llama-3.3-70b-versatile`) addresses questions that fall o
 
 The original problem was that Trilemma Foundation analysts had no scalable way to extract tactical insights from StatsBomb event data without writing complex SQL. This project addressed that problem by delivering three research products on a single automated pipeline.
 
-**RQ1** established that five tactical archetypes emerge from 5,759 player-seasons across 16 competitions, with position being the dominant driver of cluster assignment. Trilemma can now use archetype labels to profile scouting targets and assess squad balance before a transfer window — replacing ad-hoc SQL with a filterable Looker dashboard. **RQ2** found that 36% of dual-context players specialize in one setting (club or national) while 32% perform above peer median in both, providing a data-grounded tool for national team selection decisions. **RQ3** demonstrated that a Groq LLM reliably translates plain English questions into accurate BigQuery SQL, removing the technical barrier for non-technical analysts entirely.
+**RQ1** established that five tactical archetypes emerge from 5,759 player-seasons across 16 competitions, with position being the dominant driver of cluster assignment. Trilemma can now use archetype labels to profile scouting targets and assess squad balance before a transfer window, replacing ad-hoc SQL with a filterable Looker dashboard. **RQ2** found that 36% of dual-context players specialize in one setting (club or national) while 32% perform above peer median in both, providing a data-grounded tool for national team selection decisions. **RQ3** demonstrated that a Groq LLM reliably translates plain English questions into accurate BigQuery SQL, removing the technical barrier for non-technical analysts entirely.
 
-The product addresses the core needs described in the project brief. Remaining limitations are: men's-only data scope due to feature distribution differences in women's football, uneven competition coverage in the StatsBomb open tier, and the chatbot's single-step reasoning constraint. All metrics are relative to peers within each competition or context, so analysts should interpret archetype and quadrant labels as tactical profiles rather than absolute player quality rankings.
+The product addresses the core needs described in the project brief. Remaining limitations are men's-only data scope, uneven StatsBomb open-tier coverage, and the chatbot's single-step reasoning constraint. Scientific objectives do not fully cover broader business decisions. Archetypes profile playing style, not transfer value or injury risk. Consistency informs national-team context, not squad chemistry or fitness.
 
-Future work should prioritize: a women's parallel dbt pipeline branch; multi-turn LLM reasoning with session memory for follow-up questions; integration with the paid StatsBomb API for real-time data; and extending the consistency framework to track how individual archetypes evolve across seasons. A key lesson from the project is that product form matters as much as model quality — combining a visual dashboard with a conversational interface gives analysts coverage that neither tool provides independently.
+Future work should prioritize a women's parallel dbt pipeline branch, multi-turn LLM reasoning with session memory for follow-up questions, integration with the paid StatsBomb API for real-time data, and extending the consistency framework to track how individual archetypes evolve across seasons. A key lesson from the project is that product form matters as much as model quality. Combining a visual dashboard with a conversational interface gives analysts coverage that neither tool provides independently.
 
 # Appendix: Supplementary Documentation
 
