@@ -4,7 +4,7 @@ All data in this project comes from the StatsBomb open dataset, accessed via the
 
 ## Dataset Structure
 
-Three tables are ingested from the API (@tbl-data-overview):
+Three tables are ingested from the API (\autoref{tbl-data-overview}):
 
 | Table | Grain | Scale |
 |-------|-------|-------|
