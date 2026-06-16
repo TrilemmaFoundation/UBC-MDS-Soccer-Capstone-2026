@@ -4,7 +4,7 @@ All data in this project comes from the StatsBomb open dataset, accessed via the
 
 ## Dataset Structure
 
-Three tables are ingested from the API (@tbl-data-overview):
+Three tables are ingested from the API (\autoref{tbl-data-overview}):
 
 | Table | Grain | Scale |
 |-------|-------|-------|
@@ -14,7 +14,7 @@ Three tables are ingested from the API (@tbl-data-overview):
 
 : Overview of ingested StatsBomb tables. {#tbl-data-overview}
 
-The `events` table is the analytical backbone. Action types are dominated by Pass (~3.4M), Ball Receipt (~3.2M), Carry (~2.6M), and Pressure (~1.1M). There are 88,023 Shot events with non-null StatsBomb xG values (mean xG per shot: 0.107). The dataset covers 10,808 distinct players across 308 teams.
+The `events` table is the analytical backbone. Action types are dominated by Pass (~3.4M), Ball Receipt (~3.2M), Carry (~2.6M), and Pressure (~1.1M). There are 88,023 Shot events with non-null StatsBomb xG values (mean xG per shot: 0.107). The dataset covers 10,808 distinct players across 308 teams. Primary model outputs are **cluster labels** (RQ1), **performance quadrants**, and **consistency scores** (RQ2). Player-level modelling is limited to **men's senior** competitions, which bounded project scope.
 
 ## Data Quality and Limitations
 
@@ -22,7 +22,7 @@ Several quality issues and constraints shaped the project:
 
 - **Missing lineup times.** Substitution `to_time` is missing for 110,917 lineup rows, corresponding to starters who played the full match and bench players who never appeared. Minutes played are inferred as 90 (or 120 for extra time) when the field is null.
 - **Missing positions.** `position_name` is absent for 34,179 lineup rows, consistent with bench entries with unconfirmed roles. These rows are excluded from per-position analyses.
-- **Uneven competition coverage.** La Liga contributes 868 matches with complete seasonal coverage; the UEFA Champions League has scattered single-match history. Analysts should treat early-season or low-coverage competitions as smaller sub-samples.
+- **Uneven competition coverage.** La Liga contributes 868 matches with complete seasonal coverage. The UEFA Champions League has scattered single-match history. Analysts should treat early-season or low-coverage competitions as smaller sub-samples.
 - **Open data scope.** The free tier does not include all competitions or all seasons available in the paid StatsBomb API. Coverage is curated by StatsBomb and may change with new releases.
 
 ## How Data Shaped Design Decisions
