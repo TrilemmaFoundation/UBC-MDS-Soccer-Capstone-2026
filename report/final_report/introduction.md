@@ -1,3 +1,5 @@
+This section describes the context and motivation for the project.
+
 ## Background
 
 The Trilemma Foundation aims to bring data-driven methods to football analysis. StatsBomb open data [@statsbomb2024] provides one of the richest publicly available sources of match event data, covering player-level on-ball actions (shots, passes, carries, pressures, dribbles, and more) at sub-second granularity. Despite its depth, the dataset is difficult to work with at scale. Event records are deeply nested JSON, competitions and seasons are fragmented across many files, and extracting meaningful player metrics requires complex aggregation logic that is impractical to write ad hoc.

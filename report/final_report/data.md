@@ -1,3 +1,5 @@
+This section describes the data source, its structure, and coverage.
+
 ## Source
 
 All data in this project comes from the StatsBomb open dataset, accessed via the `statsbombpy` Python library [@statsbomb2024]. StatsBomb collects match event data by manually tracking every on-ball action in a match, assigning it a type, timestamp, location (x, y coordinates on a 120 × 80 pitch grid), and a rich set of type-specific attributes. The open tier covers 16 competitions spanning men's senior football across Europe, South America, North America, and international tournaments.
