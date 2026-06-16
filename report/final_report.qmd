@@ -59,7 +59,7 @@ We cluster player-seasons from `int_player_season_stats` after applying a **270-
 
 **Preprocessing and modelling:** missing values are median-imputed to preserve the zero-skewed shape of defensive counts. Values above the 99th percentile are clipped column-wise to limit outlier influence, then features are standardised. PCA retains components explaining 80% of variance (typically six). **PC1** captures overall involvement volume. **PC2** contrasts defensive actions against attacking output. K-Means with **k = 5** is applied to the PCA-reduced space. We chose five outfield clusters over slightly tighter statistical fits with fewer groups (Notebook 05) because five labels are easier for coaches to interpret. K-Means was preferred over hierarchical methods for scale and reproducibility on 5,000+ player-seasons.
 
-The resulting archetypes (\autoref{tbl-cluster-dist}) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity. Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament. RQ1 archetype assignments are evaluated with chi-square tests and Cramér's V; position explains most of the cluster variance, with competition effects secondary (Notebook 07).
+The resulting archetypes (\autoref{tbl-cluster-dist}) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity. Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament.
 
 | Archetype | Player-seasons | Tactical profile |
 |---|---|---|
@@ -85,7 +85,7 @@ For **489 dual-context players** with $\geq 270$ minutes in both club and nation
 
 : Quadrant assignment logic from `src/ml/consistency.py`. {#tbl-quadrants}
 
-Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context — not absolute quality — so an Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions: [Consistency Explorer appendix](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/appendix/consistency-explorer.md).
+Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context, not absolute quality. An Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions: [Consistency Explorer appendix](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/appendix/consistency-explorer.md).
 
 # Data Product and Results
 
@@ -93,7 +93,7 @@ The data product is a unified Django web application combining an embedded Looke
 
 ## Results
 
-**RQ1 (Role distribution).** Chi-square tests on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07, full heatmaps and statistics in the [analysis notebooks guide](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/notebooks.md)). Cramér's V for position × cluster is materially larger than for competition × cluster. In row-normalised heatmaps:
+**RQ1 (Role distribution).** Chi-square tests on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07, full heatmaps and statistics in the [analysis notebooks guide](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/notebooks.md)). In row-normalised heatmaps:
 
 - **Center backs** concentrate in Defensive Anchor and Low Activity. Attacking clusters are rare.
 - **Forwards and attacking mids** skew toward Pressing Forward and Creative Winger.
@@ -156,7 +156,7 @@ The **chatbot** covers ad-hoc questions outside fixed dashboard charts, returnin
 
 **Strengths:** the Dagster-automated pipeline refreshes all data weekly with zero manual intervention, so both interfaces always reflect current StatsBomb releases. The product is fully reproducible from a single `docker compose up` and documented for independent use by a new team member.
 
-**Limitations:** the chatbot handles single-step queries; multi-step reasoning (e.g., tracking a player's archetype across seasons before comparing against national peers) is not yet supported. Both interfaces are scoped to men's competitions only — a women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customised without Looker Studio access.
+**Limitations:** the chatbot handles single-step queries. Multi-step reasoning (e.g., tracking a player's archetype across seasons before comparing against national peers) is not yet supported. Both interfaces are scoped to men's competitions only. A women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customised without Looker Studio access.
 
 # Conclusions and Recommendations
 
@@ -164,7 +164,7 @@ The original problem was that Trilemma Foundation analysts had no scalable way t
 
 **RQ1** established that five tactical archetypes emerge from 5,759 player-seasons across 16 competitions, with position being the dominant driver of cluster assignment. Trilemma can now use archetype labels to profile scouting targets and assess squad balance before a transfer window, replacing ad-hoc SQL with a filterable Looker dashboard. **RQ2** found that 36% of dual-context players specialize in one setting (club or national) while 32% perform above peer median in both, providing a data-grounded tool for national team selection decisions. **RQ3** demonstrated that a Groq LLM reliably translates plain English questions into accurate BigQuery SQL, removing the technical barrier for non-technical analysts entirely.
 
-The product addresses the core needs described in the project brief. Remaining limitations are men's-only data scope, uneven StatsBomb open-tier coverage, and the chatbot's single-step reasoning constraint. It is worth noting where the scientific objectives stop short of broader business decisions: archetypes profile playing style, not transfer value or injury risk; consistency scores inform national-team context, not squad chemistry or fitness. These gaps are inherent to the available data and scope, not failures of the models themselves.
+The product addresses the core needs described in the project brief. Remaining limitations are men's-only data scope, uneven StatsBomb open-tier coverage, and the chatbot's single-step reasoning constraint. It is worth noting where the scientific objectives stop short of broader business decisions. Archetypes profile playing style, not transfer value or injury risk. Consistency scores inform national-team context, not squad chemistry or fitness. These gaps are inherent to the available data and scope, not failures of the models themselves.
 
 Future work should prioritize a women's parallel dbt pipeline branch, multi-turn LLM reasoning with session memory for follow-up questions, integration with the paid StatsBomb API for real-time data, and extending the consistency framework to track how individual archetypes evolve across seasons. A key lesson from the project is that product form matters as much as model quality. Combining a visual dashboard with a conversational interface gives analysts coverage that neither tool provides independently.
 
