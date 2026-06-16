@@ -93,7 +93,7 @@ The data product is a unified Django web application combining an embedded Looke
 
 ## Results
 
-**RQ1 (Role distribution).** Chi-square tests on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07, full heatmaps and statistics in the [analysis notebooks guide](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/notebooks.md)). In row-normalised heatmaps:
+**RQ1 (Role distribution).** Chi-square tests and Cramér's V on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07, full heatmaps and statistics in the [analysis notebooks guide](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/notebooks.md)). In row-normalised heatmaps:
 
 - **Center backs** concentrate in Defensive Anchor and Low Activity. Attacking clusters are rare.
 - **Forwards and attacking mids** skew toward Pressing Forward and Creative Winger.
@@ -156,7 +156,7 @@ The **chatbot** covers ad-hoc questions outside fixed dashboard charts, returnin
 
 **Strengths:** the Dagster-automated pipeline refreshes all data weekly with zero manual intervention, so both interfaces always reflect current StatsBomb releases. The product is fully reproducible from a single `docker compose up` and documented for independent use by a new team member.
 
-**Limitations:** the chatbot handles single-step queries. Multi-step reasoning (e.g., tracking a player's archetype across seasons before comparing against national peers) is not yet supported. Both interfaces are scoped to men's competitions only. A women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customised without Looker Studio access.
+**Limitations:** the chatbot handles single-step queries only — multi-step reasoning (e.g., tracking a player's archetype across seasons before comparing against national peers) is not yet supported. Both interfaces are scoped to men's competitions; a women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customised without Looker Studio access.
 
 # Conclusions and Recommendations
 
@@ -164,7 +164,7 @@ The original problem was that Trilemma Foundation analysts had no scalable way t
 
 **RQ1** established that five tactical archetypes emerge from 5,759 player-seasons across 16 competitions, with position being the dominant driver of cluster assignment. Trilemma can now use archetype labels to profile scouting targets and assess squad balance before a transfer window, replacing ad-hoc SQL with a filterable Looker dashboard. **RQ2** found that 36% of dual-context players specialize in one setting (club or national) while 32% perform above peer median in both, providing a data-grounded tool for national team selection decisions. **RQ3** demonstrated that a Groq LLM reliably translates plain English questions into accurate BigQuery SQL, removing the technical barrier for non-technical analysts entirely.
 
-The product addresses the core needs described in the project brief. Remaining limitations are men's-only data scope, uneven StatsBomb open-tier coverage, and the chatbot's single-step reasoning constraint. It is worth noting where the scientific objectives stop short of broader business decisions. Archetypes profile playing style, not transfer value or injury risk. Consistency scores inform national-team context, not squad chemistry or fitness. These gaps are inherent to the available data and scope, not failures of the models themselves.
+The product addresses the core needs described in the project brief. Remaining limitations are men's-only data scope, uneven StatsBomb open-tier coverage, and the chatbot's single-step reasoning constraint. The models address analytical questions within a defined scope: archetypes profile playing style, not transfer value or injury risk; consistency scores inform national-team context, not squad chemistry or fitness. These boundaries are inherent to the available data, not failures of the models themselves.
 
 Future work should prioritize a women's parallel dbt pipeline branch, multi-turn LLM reasoning with session memory for follow-up questions, integration with the paid StatsBomb API for real-time data, and extending the consistency framework to track how individual archetypes evolve across seasons. A key lesson from the project is that product form matters as much as model quality. Combining a visual dashboard with a conversational interface gives analysts coverage that neither tool provides independently.
 
