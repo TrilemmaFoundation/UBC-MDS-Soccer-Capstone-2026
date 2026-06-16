@@ -226,7 +226,7 @@ git --version            # git version 2.x.x
 
 ## 5. GCP Setup (First Time Only)
 
-> Skip this section if you received `dagster-service-account-key.json` and `chatbot-service-account-key.json` from the outgoing team and the GCP project already exists.
+> Skip this section if you received `service-account-key.json` from the outgoing team and the GCP project already exists.
 
 ### 5a. Enable required APIs
 In the [GCP Console](https://console.cloud.google.com) for your project, enable:
@@ -263,40 +263,29 @@ bq mk --dataset --location=US YOUR_PROJECT_ID:dbt_marts
 bq mk --dataset --location=US YOUR_PROJECT_ID:analytics
 ```
 
-### 5d. Create service accounts and download the keys
+### 5d. Create service account and download the key
 ```bash
-# Create Dagster service account
-gcloud iam service-accounts create dagster-sa \
-  --display-name="Dagster Pipeline Service Account"
+# Create service account
+gcloud iam service-accounts create football-analytics-sa \
+  --display-name="Football Analytics Service Account"
 
-# Grant Dagster required roles
+# Grant required roles
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataEditor"
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.jobUser"
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.admin"
-
-# Create Chatbot service account
-gcloud iam service-accounts create chatbot-sa \
-  --display-name="Django Chatbot Service Account"
-
-# Grant Chatbot required roles
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:chatbot-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataViewer"
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:chatbot-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/bigquery.jobUser"
 
-# Download the keys — place them in the project root
-gcloud iam service-accounts keys create dagster-service-account-key.json \
-  --iam-account=dagster-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
-gcloud iam service-accounts keys create chatbot-service-account-key.json \
-  --iam-account=chatbot-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+# Download the key — place it in the project root
+gcloud iam service-accounts keys create service-account-key.json \
+  --iam-account=football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
 ```
 
 > ⚠️ **Never commit `service-account-key.json` to Git.** It is already in `.gitignore`.
@@ -485,8 +474,8 @@ cp .env.example .env
 # Edit .env — fill in all required values (see Section 6a)
 cp /path/to/service-account-key.json .
 
-# 3. Build images (first time only — takes 5-10 min)
-docker compose build
+# 3. Pull pre-built images from Docker Hub (first time only — takes 2-3 min)
+docker compose pull
 
 # 4. Apply Django migrations (first time only)
 docker compose run --rm django-env python manage.py migrate
@@ -509,9 +498,9 @@ docker compose up dagster-env       # pipeline UI only
 docker compose up jupyter-env       # notebooks only
 ```
 
-To rebuild after code changes:
+To update to a new image version:
 ```bash
-docker compose build django-env && docker compose up django-env
+docker compose pull django-env && docker compose up django-env
 ```
 
 ---
@@ -1151,7 +1140,7 @@ dbt test --select <model_name>
 1. Create a new service account key in GCP IAM
 2. Download and replace `service-account-key.json` in the project root
 3. Update `GCE_SERVICE_ACCOUNT_KEY` in GitHub Actions secrets
-4. Rebuild Docker containers: `docker compose build`
+4. Pull the latest Docker images: `docker compose pull`
 
 ---
 
@@ -1220,7 +1209,7 @@ python -c "from google.cloud import bigquery; bigquery.Client(); print('OK')"
 
 ### "Docker container can't reach BigQuery"
 **Cause:** `service-account-key.json` is not mounted or `GOOGLE_APPLICATION_CREDENTIALS` is not set in the container.
-**Fix:** Verify `docker-compose.yml` mounts the key file and sets `GOOGLE_APPLICATION_CREDENTIALS`. Rebuild if needed: `docker compose build`.
+**Fix:** Verify `docker-compose.yml` mounts the key file and sets `GOOGLE_APPLICATION_CREDENTIALS`. Pull the latest images if needed: `docker compose pull`.
 
 ### "Port already in use"
 ```bash
