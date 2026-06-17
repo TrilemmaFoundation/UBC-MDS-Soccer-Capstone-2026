@@ -7,7 +7,7 @@ football_analytics: # This name must match the 'profile' in dbt_project.yml
       project: "{{ env_var('GCP_PROJECT_ID', 'football-capstone-mds-496219') }}"
       dataset: dbt # The dataset where dbt will create your models
       threads: 4
-      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS', 'service-account-key.json') }}"
+      keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS', 'dagster-service-account-key.json') }}"
       location: US # Or your specific GCP region
       priority: interactive
       retries: 1

@@ -14,7 +14,10 @@ You can run Dagster either locally using Conda or via Docker. The Dagster UI wil
 ### Running via Docker (Recommended)
 This method is recommended as it ensures all environment variables, Python dependencies, and networking are correctly isolated.
 ```bash
-# Ensure .env and dagster-service-account-key.json are properly set in the root directory
+# Ensure .env and dagster-service-account-key.json are in the project root
+# Dagster compose mounts ./repo — link project root for local Docker runs
+ln -sf "$(pwd)" repo
+mkdir -p repo/dagster_home
 docker compose up dagster-env
 ```
 
