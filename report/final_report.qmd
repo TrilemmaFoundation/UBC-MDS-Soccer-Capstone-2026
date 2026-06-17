@@ -58,13 +58,13 @@ End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489
 
 ## RQ1: Player Archetype Clustering {#sec-rq1-methods}
 
-This section describes the unsupervised clustering model for RQ1. Findings and dashboard outputs are in \autoref{sec-rq1-results}.
+This section describes the unsupervised clustering model for RQ1. Findings and dashboard outputs are in \hyperref[sec-rq1-results]{RQ1: Role Distribution}.
 
 We cluster player-seasons from `int_player_season_stats` after applying a **270-minute** minimum per season (*n* = 5,469 outfield, 5,759 including goalkeepers). **Goalkeepers** are excluded from K-Means and assigned a fixed label because their event profiles are structurally unlike outfield players.
 
 **Feature selection.** Thirteen per-90 metrics span attacking output (`xg_per_90`, `shots_per_90`), ball progression (`passes_per_90`, `passes_att_third_per_90`, `pass_completion_pct`, `carries_per_90`, `dribbles_per_90`), defensive work (`pressures_per_90`, `interceptions_per_90`, `blocks_per_90`, `clearances_per_90`, `duels_per_90`), and shot efficiency (`xg_per_shot`). The same 13 features are used in clustering, consistency scoring, and the dashboard so labels stay aligned across the product.
 
-**Preprocessing and modelling:** missing values are median-imputed to preserve the zero-skewed shape of defensive counts. Values above the 99th percentile are clipped column-wise to limit outlier influence, then features are standardised. PCA [@jolliffe2016] retains components explaining 80% of variance (typically six). **PC1** captures overall involvement volume. **PC2** contrasts defensive actions against attacking output. K-Means [@lloyd1982] with **k = 5** is applied to the PCA-reduced space. We chose five outfield clusters over slightly tighter statistical fits with fewer groups (Notebook 05) because five labels are easier for coaches to interpret. K-Means was preferred over hierarchical methods for scale and reproducibility on 5,000+ player-seasons.
+**Preprocessing and modelling:** missing values are median-imputed to preserve the zero-skewed shape of defensive counts. Values above the 99th percentile are clipped column-wise to limit outlier influence, then features are standardised. PCA [@jolliffe2016] retains components explaining 80% of variance (typically six). **PC1** captures overall involvement volume. **PC2** contrasts defensive actions against attacking output. K-Means [@lloyd1982] with **k = 5** is applied to the PCA-reduced space. We compared **k = 3–7** using silhouette score; **k = 5** offered the best trade-off between cluster separation and coach-facing interpretability (\hyperref[tbl-appendix-docs]{Notebook 05}). K-Means was preferred over hierarchical methods for scale and reproducibility on 5,000+ player-seasons.
 
 ::: {#fig-cluster-scatter fig-pos="H"}
 
@@ -99,7 +99,7 @@ Goalkeeper & 290 & Assigned by position. Excluded from K-Means \\
 
 ## RQ2: Club vs National Consistency Scoring {#sec-rq2-methods}
 
-This section describes the within-context scoring model for RQ2. Findings and dashboard outputs are in \autoref{sec-rq2-results}.
+This section describes the within-context scoring model for RQ2. Findings and dashboard outputs are in \hyperref[sec-rq2-results]{RQ2: Club vs National Consistency}.
 
 For **489 dual-context players** with $\geq 270$ minutes in both club and national football, we standardise each of the 13 features **within context**. Club z-scores compare a player only to other club players; national z-scores compare only to national-team peers.
 
@@ -128,7 +128,9 @@ Quadrants split the cohort at the **medians** of club and national performance s
 
 : Quadrant assignment logic from `src/ml/consistency.py`. Each quadrant contains roughly one quarter of the cohort. {#tbl-quadrants}
 
-Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context, not absolute quality. An Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions are in the supplementary documentation (\autoref{tbl-appendix-docs}).
+Outputs were sanity-checked against known dual-context players (e.g., Gnabry as International Specialist). Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context, not absolute quality. An Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions are in the supplementary documentation (\autoref{tbl-appendix-docs}).
+
+**Stakeholders and ethics.** Trilemma analysts and partner scouts use archetypes for scouting decisions, and national-team staff use consistency scores for selection. Players are indirectly affected by labels, so outputs are scoped to playing style, not player value. The project is limited to men's senior competitions per StatsBomb open-data coverage and terms of use.
 
 # Data Product and Results
 
@@ -138,7 +140,7 @@ The data product is a unified Django web application combining an embedded Looke
 
 ### RQ1: Role Distribution {#sec-rq1-results}
 
-See also \autoref{sec-rq1-methods}. Chi-square tests and Cramér's V on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07; full heatmaps and statistics in the supplementary documentation, \autoref{tbl-appendix-docs}). In row-normalised heatmaps:
+See also \hyperref[sec-rq1-methods]{RQ1: Player Archetype Clustering}. Chi-square tests and Cramér's V on top-five European leagues show **position drives archetype assignment** more strongly than competition (full heatmaps and statistics in \hyperref[tbl-appendix-docs]{Notebook 07}). In row-normalised heatmaps:
 
 - **Center backs** concentrate in Defensive Anchor and Low Activity. Attacking clusters are rare.
 - **Forwards and attacking mids** skew toward Pressing Forward and Creative Winger.
@@ -177,9 +179,9 @@ Looker cluster explorer filtered to Lionel Messi. Most seasons are classified as
 
 ### RQ2: Club vs National Consistency {#sec-rq2-results}
 
-See also \autoref{sec-rq2-methods}. Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
+See also \hyperref[sec-rq2-methods]{RQ2: Club vs National Consistency Scoring}. Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
 
-A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (Notebook 08), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see supplementary documentation, \autoref{tbl-appendix-docs}).
+A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (\hyperref[tbl-appendix-docs]{Notebook 08}), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see supplementary documentation, \autoref{tbl-appendix-docs}).
 
 | Quadrant | Players | Share |
 |----------|---------|-------|
@@ -216,7 +218,7 @@ The **chatbot** covers ad-hoc questions outside fixed dashboard charts, returnin
 
 **Strengths:** the Dagster-automated pipeline refreshes all data weekly with zero manual intervention, so both interfaces always reflect current StatsBomb releases. The product is fully reproducible from a single `docker compose up` and documented for independent use by a new team member.
 
-**Limitations:** the chatbot handles single-step queries only — multi-step reasoning (e.g., tracking a player's archetype across seasons before comparing against national peers) is not yet supported. Both interfaces are scoped to men's competitions; a women's parallel dbt branch is the most impactful near-term extension. Pre-defined dashboard charts cannot be customised without Looker Studio access.
+**Limitations:** the chatbot handles single-step queries only — multi-turn reasoning would require session state and prompt chaining beyond the deployment timeline. Both interfaces are scoped to men's competitions; a women's pipeline needs a separate dbt source filter and re-running all intermediate models. Pre-defined dashboard charts cannot be customised without Looker Studio edit access, which was not provisioned for this phase.
 
 # Conclusions and Recommendations
 

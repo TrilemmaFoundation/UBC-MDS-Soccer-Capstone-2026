@@ -1,3 +1,16 @@
+This section describes the data source, its structure, quality issues, and how it shaped design decisions.
+
+## Key EDA Findings
+
+Coverage is highly uneven across seasons: 2015–16 alone accounts for roughly half of all ingested matches, so EDA and interpretation focus on that cycle where sample depth is greatest (\autoref{fig-match-overview}).
+
+::: {#fig-match-overview fig-pos="H"}
+
+![](../results/dashboard/01_match_overview.png){width=95%}
+
+StatsBomb open-data coverage overview: match volume by season and competition.
+:::
+
 ## Source
 
 All data in this project comes from the StatsBomb open dataset, accessed via the `statsbombpy` Python library [@statsbomb2024]. Like other public spatio-temporal event repositories [@pappalardo2019], StatsBomb collects match event data by manually tracking every on-ball action in a match, assigning it a type, timestamp, location (x, y coordinates on a 120 × 80 pitch grid), and a rich set of type-specific attributes. Our per-90 feature set follows the action-based profiling tradition in football analytics [@decroos2019]. The open tier covers 16 competitions spanning men's senior football across Europe, South America, North America, and international tournaments.
