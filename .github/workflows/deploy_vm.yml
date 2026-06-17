@@ -28,27 +28,29 @@ jobs:
       - name: Add VM to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ secrets.GCE_VM_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ vars.GCE_VM_HOST }} >> ~/.ssh/known_hosts
 
       - name: Prepare and Copy Configuration Files
         run: |
-          cp .env.example .env
-          sed -i 's|^GOOGLE_APPLICATION_CREDENTIALS=.*|GOOGLE_APPLICATION_CREDENTIALS=/app/service-account-key.json|' .env
-          sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
-          echo '${{ secrets.GCE_SERVICE_ACCOUNT_KEY }}' > service-account-key.json
-
-          # 1. Create directory structure and clean up previously locked files to avoid scp permission denied
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} "mkdir -p ~/src/dagster && sudo rm -f ~/.env ~/service-account-key.json"
-
-          # 2. Copy root files to ~/
-          scp .env service-account-key.json docker-compose.yml ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/
+          # 1. Clean up previously locked files to avoid scp permission denied
+          ssh ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }} "sudo rm -f ~/.env ~/chatbot-service-account-key.json ~/dagster-service-account-key.json ~/docker-compose.yml ~/repo.tar.gz"
+          ssh ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }} "sudo rm -rf ~/repo"
           
-          # 3. Copy the definitions file explicitly into its matching subfolder
-          scp src/dagster/definitions.py ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }}:~/src/dagster/
+          # 0. Archive and copy the repository
+          tar -czf /tmp/repo.tar.gz --exclude=.git .
+          scp /tmp/repo.tar.gz ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }}:~/
+
+          cp .env.example .env
+          sed -i 's|^GROQ_API_KEY=.*|GROQ_API_KEY=${{ secrets.GROQ_API_KEY }}|' .env
+          echo '${{ secrets.GCE_CHATBOT_SERVICE_ACCOUNT_KEY }}' > chatbot-service-account-key.json
+          echo '${{ secrets.GCE_DAGSTER_SERVICE_ACCOUNT_KEY }}' > dagster-service-account-key.json
+
+          # 2. Copy configuration files to ~/
+          scp .env chatbot-service-account-key.json dagster-service-account-key.json docker-compose.yml ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }}:~/
 
       - name: Deploy Cluster on GCE VM
         run: |
-          ssh ${{ secrets.GCE_VM_USER }}@${{ secrets.GCE_VM_HOST }} << 'EOF'
+          ssh ${{ vars.GCE_VM_USER }}@${{ vars.GCE_VM_HOST }} << 'EOF'
             set -e
             
             # Safely source environmental variables even with comments or strings present
@@ -56,12 +58,29 @@ jobs:
             source $HOME/.env
             set +a
 
+            # Extract the repository into the home directory so Dagster volume mounts (.:/opt/dagster/app) work
+            # Create a `repo` directory and extract the code.
+            mkdir -p $HOME/repo
+            tar -xzf $HOME/repo.tar.gz -C $HOME/repo
+            rm -f $HOME/repo.tar.gz
+
             # Execute cluster update using files located in $HOME
             sudo docker compose down || true
             sudo docker image prune -a -f
 
-            # Lock down credentials so only the deployment user and Docker can read them
-            chmod 600 $HOME/.env $HOME/service-account-key.json
+            # Lock down environment and chatbot key to the host user (since Django runs as root and bypasses this)
+            chmod 600 $HOME/.env $HOME/chatbot-service-account-key.json
+
+            # Secure the Dagster GCP key: Assign to UID 1003 (Dagster non-root user) and make it read-only
+            sudo chown 1003:1003 $HOME/dagster-service-account-key.json
+            sudo chmod 400 $HOME/dagster-service-account-key.json
+
+            # Create a persistent directory for Dagster's SQLite database (much faster I/O)
+            mkdir -p $HOME/repo/dagster_home
+
+            # This prevents permission denied errors when dbt deps/parse generates files.
+            sudo chown -R 1003:1003 $HOME/repo
+            sudo chmod -R 775 $HOME/repo
 
             sudo docker compose pull
             sudo docker compose up -d
