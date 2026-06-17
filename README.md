@@ -223,8 +223,7 @@ All GCP resource names are configured via `.env` (copy from `.env.example`). No 
 | Item | Env var |
 |---|---|
 | Project ID | `GCP_PROJECT_ID` |
-| Dagster service account key | `DAGSTER_GOOGLE_APPLICATION_CREDENTIALS` (local: `export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json`) |
-| Chatbot service account key | `CHATBOT_GOOGLE_APPLICATION_CREDENTIALS` |
+| GCP credentials (local) | `GOOGLE_APPLICATION_CREDENTIALS` — set to `dagster-service-account-key.json` for pipeline/dbt/ML, or `chatbot-service-account-key.json` for the chatbot (use separate `.env` files) |
 | Ingestion GCS bucket | `INGESTION_GCS_BUCKET` |
 | ML outputs GCS bucket | `ML_GCS_BUCKET` |
 

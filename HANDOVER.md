@@ -327,8 +327,14 @@ Full list of variables (all required unless marked optional):
 ```bash
 # ── GCP ──────────────────────────────────────────────────────────────────
 GCP_PROJECT_ID=your-gcp-project-id
-DAGSTER_GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
-CHATBOT_GOOGLE_APPLICATION_CREDENTIALS=./chatbot-service-account-key.json
+GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+
+# The Dagster and Chatbot environments should use different .env files for security concerns.
+# For the local Dagster environment, export the Dagster key:
+# GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
+
+# For the local Chatbot environment, export the Chatbot key:
+# GOOGLE_APPLICATION_CREDENTIALS=./chatbot-service-account-key.json
 
 # ── GCS buckets ──────────────────────────────────────────────────────────
 INGESTION_GCS_BUCKET=your-ingestion-bucket-name
@@ -376,7 +382,7 @@ StatsBomb: using authenticated API (paid data)
 
 ### 6c. The service account key files
 
-Place both keys in the project root. They are loaded via `.env` mappings, and `docker-compose.yml` mounts them into the necessary containers automatically.
+Place both keys in the project root. Runtime code reads `GOOGLE_APPLICATION_CREDENTIALS`. Use **separate `.env` files** for Dagster vs Chatbot local work, each pointing at the correct key (see §6a comments). In Docker, `docker-compose.yml` mounts each key and sets `GOOGLE_APPLICATION_CREDENTIALS` inside the container automatically.
 
 ```
 UBC-MDS-Soccer-Capstone-2026/
