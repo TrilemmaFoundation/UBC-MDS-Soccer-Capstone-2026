@@ -8,7 +8,7 @@ WITH player_season_stats AS (
 
 cluster_assignments AS (
     SELECT 
-        CAST(player_id AS INT64)     AS player_id,
+        CAST(ca.player_id AS INT64)     AS player_id,
         CAST(cluster AS INT64)       AS cluster_id,
         CAST(archetype AS STRING)    AS cluster_label
     FROM {{ source('ml_models', 'cluster_assignments') }} ca
@@ -105,8 +105,8 @@ final_mart AS (
         COALESCE(c.cluster_label, 'Unknown') AS cluster_label,
 
         -- PCA Coordinates (from cluster.py output)
-        c.pc1,
-        c.pc2,
+        pca.pc1,
+        pca.pc2,
 
         -- All 13 PCA clustering features (aligned to Li's pca_loadings.parquet)
         p.xg_per_90,
