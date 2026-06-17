@@ -16,7 +16,7 @@ Ingests StatsBomb open event data, transforms it through a 3-layer dbt pipeline,
 | [Groq API key](https://console.groq.com) | LLM chatbot |
 | [Quarto](https://quarto.org/docs/get-started/) + LaTeX | Rendering the final report PDF |
 
-Copy `.env.example` to `.env` and fill in all values before running anything. Never commit `.env` or `service-account-key.json`.
+Copy `.env.example` to `.env` and fill in all values before running anything. Never commit `.env` or the service account JSON keys (`chatbot-service-account-key.json`, `dagster-service-account-key.json`).
 
 ---
 
@@ -29,7 +29,12 @@ cd UBC-MDS-Soccer-Capstone-2026
 
 # 2. Add credentials (get from team)
 cp .env.example .env          # fill in GCP vars, GROQ_API_KEY, LOOKER_STUDIO_URL, etc.
-cp service-account-key.json . # GCP service account key — never commit this
+cp chatbot-service-account-key.json .
+cp dagster-service-account-key.json .
+
+# Dagster compose mounts ./repo — link project root for local Docker runs
+ln -sf "$(pwd)" repo
+mkdir -p repo/dagster_home
 
 # 3. Pull pre-built images and start
 docker compose pull
@@ -121,7 +126,7 @@ BigQuery: dbt_marts              ← chatbot and dashboard read from here
 conda env create -f environment.yml
 conda activate soccer_capstone
 cp .env.example .env            # fill in values
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 
 # Install dbt packages (first time only)
 dbt deps
@@ -218,7 +223,8 @@ All GCP resource names are configured via `.env` (copy from `.env.example`). No 
 | Item | Env var |
 |---|---|
 | Project ID | `GCP_PROJECT_ID` |
-| Service Account key | `GOOGLE_APPLICATION_CREDENTIALS` |
+| Dagster service account key | `DAGSTER_GOOGLE_APPLICATION_CREDENTIALS` (local: `export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json`) |
+| Chatbot service account key | `CHATBOT_GOOGLE_APPLICATION_CREDENTIALS` |
 | Ingestion GCS bucket | `INGESTION_GCS_BUCKET` |
 | ML outputs GCS bucket | `ML_GCS_BUCKET` |
 
@@ -258,6 +264,8 @@ See [`docs/`](./docs/) for component-specific documentation:
 
 | Doc | Topic |
 |---|---|
+| [`docs/chatbot.md`](./docs/chatbot.md) | Django chatbot maintenance and debugging |
+| [`docs/dagster.md`](./docs/dagster.md) | Dagster pipeline operation |
 | [`docs/consistency.md`](./docs/consistency.md) | Consistency scoring pipeline |
 | [`docs/notebooks.md`](./docs/notebooks.md) | Databricks notebook catalog and run order |
 | [`docs/marts_data_dict.md`](./docs/marts_data_dict.md) | Mart table column reference |

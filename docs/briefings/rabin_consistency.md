@@ -171,7 +171,7 @@ Roughly 25% of players per quadrant (~122 of 489), with small variation when man
 
 ```bash
 conda activate soccer_capstone
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 
 # Prerequisites
 dbt run --select int_player_club_vs_national

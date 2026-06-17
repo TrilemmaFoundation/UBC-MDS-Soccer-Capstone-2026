@@ -213,7 +213,7 @@ Replace the project id with your `GCP_PROJECT_ID` if different.
 
 ### Prerequisites
 
-1. **GCP auth:** `export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json`
+1. **GCP auth:** `export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json`
 2. **dbt intermediate** models built, especially `int_player_club_vs_national`:
 
    ```bash
@@ -230,7 +230,7 @@ Replace the project id with your `GCP_PROJECT_ID` if different.
 
 ```bash
 conda activate soccer_capstone   # or your env with google-cloud-bigquery, pandas, pyarrow
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 python src/ml/consistency.py
 ```
 
