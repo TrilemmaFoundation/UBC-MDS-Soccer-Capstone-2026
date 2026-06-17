@@ -11,10 +11,10 @@ renamed AS (
         CAST(player_name AS STRING)                         AS player_name,
         CAST(team_name AS STRING)                           AS team_name,
         CAST(jersey_number AS INT64)                        AS jersey_number,
-        COALESCE(CAST(position_name AS STRING), 'Unknown')  AS position_name,
-        CAST(from_time AS STRING)                           AS from_time,
-        CAST(to_time AS STRING)                             AS to_time,
-        CAST(card_type AS STRING)                           AS card_type
+        COALESCE(REGEXP_EXTRACT(CAST(positions AS STRING), "'position': '([^']+)'"), 'Unknown') AS position_name,
+        REGEXP_EXTRACT(CAST(positions AS STRING), "'from': '([^']+)'")                       AS from_time,
+        REGEXP_EXTRACT(CAST(positions AS STRING), "'to': '([^']+)'")                         AS to_time,
+        REGEXP_EXTRACT(CAST(cards AS STRING), "'card_type': '([^']+)'")                      AS card_type
 
     FROM source
     WHERE CAST(match_id AS INT64) IN (
