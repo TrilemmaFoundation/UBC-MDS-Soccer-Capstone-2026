@@ -226,7 +226,7 @@ git --version            # git version 2.x.x
 
 ## 5. GCP Setup (First Time Only)
 
-> Skip this section if you received `service-account-key.json` from the outgoing team and the GCP project already exists.
+> Skip this section if you received `dagster-service-account-key.json` and `chatbot-service-account-key.json` from the outgoing team and the GCP project already exists.
 
 ### 5a. Enable required APIs
 In the [GCP Console](https://console.cloud.google.com) for your project, enable:
@@ -263,32 +263,53 @@ bq mk --dataset --location=US YOUR_PROJECT_ID:dbt_marts
 bq mk --dataset --location=US YOUR_PROJECT_ID:analytics
 ```
 
-### 5d. Create service account and download the key
-```bash
-# Create service account
-gcloud iam service-accounts create football-analytics-sa \
-  --display-name="Football Analytics Service Account"
+### 5d. Create service accounts and download the keys
 
-# Grant required roles
+Two specialized service accounts are required: one for the Dagster data pipeline and one for the Django chatbot app.
+
+```bash
+# ==========================================
+# 1. Dagster Service Account
+# ==========================================
+gcloud iam service-accounts create football-analytics-dagster \
+  --display-name="Football Analytics Dagster SA"
+
+# Grant required roles (Data Editor, Job User, Storage Admin)
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataEditor"
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.jobUser"
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --member="serviceAccount:football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.admin"
-gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
-  --member="serviceAccount:football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/bigquery.dataViewer"
 
-# Download the key — place it in the project root
-gcloud iam service-accounts keys create service-account-key.json \
-  --iam-account=football-analytics-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com
+# Download the Dagster key — place it in the project root
+gcloud iam service-accounts keys create dagster-service-account-key.json \
+  --iam-account=football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com
+
+# ==========================================
+# 2. Chatbot Service Account
+# ==========================================
+gcloud iam service-accounts create football-analytics-chatbot \
+  --display-name="Football Analytics Chatbot SA"
+
+# Grant required roles (Data Viewer, Job User)
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:football-analytics-chatbot@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.dataViewer"
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:football-analytics-chatbot@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.jobUser"
+
+# Download the Chatbot key — place it in the project root
+gcloud iam service-accounts keys create chatbot-service-account-key.json \
+  --iam-account=football-analytics-chatbot@YOUR_PROJECT_ID.iam.gserviceaccount.com
+
 ```
 
-> ⚠️ **Never commit `service-account-key.json` to Git.** It is already in `.gitignore`.
+> ⚠️ **Never commit these JSON keys to Git.** They are already in `.gitignore`.
 
 ---
 
@@ -306,7 +327,8 @@ Full list of variables (all required unless marked optional):
 ```bash
 # ── GCP ──────────────────────────────────────────────────────────────────
 GCP_PROJECT_ID=your-gcp-project-id
-GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+DAGSTER_GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
+CHATBOT_GOOGLE_APPLICATION_CREDENTIALS=./chatbot-service-account-key.json
 
 # ── GCS buckets ──────────────────────────────────────────────────────────
 INGESTION_GCS_BUCKET=your-ingestion-bucket-name
@@ -352,17 +374,17 @@ or
 StatsBomb: using authenticated API (paid data)
 ```
 
-### 6c. The `service-account-key.json` file
+### 6c. The service account key files
 
-Place it in the project root. It is loaded via:
-- `GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json` in `.env`
-- `docker-compose.yml` mounts it into all containers automatically
+Place both keys in the project root. They are loaded via `.env` mappings, and `docker-compose.yml` mounts them into the necessary containers automatically.
 
 ```
 UBC-MDS-Soccer-Capstone-2026/
-├── service-account-key.json   ← here (never commit this)
-├── .env                       ← here (never commit this)
+├── chatbot-service-account-key.json   ← here (never commit this)
+├── dagster-service-account-key.json   ← here (never commit this)
+├── .env                               ← here (never commit this)
 └── ...
+
 ```
 
 ---
@@ -385,11 +407,13 @@ cp .env.example .env
 # Edit .env and fill in: GCP_PROJECT_ID, INGESTION_GCS_BUCKET, ML_GCS_BUCKET, GROQ_API_KEY
 # (and optionally SB_USERNAME / SB_PASSWORD)
 
-# 4. Place your GCP service account key
-cp /path/to/service-account-key.json .
+# 4. Place your GCP service account keys
+cp /path/to/chatbot-service-account-key.json .
+cp /path/to/dagster-service-account-key.json .
 
-# 5. Export the credentials path for the current shell session
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+# 5. Export the credentials path for the current shell session (using Dagster key for ML/dbt work)
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
+
 ```
 
 #### Set up dbt connection profile
@@ -472,7 +496,8 @@ cd UBC-MDS-Soccer-Capstone-2026
 # 2. Set up credentials
 cp .env.example .env
 # Edit .env — fill in all required values (see Section 6a)
-cp /path/to/service-account-key.json .
+cp /path/to/chatbot-service-account-key.json .
+cp /path/to/dagster-service-account-key.json .
 
 # 3. Pull pre-built images from Docker Hub (first time only — takes 2-3 min)
 docker compose pull
@@ -510,8 +535,9 @@ docker compose pull django-env && docker compose up django-env
 ### First-time run checklist
 
 Before running the pipeline for the first time, confirm:
+
 - [ ] `.env` is populated with all required variables
-- [ ] `service-account-key.json` is in the project root
+- [ ] `dagster-service-account-key.json` and `chatbot-service-account-key.json` are in the project root
 - [ ] GCP BigQuery datasets exist (`raw_statsbomb`, `dbt_staging`, `dbt_intermediate`, `dbt_marts`, `analytics`) — see Section 5c
 - [ ] GCS buckets exist — see Section 5b
 - [ ] `dbt debug` passes
@@ -973,7 +999,8 @@ See `docs/notebooks.md` for recommended run order, BigQuery table paths, and tro
 
 #### Connecting Databricks to BigQuery
 See `docs/databricks_bigquery_setup.md` for the full setup. Summary:
-1. Upload `service-account-key.json` to Databricks File System (DBFS)
+
+1. Upload `dagster-service-account-key.json` to Databricks File System (DBFS)
 2. Install `google-cloud-bigquery` and `db-dtypes` via cluster libraries
 3. Authenticate:
 ```python
@@ -982,7 +1009,7 @@ from google.cloud import bigquery
 import os
 
 credentials = service_account.Credentials.from_service_account_file(
-    "/dbfs/path/to/service-account-key.json"
+    "/dbfs/path/to/dagster-service-account-key.json"
 )
 client = bigquery.Client(
     project=os.getenv("GCP_PROJECT_ID"),
@@ -1049,28 +1076,53 @@ One row per player (only players with 270+ min in BOTH club and international co
 
 ---
 
-## 11. GitHub Actions CI Setup
+## 11. GitHub Actions CI/CD Setup
 
-The repository has a dbt CI workflow (`.github/workflows/dbt_test.yml`) that runs on every PR touching `models/`. It requires two secrets/variables to be configured in GitHub:
+The repository has multiple CI/CD workflows (`dbt_test.yml`, `deploy_vm.yml`, `publish_images.yml`, etc.) for testing, building, and deploying. They require several secrets and variables to be configured in GitHub.
 
-### Required GitHub repository variable
+### Required GitHub repository variables
 1. Go to **Settings → Secrets and variables → Actions → Variables tab**
 2. Click **New repository variable**
-3. Name: `GCP_PROJECT_ID`, Value: your GCP project ID
+3. Add the following variables:
+   - `GCE_VM_HOST`: The public IP address or hostname of your GCE deployment VM.
+   - `GCE_VM_USER`: The SSH username for the GCE deployment VM.
+   - `GCP_PROJECT_ID`: Your GCP project ID.
 
-### Required GitHub secret
+### Required GitHub secrets
 1. Go to **Settings → Secrets and variables → Actions → Secrets tab**
 2. Click **New repository secret**
-3. Name: `GCE_SERVICE_ACCOUNT_KEY`
-4. Value: the **entire contents** of `service-account-key.json` (copy-paste the JSON)
+3. Add the following secrets:
+   - `DOCKER_USERNAME`: Docker Hub username used for publishing the application images.
+   - `DOCKER_PASSWORD`: Docker Hub password or Personal Access Token (PAT).
+   - `GCE_CHATBOT_SERVICE_ACCOUNT_KEY`: The JSON contents of the GCP service account key for the chatbot.
+   - `GCE_DAGSTER_SERVICE_ACCOUNT_KEY`: The JSON contents of the GCP service account key for Dagster orchestration.
+   - `GCE_SSH_PRIVATE_KEY`: The SSH private key to securely connect to your GCE deployment VM.
+   - `GROQ_API_KEY`: Your Groq API key for the LLM chatbot.
 
-### What the CI workflow does
+### What the dbt CI workflow does
 On every PR that touches `models/`, `macros/`, or `dbt_project.yml`:
-1. Authenticates with GCP using `GCE_SERVICE_ACCOUNT_KEY`
+
+1. Authenticates with GCP using `GCE_DAGSTER_SERVICE_ACCOUNT_KEY` (or the generic service account mapped to dbt tests)
 2. Creates a temporary BigQuery dataset `pr_validation_{PR_NUMBER}`
 3. Runs `dbt run --select staging intermediate`
 4. Runs `dbt test --select staging intermediate`
 5. Drops the temporary dataset (always, even if tests fail)
+
+### What the Docker CD workflow does
+On manual dispatch (`workflow_dispatch`) or automatically when the "Update conda-lock file" workflow succeeds on the `main` branch:
+1. Logs into Docker Hub using `DOCKER_USERNAME` and `DOCKER_PASSWORD`
+2. Builds and pushes `arm64` architecture Docker images for Django, Jupyter, and Dagster to Docker Hub
+3. Updates the local `docker-compose.yml` file with the newly generated image tags
+4. Commits and pushes the updated `docker-compose.yml` back to the repository using the GitHub Actions bot
+
+### What the deploy CD workflow does
+On manual dispatch (`workflow_dispatch`) or automatically when the "Publish Docker Images" workflow succeeds on the `main` branch:
+1. Connects securely to the GCE deployment VM using `GCE_SSH_PRIVATE_KEY`, `GCE_VM_HOST`, and `GCE_VM_USER`
+2. Archives the repository and securely copies it to the VM via `scp`, cleaning up any previously locked files
+3. Injects GitHub secrets (e.g., `GROQ_API_KEY`, `GCE_CHATBOT_SERVICE_ACCOUNT_KEY`, `GCE_DAGSTER_SERVICE_ACCOUNT_KEY`) into configuration files and copies them to the VM
+4. SSHes into the VM to extract the code and set appropriate secure file permissions for credentials and the non-root Dagster user
+5. Shuts down the existing Docker cluster and prunes old images
+6. Pulls the newest images and restarts the cluster with `docker compose up -d`
 
 ---
 
@@ -1137,10 +1189,11 @@ dbt test --select <model_name>
 3. The Django embed at `/dashboard/` will automatically show the new page (iframe)
 
 ### Rotating GCP credentials
-1. Create a new service account key in GCP IAM
-2. Download and replace `service-account-key.json` in the project root
-3. Update `GCE_SERVICE_ACCOUNT_KEY` in GitHub Actions secrets
-4. Pull the latest Docker images: `docker compose pull`
+
+1. Create new service account keys in GCP IAM for both the Chatbot and Dagster accounts.
+2. Download and replace `chatbot-service-account-key.json` and `dagster-service-account-key.json` in the project root.
+3. Update `GCE_CHATBOT_SERVICE_ACCOUNT_KEY` and `GCE_DAGSTER_SERVICE_ACCOUNT_KEY` in GitHub Actions secrets.
+4. Pull the latest Docker images and restart: `docker compose pull` then `docker compose up -d`
 
 ---
 
@@ -1162,7 +1215,7 @@ dbt test --select <model_name>
 **Cause:** `GOOGLE_APPLICATION_CREDENTIALS` is not set or points to a missing file.
 **Fix:**
 ```bash
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 # Then verify:
 python -c "from google.cloud import bigquery; bigquery.Client(); print('OK')"
 ```
@@ -1208,8 +1261,9 @@ python -c "from google.cloud import bigquery; bigquery.Client(); print('OK')"
 **Fix:** Usually a model inconsistency. If persistent, add the pattern to `forbidden_keywords` in `app/chatbot/llm_engine.py`.
 
 ### "Docker container can't reach BigQuery"
-**Cause:** `service-account-key.json` is not mounted or `GOOGLE_APPLICATION_CREDENTIALS` is not set in the container.
-**Fix:** Verify `docker-compose.yml` mounts the key file and sets `GOOGLE_APPLICATION_CREDENTIALS`. Pull the latest images if needed: `docker compose pull`.
+
+**Cause:** The required key (`chatbot-service-account-key.json` or `dagster-service-account-key.json`) is not mounted or the environmental variable is not set correctly in the container.
+**Fix:** Verify `docker-compose.yml` mounts the key files and sets the variables correctly. Pull the latest images if needed: `docker compose pull`.
 
 ### "Port already in use"
 ```bash

@@ -31,8 +31,8 @@ renamed AS (
         CAST(type AS STRING)                     AS event_type,
         CAST(team AS STRING)                     AS team,
         CAST(player AS STRING)                   AS player,
-        SAFE_CAST(location_x AS FLOAT64)         AS location_x,
-        SAFE_CAST(location_y AS FLOAT64)         AS location_y,
+        SAFE_CAST(REGEXP_EXTRACT(CAST(location AS STRING), r'\[(-?[\d.]+)') AS FLOAT64)     AS location_x,
+        SAFE_CAST(REGEXP_EXTRACT(CAST(location AS STRING), r'\s+(-?[\d.]+)\]') AS FLOAT64)  AS location_y,
         CAST(play_pattern AS STRING)             AS play_pattern,
         SAFE_CAST(shot_statsbomb_xg AS FLOAT64)  AS shot_statsbomb_xg,
         CAST(pass_outcome AS STRING)             AS pass_outcome
