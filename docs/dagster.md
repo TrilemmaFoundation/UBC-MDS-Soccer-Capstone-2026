@@ -22,7 +22,7 @@ docker compose up dagster-env
 Make sure you have your conda environment activated and your credentials exported before starting the server.
 ```bash
 conda activate soccer_capstone
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 dagster dev -f src/dagster/definitions.py
 ```
 
