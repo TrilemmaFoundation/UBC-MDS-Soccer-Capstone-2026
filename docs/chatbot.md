@@ -15,7 +15,7 @@ conda activate soccer_capstone
 
 # 2. Ensure credentials are set
 # The chat service account requires the 'BigQuery Data Viewer' and 'BigQuery Job User' roles
-export GOOGLE_APPLICATION_CREDENTIALS=./chat-service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./chatbot-service-account-key.json
 # (Make sure GROQ_API_KEY is set in your .env file and loaded)
 
 # 3. Navigate to the app directory
@@ -33,11 +33,11 @@ The chatbot will be available at http://localhost:8000.
 This is recommended for running the full stack or deploying.
 
 ```bash
-# Ensure .env and chat-service-account-key.json are in the project root
+# Ensure .env and chatbot-service-account-key.json are in the project root
 # Start the chatbot container
 docker compose up django-env
 ```
-The chatbot will be available at http://localhost:8000.
+The chatbot will be available at http://localhost (Docker maps port 80 → 8000).
 
 ## 2. How to update `table_schema.py`
 
@@ -91,5 +91,5 @@ If you need to allow a new specific SQL function that gets falsely flagged, or b
 | :--- | :--- |
 | **"Database query rejected: Unauthorized SQL statement structure."** | The LLM generated a query that failed `is_safe_sql()`. Turn on Advanced Mode, look at the SQL. If it added a semicolon, update the prompt to say "Do not use semicolons". |
 | **"An error occurred while fetching the requested statistics."** | The generated SQL was invalid BigQuery syntax (e.g., hallucinated a column). Turn on Advanced Mode, copy the SQL, run it in BigQuery UI to see the exact error. Update `table_schema.py` if the LLM is confused about the schema. |
-| **Response says "No results found" but you know data exists.** | The LLM likely filtered out the data (e.g., applied a `minutes_played >= 270` filter that excluded your target player). Review the SQL in Advanced Mode. |
-| **Chatbot hangs or takes a long time.** | The Groq API might be rate-limiting, or the BigQuery job is scanning too much data. Check your terminal logs for Groq fallback messages (`Retrying with fallback model...`). |
+| **Response says "No results found" but you know data exists.** | The LLM likely filtered out the data (e.g., applied a `total_minutes >= 270` filter that excluded your target player). Review the SQL in Advanced Mode. |
+| **Chatbot hangs or takes a long time.** | The Groq API might be rate-limiting, or the BigQuery job is scanning too much data (200 MB billed-bytes cap per query). Check terminal logs for `[Model fallback]` messages. |
