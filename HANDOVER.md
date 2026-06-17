@@ -1049,28 +1049,52 @@ One row per player (only players with 270+ min in BOTH club and international co
 
 ---
 
-## 11. GitHub Actions CI Setup
+## 11. GitHub Actions CI/CD Setup
 
-The repository has a dbt CI workflow (`.github/workflows/dbt_test.yml`) that runs on every PR touching `models/`. It requires two secrets/variables to be configured in GitHub:
+The repository has multiple CI/CD workflows (`dbt_test.yml`, `deploy_vm.yml`, `publish_images.yml`, etc.) for testing, building, and deploying. They require several secrets and variables to be configured in GitHub.
 
-### Required GitHub repository variable
+### Required GitHub repository variables
 1. Go to **Settings → Secrets and variables → Actions → Variables tab**
 2. Click **New repository variable**
-3. Name: `GCP_PROJECT_ID`, Value: your GCP project ID
+3. Add the following variables:
+   - `GCE_VM_HOST`: The public IP address or hostname of your GCE deployment VM.
+   - `GCE_VM_USER`: The SSH username for the GCE deployment VM.
+   - `GCP_PROJECT_ID`: Your GCP project ID.
 
-### Required GitHub secret
+### Required GitHub secrets
 1. Go to **Settings → Secrets and variables → Actions → Secrets tab**
 2. Click **New repository secret**
-3. Name: `GCE_SERVICE_ACCOUNT_KEY`
-4. Value: the **entire contents** of `service-account-key.json` (copy-paste the JSON)
+3. Add the following secrets:
+   - `DOCKER_USERNAME`: Docker Hub username used for publishing the application images.
+   - `DOCKER_PASSWORD`: Docker Hub password or Personal Access Token (PAT).
+   - `GCE_CHATBOT_SERVICE_ACCOUNT_KEY`: The JSON contents of the GCP service account key for the chatbot.
+   - `GCE_DAGSTER_SERVICE_ACCOUNT_KEY`: The JSON contents of the GCP service account key for Dagster orchestration.
+   - `GCE_SSH_PRIVATE_KEY`: The SSH private key to securely connect to your GCE deployment VM.
+   - `GROQ_API_KEY`: Your Groq API key for the LLM chatbot.
 
-### What the CI workflow does
+### What the dbt CI workflow does
 On every PR that touches `models/`, `macros/`, or `dbt_project.yml`:
 1. Authenticates with GCP using `GCE_SERVICE_ACCOUNT_KEY`
 2. Creates a temporary BigQuery dataset `pr_validation_{PR_NUMBER}`
 3. Runs `dbt run --select staging intermediate`
 4. Runs `dbt test --select staging intermediate`
 5. Drops the temporary dataset (always, even if tests fail)
+
+### What the Docker CD workflow does
+On manual dispatch (`workflow_dispatch`) or automatically when the "Update conda-lock file" workflow succeeds on the `main` branch:
+1. Logs into Docker Hub using `DOCKER_USERNAME` and `DOCKER_PASSWORD`
+2. Builds and pushes `arm64` architecture Docker images for Django, Jupyter, and Dagster to Docker Hub
+3. Updates the local `docker-compose.yml` file with the newly generated image tags
+4. Commits and pushes the updated `docker-compose.yml` back to the repository using the GitHub Actions bot
+
+### What the deploy CD workflow does
+On manual dispatch (`workflow_dispatch`) or automatically when the "Publish Docker Images" workflow succeeds on the `main` branch:
+1. Connects securely to the GCE deployment VM using `GCE_SSH_PRIVATE_KEY`, `GCE_VM_HOST`, and `GCE_VM_USER`
+2. Archives the repository and securely copies it to the VM via `scp`, cleaning up any previously locked files
+3. Injects GitHub secrets (e.g., `GROQ_API_KEY`, `GCE_CHATBOT_SERVICE_ACCOUNT_KEY`, `GCE_DAGSTER_SERVICE_ACCOUNT_KEY`) into configuration files and copies them to the VM
+4. SSHes into the VM to extract the code and set appropriate secure file permissions for credentials and the non-root Dagster user
+5. Shuts down the existing Docker cluster and prunes old images
+6. Pulls the newest images and restarts the cluster with `docker compose up -d`
 
 ---
 
