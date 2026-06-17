@@ -205,9 +205,10 @@ The chatbot returns BigQuery-backed answers to plain-English questions in under 
 
 ::: {#fig-chatbot fig-pos="H"}
 
-![](../presentation/assets/chatbot_screenshot.png){width=95%}
+![](final_report/chatbot_screenshot.png){width=95%}
 
-Django chatbot with Advanced Mode enabled, showing a natural language query, generated BigQuery SQL, and formatted results.
+A Django-based football analytics chatbot demonstrating its Advanced Mode. When a user asks a natural language query, such as "Show me the top defensive anchors by pressures per 90", the chatbot returns the formatted top-10 results alongside the generated BigQuery SQL statement and the raw JSON data.
+
 :::
 
 ## Product Design
