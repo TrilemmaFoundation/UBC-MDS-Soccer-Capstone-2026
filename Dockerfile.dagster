@@ -18,6 +18,10 @@ RUN mkdir -p $DAGSTER_HOME /opt/dagster/app
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir \
+    pandas \
+    numpy \
+    scikit-learn \
+    pyarrow \
     dagster \
     dagster-webserver \
     dagster-dbt \
