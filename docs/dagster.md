@@ -8,6 +8,7 @@ To run Dagster, you will need a GCP service account key named `dagster-service-a
 *   BigQuery Data Editor
 *   BigQuery Job User
 *   Storage Admin
+*   BigQuery User
 
 You can run Dagster either locally using Conda or via Docker. The Dagster UI will be served at `http://localhost:3000`.
 
