@@ -213,6 +213,9 @@ def extract_lineups(match_ids):
         )
 
     df = pd.concat(all_lineups, ignore_index=True)
+    for col in df.columns:
+        if df[col].dtype == object:
+            df[col] = df[col].astype(str)
     df = clean_column_names(df)
     df.to_parquet(f"{OUTPUT_DIR}/lineups/lineups.parquet", index=False)
     print(f"Saved {len(df)} lineup rows total")
