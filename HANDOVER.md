@@ -274,7 +274,7 @@ Two specialized service accounts are required: one for the Dagster data pipeline
 gcloud iam service-accounts create football-analytics-dagster \
   --display-name="Football Analytics Dagster SA"
 
-# Grant required roles (Data Editor, Job User, Storage Admin)
+# Grant required roles (Data Editor, Job User, Storage Admin, BigQuery User)
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
   --member="serviceAccount:football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/bigquery.dataEditor"
@@ -284,6 +284,9 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
 gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
   --member="serviceAccount:football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
   --role="roles/storage.admin"
+gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
+  --member="serviceAccount:football-analytics-dagster@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/bigquery.user"
 
 # Download the Dagster key — place it in the project root
 gcloud iam service-accounts keys create dagster-service-account-key.json \
