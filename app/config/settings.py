@@ -13,7 +13,7 @@ if cred_path and not os.path.isabs(cred_path):
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Security
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-key-for-football-app")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
@@ -75,4 +75,4 @@ DATABASES = {
 STATIC_URL = "static/"
 
 # BigQuery & Groq Config (For Li's Chatbot Logic)
-LOOKER_STUDIO_URL = os.environ.get("LOOKER_STUDIO_URL", "https://lookerstudio.google.com/embed/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53/page/If9xF")
+LOOKER_STUDIO_URL = os.environ.get("LOOKER_STUDIO_URL")

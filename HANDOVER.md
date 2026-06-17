@@ -358,7 +358,7 @@ SB_PASSWORD=
 GROQ_API_KEY=your_groq_api_key_here       # get from https://console.groq.com
 
 # ── Looker Studio ─────────────────────────────────────────────────────────
-LOOKER_STUDIO_URL=https://lookerstudio.google.com/embed/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53/page/If9xF
+LOOKER_STUDIO_URL=https://datastudio.google.com/embed/reporting/6ed7dbc3-7bbf-4659-ad60-393443a4587c/page/If9xF
 
 # ── Django ────────────────────────────────────────────────────────────────
 DJANGO_DEBUG=True
@@ -903,7 +903,7 @@ Checkbox in the UI that shows the executed SQL and raw BigQuery JSON for debuggi
 
 ### 9g. Looker Studio Dashboard
 
-**URL:** https://lookerstudio.google.com/reporting/00c26aba-1328-4c33-aa11-c3cff2b64c53
+**URL:** https://datastudio.google.com/reporting/6ed7dbc3-7bbf-4659-ad60-393443a4587c
 **Embedded at:** `/dashboard/` in the Django app (iframe via `LOOKER_STUDIO_URL` in `.env`)
 
 The dashboard has **12 pages** (4 match/clustering pages, 5 consistency pages, 3 methodology appendix pages).
