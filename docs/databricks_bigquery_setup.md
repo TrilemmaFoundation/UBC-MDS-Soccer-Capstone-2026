@@ -53,6 +53,6 @@ SHOW TABLES IN bq_raw_statsbomb_sa_catalog.raw_statsbomb;
 
 ## 4. Security notes
 
-- Do not commit `service-account-key.json` to git.
+- Do not commit `chatbot-service-account-key.json` or `dagster-service-account-key.json` to git.
 - Do not paste credentials into screenshots, PR descriptions, or chat.
 - Keep credentials only in approved secure storage (team drive/Databricks connection settings).

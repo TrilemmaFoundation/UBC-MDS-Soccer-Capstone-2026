@@ -327,8 +327,14 @@ Full list of variables (all required unless marked optional):
 ```bash
 # ── GCP ──────────────────────────────────────────────────────────────────
 GCP_PROJECT_ID=your-gcp-project-id
-DAGSTER_GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
-CHATBOT_GOOGLE_APPLICATION_CREDENTIALS=./chatbot-service-account-key.json
+GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+
+# The Dagster and Chatbot environments should use different .env files for security concerns.
+# For the local Dagster environment, export the Dagster key:
+# GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
+
+# For the local Chatbot environment, export the Chatbot key:
+# GOOGLE_APPLICATION_CREDENTIALS=./chatbot-service-account-key.json
 
 # ── GCS buckets ──────────────────────────────────────────────────────────
 INGESTION_GCS_BUCKET=your-ingestion-bucket-name
@@ -376,7 +382,7 @@ StatsBomb: using authenticated API (paid data)
 
 ### 6c. The service account key files
 
-Place both keys in the project root. They are loaded via `.env` mappings, and `docker-compose.yml` mounts them into the necessary containers automatically.
+Place both keys in the project root. Runtime code reads `GOOGLE_APPLICATION_CREDENTIALS`. Use **separate `.env` files** for Dagster vs Chatbot local work, each pointing at the correct key (see §6a comments). In Docker, `docker-compose.yml` mounts each key and sets `GOOGLE_APPLICATION_CREDENTIALS` inside the container automatically.
 
 ```
 UBC-MDS-Soccer-Capstone-2026/
@@ -499,11 +505,15 @@ cp .env.example .env
 cp /path/to/chatbot-service-account-key.json .
 cp /path/to/dagster-service-account-key.json .
 
+# Dagster compose mounts ./repo — link project root for local Docker runs
+ln -sf "$(pwd)" repo
+mkdir -p repo/dagster_home
+
 # 3. Pull pre-built images from Docker Hub (first time only — takes 2-3 min)
 docker compose pull
 
 # 4. Apply Django migrations (first time only)
-docker compose run --rm django-env python manage.py migrate
+docker compose run --rm django-env python app/manage.py migrate
 
 # 5. Start all services
 docker compose up
@@ -512,7 +522,7 @@ docker compose up
 Docker exposes:
 | URL | Service |
 |---|---|
-| `http://localhost:8000` | Django chatbot + dashboard |
+| `http://localhost` | Django chatbot + dashboard (port 80) |
 | `http://localhost:3000` | Dagster orchestration UI |
 | `http://localhost:8888` | Jupyter notebooks |
 
@@ -861,7 +871,7 @@ python manage.py runserver
 
 ```bash
 docker compose up django-env
-# Visit http://localhost:8000
+# Visit http://localhost (Docker maps port 80 → 8000)
 ```
 
 #### How the chatbot works

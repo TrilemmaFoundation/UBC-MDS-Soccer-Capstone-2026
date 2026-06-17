@@ -16,12 +16,13 @@ My part is the **entire data backbone** of the platform. Nothing else works with
 
 ### Credentials
 You need two things to run anything:
-- `service-account-key.json` — GCP service account key. Get this from the team. Place it in the project root. **Never commit it.**
+- `dagster-service-account-key.json` — GCP service account key for pipeline/dbt work. Get this from the team. Place it in the project root. **Never commit it.**
+- `chatbot-service-account-key.json` — read-only GCP key for the Django chatbot. **Never commit it.**
 - `.env` — copy from `.env.example`, fill in at minimum `GROQ_API_KEY`. All GCP resource names (`GCP_PROJECT_ID`, `INGESTION_GCS_BUCKET`, `ML_GCS_BUCKET`) are read from this file — do not hardcode them anywhere.
 
 ```bash
 cp .env.example .env
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 ```
 
 ### GCP Resources
@@ -83,7 +84,7 @@ python src/ingestion/load_bq.py
 3. Re-run all 3 scripts
 
 ### Common issues
-- **DefaultCredentialsError** → `export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json`
+- **DefaultCredentialsError** → `export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json`
 - **Missing parquet file** → `statsbomb.py` failed mid-run; check stdout for which competition errored
 - **StatsBomb rate limit** → the library handles it automatically; just let it run
 - **`NoAuthWarning: credentials were not supplied`** → expected when running on open data; not an error. Set `SB_USERNAME` and `SB_PASSWORD` in `.env` to use the paid API instead.
@@ -194,7 +195,8 @@ docker compose up dagster-env
 ### Run
 ```bash
 cp .env.example .env            # fill in GROQ_API_KEY
-cp service-account-key.json .
+cp dagster-service-account-key.json .
+cp chatbot-service-account-key.json .
 docker compose up               # starts all 3 containers
 docker compose up django-env    # start one container only
 ```
@@ -209,7 +211,7 @@ docker compose up django-env    # start one container only
 | `Dockerfile.jupyter` | Jupyter notebook container |
 
 ### Common issues
-- **Container can't reach BigQuery** → make sure `service-account-key.json` is mounted and `GOOGLE_APPLICATION_CREDENTIALS` is set in `docker-compose.yml`
+- **Container can't reach BigQuery** → make sure `chatbot-service-account-key.json` / `dagster-service-account-key.json` are mounted and `GOOGLE_APPLICATION_CREDENTIALS` is set in `docker-compose.yml`
 - **Port already in use** → `lsof -i :8000` to find and kill the process
 - **Changes not reflected** → rebuild: `docker compose build django-env && docker compose up django-env`
 

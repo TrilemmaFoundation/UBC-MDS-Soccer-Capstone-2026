@@ -16,11 +16,12 @@ conda env create -f environment.yml
 conda activate soccer_capstone
 
 # Add credentials
-cp .env.example .env        # fill in GROQ_API_KEY
-cp service-account-key.json .  # get from the team — never commit this file
+cp .env.example .env        # fill in GROQ_API_KEY and GCP vars
+cp chatbot-service-account-key.json .   # get from the team — never commit
+cp dagster-service-account-key.json .   # get from the team — never commit
 
-# Authenticate with GCP
-export GOOGLE_APPLICATION_CREDENTIALS=./service-account-key.json
+# Authenticate with GCP (Dagster/dbt/ML use the Dagster key)
+export GOOGLE_APPLICATION_CREDENTIALS=./dagster-service-account-key.json
 ```
 
 See `README.md` for Docker-based setup and `HANDOVER.md` for full component guides.
