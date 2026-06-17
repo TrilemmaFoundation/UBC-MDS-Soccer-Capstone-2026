@@ -31,13 +31,19 @@ format:
 
 {{< include final_report/executive_summary.md >}}
 
+# Introduction
+
 {{< include final_report/introduction.md >}}
+
+# Data
 
 {{< include final_report/data.md >}}
 
-# Data Pipeline
+# Data Science Methods
 
 Our analytical work addresses *how* players play, not just output volume. Two models sit on the same 13 per-90 StatsBomb features (attack, progression, defending, efficiency): **PCA + K-Means** for tactical archetypes and **within-context z-score scoring** for club vs national consistency. Both run on a shared automated pipeline (\autoref{fig-architecture}). Full feature definitions, preprocessing steps, and formulas are in the supplementary documentation (\autoref{tbl-appendix-docs}).
+
+## Data Pipeline
 
 StatsBomb open data is ingested through GCS into BigQuery, transformed with dbt (staging, intermediate, marts), enriched by Python ML scripts (`cluster.py`, `consistency.py`), and served through a Django app embedding Looker Studio and a Groq chatbot. Dagster orchestrates weekly full runs and hourly refreshes when new files land in GCS. Deployment and maintenance details are in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
@@ -50,9 +56,9 @@ Automated ELT pipeline: StatsBomb API through BigQuery and dbt to analytics mart
 
 End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). Mart schemas are documented in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
-# RQ1: Player Archetype Clustering {#sec-rq1-methods}
+## RQ1: Player Archetype Clustering {#sec-rq1-methods}
 
-This section describes the unsupervised clustering model for RQ1. Findings and dashboard outputs are in [RQ1 results](#sec-rq1-results) below.
+This section describes the unsupervised clustering model for RQ1. Findings and dashboard outputs are in \autoref{sec-rq1-results}.
 
 We cluster player-seasons from `int_player_season_stats` after applying a **270-minute** minimum per season (*n* = 5,469 outfield, 5,759 including goalkeepers). **Goalkeepers** are excluded from K-Means and assigned a fixed label because their event profiles are structurally unlike outfield players.
 
@@ -91,9 +97,9 @@ Goalkeeper & 290 & Assigned by position. Excluded from K-Means \\
 \end{table}
 ```
 
-# RQ2: Club vs National Consistency Scoring {#sec-rq2-methods}
+## RQ2: Club vs National Consistency Scoring {#sec-rq2-methods}
 
-This section describes the within-context scoring model for RQ2. Findings and dashboard outputs are in [RQ2 results](#sec-rq2-results) below.
+This section describes the within-context scoring model for RQ2. Findings and dashboard outputs are in \autoref{sec-rq2-results}.
 
 For **489 dual-context players** with $\geq 270$ minutes in both club and national football, we standardise each of the 13 features **within context**. Club z-scores compare a player only to other club players; national z-scores compare only to national-team peers.
 
@@ -124,13 +130,15 @@ Quadrants split the cohort at the **medians** of club and national performance s
 
 Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context, not absolute quality. An Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions are in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
-# Data Product
+# Data Product and Results
 
 The data product is a unified Django web application combining an embedded Looker Studio dashboard and a natural language chatbot. These forms were chosen because Trilemma's analysts operate at two levels of inquiry that no single tool handles alone: broad visual exploration and specific ad-hoc questions. A notebooks-only approach was ruled out as inaccessible to non-technical partner staff. A dashboard alone could not replace flexible querying without Looker edit access.
 
-[]{#sec-rq1-results}
+## Results
 
-**RQ1 (Role distribution).** See also [RQ1: Player Archetype Clustering](#sec-rq1-methods). Chi-square tests and Cramér's V on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07; full heatmaps and statistics in the supplementary documentation, \autoref{tbl-appendix-docs}). In row-normalised heatmaps:
+### RQ1: Role Distribution {#sec-rq1-results}
+
+See also \autoref{sec-rq1-methods}. Chi-square tests and Cramér's V on top-five European leagues show **position drives archetype assignment** more strongly than competition (Notebook 07; full heatmaps and statistics in the supplementary documentation, \autoref{tbl-appendix-docs}). In row-normalised heatmaps:
 
 - **Center backs** concentrate in Defensive Anchor and Low Activity. Attacking clusters are rare.
 - **Forwards and attacking mids** skew toward Pressing Forward and Creative Winger.
@@ -167,9 +175,9 @@ Bundesliga & Defensive Anchor (145) & Low Activity (121) & Smallest top-five sam
 Looker cluster explorer filtered to Lionel Messi. Most seasons are classified as Creative Winger, with Pressing Forward appearing in Copa América 2024.
 :::
 
-[]{#sec-rq2-results}
+### RQ2: Club vs National Consistency {#sec-rq2-results}
 
-**RQ2 (Club vs national consistency).** See also [RQ2: Club vs National Consistency Scoring](#sec-rq2-methods). Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
+See also \autoref{sec-rq2-methods}. Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
 
 A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (Notebook 08), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see supplementary documentation, \autoref{tbl-appendix-docs}).
 
@@ -189,7 +197,9 @@ A stable profile is not the same as a strong one. Many players look similar acro
 Looker Consistency Explorer with Germany selected. Serge Gnabry appears as an International Specialist (stronger vs national-team peers than club peers).
 :::
 
-**RQ3 (Natural language access).** The chatbot returns BigQuery-backed answers to plain-English questions in under ten seconds. It was tested manually on representative analyst questions (player rankings by archetype, cross-context comparisons, competition filters) and consistently applied the same eligibility rules as the dashboard, including the 270-minute threshold. Advanced Mode exposes generated SQL for audit. A read-only SQL guard blocks destructive queries.
+### RQ3: Natural Language Access
+
+The chatbot returns BigQuery-backed answers to plain-English questions in under ten seconds. It was tested manually on representative analyst questions (player rankings by archetype, cross-context comparisons, competition filters) and consistently applied the same eligibility rules as the dashboard, including the 270-minute threshold. Advanced Mode exposes generated SQL for audit. A read-only SQL guard blocks destructive queries.
 
 ::: {#fig-chatbot fig-pos="H"}
 
@@ -198,7 +208,7 @@ Looker Consistency Explorer with Germany selected. Serge Gnabry appears as an In
 Django chatbot with Advanced Mode enabled, showing a natural language query, generated BigQuery SQL, and formatted results.
 :::
 
-# Product Design
+## Product Design
 
 The **dashboard** provides visual access to pre-computed results (archetype distributions, consistency quadrants, and player rankings) filterable by position, competition, and archetype without writing code. It is appropriate for regular reporting and for communicating findings to non-technical stakeholders within Trilemma's partner organizations.
 
