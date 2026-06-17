@@ -49,7 +49,7 @@ StatsBomb open data is ingested through GCS into BigQuery, transformed with dbt 
 
 ::: {#fig-architecture fig-pos="H"}
 
-![](../presentation/assets/architecture.png){width=100%}
+![](final_report/architecture.png){width=100%}
 
 Automated ELT pipeline: StatsBomb API through BigQuery and dbt to analytics marts, ML outputs, and end-user interfaces.
 :::
