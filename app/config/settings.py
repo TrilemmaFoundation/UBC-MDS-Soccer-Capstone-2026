@@ -14,7 +14,7 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Security
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
-DEBUG = True
+DEBUG = os.environ.get("DJANGO_DEBUG", "False").lower() == "true"
 ALLOWED_HOSTS = ["*"]
 
 # Application definition
