@@ -45,8 +45,7 @@ jobs:
 
       - name: Set up dbt Profiles Directory
         run: |
-          mkdir -p ~/.dbt
-          cat << EOF > ~/.dbt/profiles.yml
+          cat << EOF > profiles.yml
           football_analytics:
             target: pr
             outputs:
