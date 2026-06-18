@@ -26,7 +26,6 @@ player_match_with_meta AS (
 aggregated AS (
     SELECT
         player_id,
-        player_name,
         competition_id,
         competition_name,
         season_id,
@@ -57,10 +56,11 @@ aggregated AS (
         SUM(ball_recoveries) AS total_ball_recoveries,
         SUM(fouls) AS total_fouls,
 
+        ANY_VALUE(player_name) AS player_name,
         -- Most common position across all matches in the season
         APPROX_TOP_COUNT(position_name, 1)[SAFE_OFFSET(0)].value AS position_name
     FROM player_match_with_meta
-    GROUP BY 1, 2, 3, 4, 5, 6
+    GROUP BY 1, 2, 3, 4, 5
     HAVING SUM(minutes_played) >= 270
 ),
 
