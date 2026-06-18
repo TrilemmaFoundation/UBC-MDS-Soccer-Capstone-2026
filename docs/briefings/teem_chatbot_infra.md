@@ -48,12 +48,12 @@ My part covers the **user-facing product** and the **infrastructure/deployment**
 
 Our repository relies on three main GitHub Actions workflows for continuous integration and deployment.
 
-**Required GitHub Secrets:** `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `GCE_CHATBOT_SERVICE_ACCOUNT_KEY`, `GCE_DAGSTER_SERVICE_ACCOUNT_KEY` (or `GCE_SERVICE_ACCOUNT_KEY`), `GCE_SSH_PRIVATE_KEY`, `GROQ_API_KEY`
+**Required GitHub Secrets:** `DOCKER_USERNAME`, `DOCKER_PASSWORD`, `GCE_CHATBOT_SERVICE_ACCOUNT_KEY`, `GCE_DAGSTER_SERVICE_ACCOUNT_KEY`, `GCE_SSH_PRIVATE_KEY`, `GROQ_API_KEY`
 **Required Repository Variables:** `GCE_VM_HOST`, `GCE_VM_USER`, `GCP_PROJECT_ID`
 
 - **dbt Test Workflow (`dbt_test.yml`)**:
   - **Trigger**: PRs touching `models/`, `macros/`, or dbt configuration files.
-  - **Secrets/Vars Used**: `GCE_SERVICE_ACCOUNT_KEY`, `GCP_PROJECT_ID`.
+  - **Secrets/Vars Used**: `GCE_DAGSTER_SERVICE_ACCOUNT_KEY`, `GCP_PROJECT_ID`.
   - **What it does**: Authenticates with GCP, creates a temporary BigQuery dataset (e.g., `pr_validation_{PR_NUMBER}`), runs `dbt run` and `dbt test` for staging and intermediate layers, and finally drops the temporary dataset even if the tests fail.
 - **Docker CD Workflow (`publish_images.yml`)**:
   - **Trigger**: Manual dispatch or upon successful completion of the "Update conda-lock file" workflow on `main`.
