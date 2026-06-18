@@ -4,7 +4,7 @@ football_analytics: # This name must match the 'profile' in dbt_project.yml
     dev:
       type: bigquery
       method: service-account
-      project: "{{ env_var('GCP_PROJECT_ID', 'football-capstone-mds-496219') }}"
+      project: "{{ env_var('GCP_PROJECT_ID', 'football-capstone-mds-495504') }}"
       dataset: dbt # The dataset where dbt will create your models
       threads: 4
       keyfile: "{{ env_var('GOOGLE_APPLICATION_CREDENTIALS', 'dagster-service-account-key.json') }}"
