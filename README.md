@@ -188,22 +188,52 @@ Or trigger the full graph from the Dagster UI at `http://localhost:3000` (Assets
 
 ## Reproducing the Final Report
 
-The report source is `report/final_report.qmd`. It includes section files from `report/final_report/` and figures from `presentation/assets/`. A pre-built PDF is committed at `report/final_report.pdf`.
+The report source is `report/final_report.qmd`. It includes section files from `report/final_report/` and figures from `presentation/assets/`. Table counts and inline statistics are exported from BigQuery into `results/report/` by `src/report/export_metrics.py`. A pre-built PDF is committed at `report/final_report.pdf`.
+
+### Render only (no data export)
+
+If `results/report/metrics.json` is already present (committed in the repo), rebuild the PDF without touching BigQuery or rewriting metrics:
+
+```bash
+conda activate soccer_capstone
+python src/report/render_report.py
+```
+
+Or:
+
+```bash
+make final-report
+```
+
+This only runs Quarto. Python chunks read the existing `results/report/metrics.json` and build tables at render time.
+
+### Refresh report numbers from BigQuery
+
+After the pipeline and ML jobs have run, re-export metrics (requires GCP credentials in `.env`), then render:
+
+```bash
+conda activate soccer_capstone
+python src/report/export_metrics.py
+python src/report/render_report.py
+```
+
+Or `make final-report-export`.
+
+This writes `results/report/metrics.json` and CSV snapshots under `results/report/csv/`. Commit those files so others can use render-only above.
+
+To rebuild `metrics.json` from committed CSVs without BigQuery:
+
+```bash
+python src/report/export_metrics.py --from-cache
+```
 
 ### Requirements
 
 - Quarto CLI ([install guide](https://quarto.org/docs/get-started/))
 - A LaTeX distribution (TeX Live). On macOS: `brew install --cask mactex-no-gui` or install via the conda env if available.
+- Conda env `soccer_capstone` for Python chunks during render
 
-### Render
-
-```bash
-conda activate soccer_capstone   # optional — not required unless running embedded code
-quarto render report/final_report.qmd
-open report/final_report.pdf
-```
-
-The PDF is written to `report/final_report.pdf`. No BigQuery or GCP credentials are needed — the report uses static markdown includes and committed images.
+The PDF is written to `report/final_report.pdf`.
 
 To render the capstone presentation deck separately:
 

@@ -71,8 +71,9 @@ def test_live_responses_are_scoped():
     from app.chatbot.llm_engine import ask_football_chatbot
 
     for case in SAMPLE_TEST_QUESTIONS:
-        answer = ask_football_chatbot(case["question"])
-        assert answer and len(answer.strip()) > 20
+        result = ask_football_chatbot(case["question"])
+        answer = result.get("answer") if isinstance(result, dict) else result
+        assert answer and isinstance(answer, str) and len(answer.strip()) > 20
         assert _response_matches_keywords(
             answer,
             case["relevant_keywords"],

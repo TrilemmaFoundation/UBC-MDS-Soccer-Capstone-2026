@@ -41,7 +41,7 @@ The integration of these tools creates a powerful, end-to-end workflow for a foo
 *(Screenshots of the application in action are provided below)*
 
 ![Chatbot Interface Placeholder - Showcasing a user query and the LLM response with Advanced Mode toggled on](../../presentation/assets/chatbot_screenshot.png)
-*Figure 1: The Football Analytics Chatbot interface, demonstrating the natural language query processing and the Advanced Mode debugging panels.*
+*Figure 1: RQ3 chatbot with Advanced Mode enabled, showing a natural-language query, formatted results, and the generated SQL for audit.*
 
 ![Dashboard Interface Placeholder - Showcasing the Looker Studio iframe within the Django wrapper](../../presentation/assets/dashboard_screenshot.png)
-*Figure 2: The embedded Looker Studio Dashboard, providing high-level visual exploratory data analysis.*
+*Figure 2: Embedded Looker Studio dashboard with RQ1 archetype and RQ2 consistency charts, filterable by position, competition, and archetype.*
