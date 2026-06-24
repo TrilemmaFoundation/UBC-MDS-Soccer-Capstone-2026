@@ -51,7 +51,7 @@ StatsBomb open data is ingested through GCS into BigQuery, transformed with dbt 
 
 ![](final_report/architecture.png){width=100%}
 
-Automated ELT pipeline: StatsBomb API through BigQuery and dbt to analytics marts, ML outputs, and end-user interfaces.
+Automated ELT pipeline from StatsBomb open data through BigQuery, dbt, and Python ML scripts to Looker Studio and a Django chatbot, orchestrated by Dagster.
 :::
 
 End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). Mart schemas are documented in the supplementary documentation (\autoref{tbl-appendix-docs}).
@@ -70,13 +70,15 @@ We cluster player-seasons from `int_player_season_stats` after applying a **270-
 
 ![](../presentation/assets/looker-cluster-scatter-converted.png){width=95%}
 
-Looker cluster explorer scatter plot of player-seasons in PCA space (PC1 vs PC2), coloured by assigned archetype.
+Looker cluster explorer showing outfield player-seasons in PCA space (PC1 vs PC2), coloured by K-Means archetype label (k = 5).
 :::
 
 The resulting archetypes (\autoref{tbl-cluster-dist}) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity. Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament.
 
 ```{=latex}
 \begin{table}[htbp]
+\caption{RQ1 archetype distribution across 5,759 player-seasons. Outfield players receive K-Means labels and goalkeepers a fixed label. Low Activity is the largest archetype and Creative Winger the smallest outfield group.}
+\label{tbl-cluster-dist}
 \centering
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.05}
@@ -92,8 +94,6 @@ Creative Winger & 463 & High dribbles, carries, shots. Direct wide attackers \\
 Goalkeeper & 290 & Assigned by position. Excluded from K-Means \\
 \bottomrule
 \end{tabular}
-\caption{Player archetype distribution across all player-seasons.}
-\label{tbl-cluster-dist}
 \end{table}
 ```
 
@@ -126,7 +126,7 @@ Quadrants split the cohort at the **medians** of club and national performance s
 | $<$ median | $\geq$ median | International Specialist |
 | $<$ median | $<$ median | Underperformer |
 
-: Quadrant assignment logic from `src/ml/consistency.py`. Each quadrant contains roughly one quarter of the cohort. {#tbl-quadrants}
+: Quadrant rules from `src/ml/consistency.py`. Dual-context players are classified by whether club and national performance scores fall above or below cohort medians on the same 13 per-90 metrics. {#tbl-quadrants}
 
 Outputs were sanity-checked against known dual-context players (e.g., Gnabry as International Specialist). Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context, not absolute quality. An Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions are in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
@@ -151,6 +151,8 @@ League effects are secondary but visible (\autoref{tbl-rq1-competition}). Serie 
 
 ```{=latex}
 \begin{table}[htbp]
+\caption{Outfield archetype counts by top-five European league (goalkeepers excluded). Defensive Anchor and Low Activity lead in every league, with Serie A showing the highest Low Activity share.}
+\label{tbl-rq1-competition}
 \centering
 \setlength{\tabcolsep}{4pt}
 \renewcommand{\arraystretch}{1.05}
@@ -165,8 +167,6 @@ Premier League & Defensive Anchor (169) & Low Activity (163) & Near-even top two
 Bundesliga & Defensive Anchor (145) & Low Activity (121) & Smallest top-five sample. More Pressing Forward (83) \\
 \bottomrule
 \end{tabular}
-\caption{Outfield cluster counts by competition in mart\_player\_clusters (BigQuery). Goalkeepers excluded.}
-\label{tbl-rq1-competition}
 \end{table}
 ```
 
@@ -174,7 +174,7 @@ Bundesliga & Defensive Anchor (145) & Low Activity (121) & Smallest top-five sam
 
 ![](../presentation/assets/looker-cluster-page2-converted.png){width=95%}
 
-Looker cluster explorer filtered to Lionel Messi. Most seasons are classified as Creative Winger, with Pressing Forward appearing in Copa América 2024.
+Messi player-seasons in the cluster explorer. Most are Creative Winger, but Copa América 2024 is Pressing Forward, showing archetypes reflect seasonal role rather than fixed identity.
 :::
 
 ### RQ2: Club vs National Consistency {#sec-rq2-results}
@@ -190,13 +190,13 @@ A stable profile is not the same as a strong one. Many players look similar acro
 | Club Specialist | 88 | 18.0% |
 | International Specialist | 88 | 18.0% |
 
-: Observed quadrant counts in `analytics.consistency_scores` (BigQuery). {#tbl-quadrant-dist}
+: RQ2 quadrant counts for 489 dual-context players with at least 270 minutes in both settings. Elite and Underperformer each account for about one third of the cohort. {#tbl-quadrant-dist}
 
 ::: {#fig-gnabry-quadrant fig-pos="H"}
 
 ![](../presentation/assets/looker-quadrant-scatter.png){width=95%}
 
-Looker Consistency Explorer with Germany selected. Serge Gnabry appears as an International Specialist (stronger vs national-team peers than club peers).
+Consistency Explorer for Germany dual-context players. Serge Gnabry appears as an International Specialist, stronger vs national-team peers than club peers.
 :::
 
 ### RQ3: Natural Language Access
@@ -207,7 +207,7 @@ The chatbot returns BigQuery-backed answers to plain-English questions in under 
 
 ![](final_report/chatbot_screenshot.png){width=95%}
 
-A Django-based football analytics chatbot demonstrating its Advanced Mode. When a user asks a natural language query, such as "Show me the top defensive anchors by pressures per 90", the chatbot returns the formatted top-10 results alongside the generated BigQuery SQL statement and the raw JSON data.
+RQ3 chatbot with Advanced Mode showing a natural-language query, formatted top-10 results, and the generated BigQuery SQL for audit.
 
 :::
 

@@ -8,7 +8,7 @@ Coverage is highly uneven across seasons: 2015–16 alone accounts for roughly h
 
 ![](../results/dashboard/01_match_overview.png){width=95%}
 
-StatsBomb open-data coverage overview: match volume by season and competition.
+StatsBomb open-data match volume by season and competition. Coverage is uneven, with 2015--16 accounting for roughly half of all matches.
 :::
 
 ## Source
@@ -25,7 +25,7 @@ Three tables are ingested from the API (\autoref{tbl-data-overview}):
 | `events` | One row per on-ball action | ~12.2 million rows |
 | `lineups` | One row per player appearance | 165,820 rows |
 
-: Overview of ingested StatsBomb tables. {#tbl-data-overview}
+: StatsBomb tables ingested into BigQuery via `statsbombpy`. The events table drives per-90 feature engineering, matches provide competition context, and lineups supply minutes and position. {#tbl-data-overview}
 
 The `events` table is the analytical backbone. Action types are dominated by Pass (~3.4M), Ball Receipt (~3.2M), Carry (~2.6M), and Pressure (~1.1M). There are 88,023 Shot events with non-null StatsBomb xG values (mean xG per shot: 0.107). The dataset covers 10,808 distinct players across 308 teams. Primary model outputs are **cluster labels** (RQ1), **performance quadrants**, and **consistency scores** (RQ2). Player-level modelling is limited to **men's senior** competitions, which bounded project scope.
 
