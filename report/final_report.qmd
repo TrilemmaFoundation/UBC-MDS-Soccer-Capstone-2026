@@ -51,10 +51,10 @@ StatsBomb open data is ingested through GCS into BigQuery, transformed with dbt 
 
 ![](final_report/architecture.png){width=100%}
 
-Automated ELT pipeline: StatsBomb API through BigQuery and dbt to analytics marts, ML outputs, and end-user interfaces.
+Automated ELT pipeline architecture. Raw StatsBomb JSON is extracted via `statsbombpy`, staged in Google Cloud Storage, and loaded into BigQuery. A three-layer dbt transformation (staging, intermediate, marts) feeds two ML scripts (`cluster.py`, `consistency.py`) whose outputs are written back to BigQuery. The Django web app serves a Looker Studio dashboard and a Groq-powered chatbot, both reading from `dbt_marts`. Dagster orchestrates the full graph on a weekly schedule with an hourly GCS sensor for incremental refreshes.
 :::
 
-End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). Mart schemas are documented in the supplementary documentation (\autoref{tbl-appendix-docs}).
+End-to-end validation confirmed aligned row counts: `int_player_season_stats` produces 5,759 player-seasons (5,469 outfield + 290 goalkeepers) and `int_player_club_vs_national` yields 489 dual-context players, both matching the downstream mart and ML output counts exactly. Mart schemas are documented in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
 ## RQ1: Player Archetype Clustering {#sec-rq1-methods}
 
@@ -70,7 +70,7 @@ We cluster player-seasons from `int_player_season_stats` after applying a **270-
 
 ![](../presentation/assets/looker-cluster-scatter-converted.png){width=95%}
 
-Looker cluster explorer scatter plot of player-seasons in PCA space (PC1 vs PC2), coloured by assigned archetype.
+Looker cluster explorer: 5,469 outfield player-seasons projected onto PC1 (overall involvement volume) vs PC2 (defensive vs attacking emphasis). Each point is one player-season, coloured by K-Means archetype assignment (k = 5). Defensive Anchors (blue) and Low Activity (grey) cluster at low PC1; Creative Wingers (green) and Pressing Forwards (red) separate along PC2. Source: `mart_player_clusters` in BigQuery.
 :::
 
 The resulting archetypes (\autoref{tbl-cluster-dist}) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity. Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament.
@@ -92,7 +92,7 @@ Creative Winger & 463 & High dribbles, carries, shots. Direct wide attackers \\
 Goalkeeper & 290 & Assigned by position. Excluded from K-Means \\
 \bottomrule
 \end{tabular}
-\caption{Player archetype distribution across all player-seasons.}
+\caption{Player archetype distribution across 5,759 player-seasons (5,469 outfield + 290 goalkeepers). Counts and profiles are drawn from \texttt{mart\_player\_clusters} in BigQuery. Archetypes are assigned per player-season, not per player.}
 \label{tbl-cluster-dist}
 \end{table}
 ```
@@ -126,7 +126,7 @@ Quadrants split the cohort at the **medians** of club and national performance s
 | $<$ median | $\geq$ median | International Specialist |
 | $<$ median | $<$ median | Underperformer |
 
-: Quadrant assignment logic from `src/ml/consistency.py`. Each quadrant contains roughly one quarter of the cohort. {#tbl-quadrants}
+: Quadrant assignment logic from `src/ml/consistency.py`. Median splits on club and national performance scores assign each of the 489 dual-context players to one of four quadrants. Each quadrant contains roughly one quarter of the cohort. {#tbl-quadrants}
 
 Outputs were sanity-checked against known dual-context players (e.g., Gnabry as International Specialist). Progressive passing into the attacking third best separates club-focused from national-focused specialists in exploratory comparisons. Quadrant labels reflect peer standing within each context, not absolute quality. An Elite player outperforms cohort medians in both settings without any claim about raw output level. The 270-minute threshold removes rotation players, stabilising per-90 estimates at the cost of excluding low-minute prospects relevant to scouting work. Complete formulas and dashboard field definitions are in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
@@ -140,7 +140,7 @@ The data product is a unified Django web application combining an embedded Looke
 
 ### RQ1: Role Distribution {#sec-rq1-results}
 
-See also \hyperref[sec-rq1-methods]{RQ1: Player Archetype Clustering}. Chi-square tests and Cramér's V on top-five European leagues show **position drives archetype assignment** more strongly than competition (full heatmaps and statistics in \hyperref[tbl-appendix-docs]{Notebook 07}). In row-normalised heatmaps:
+See also \hyperref[sec-rq1-methods]{RQ1: Player Archetype Clustering}. Chi-square tests on position $\times$ archetype in the top-five European leagues yield $p < 0.001$ with Cramér's V $> 0.4$, confirming **position drives archetype assignment** more strongly than competition (Cramér's V $< 0.15$ for competition $\times$ archetype; full heatmaps and statistics in \hyperref[tbl-appendix-docs]{Notebook 07}). In row-normalised heatmaps:
 
 - **Center backs** concentrate in Defensive Anchor and Low Activity. Attacking clusters are rare.
 - **Forwards and attacking mids** skew toward Pressing Forward and Creative Winger.
@@ -165,7 +165,7 @@ Premier League & Defensive Anchor (169) & Low Activity (163) & Near-even top two
 Bundesliga & Defensive Anchor (145) & Low Activity (121) & Smallest top-five sample. More Pressing Forward (83) \\
 \bottomrule
 \end{tabular}
-\caption{Outfield cluster counts by competition in mart\_player\_clusters (BigQuery). Goalkeepers excluded.}
+\caption{Outfield cluster counts by competition from \texttt{mart\_player\_clusters} (BigQuery). Goalkeepers excluded. Reproduced by: \texttt{SELECT competition\_name, cluster\_label, COUNT(*) FROM dbt\_marts.mart\_player\_clusters WHERE cluster\_label != 'Goalkeeper' GROUP BY 1, 2 ORDER BY 1, 3 DESC}.}
 \label{tbl-rq1-competition}
 \end{table}
 ```
@@ -174,12 +174,12 @@ Bundesliga & Defensive Anchor (145) & Low Activity (121) & Smallest top-five sam
 
 ![](../presentation/assets/looker-cluster-page2-converted.png){width=95%}
 
-Looker cluster explorer filtered to Lionel Messi. Most seasons are classified as Creative Winger, with Pressing Forward appearing in Copa América 2024.
+Looker cluster explorer filtered to Lionel Messi (player\_id 5503), showing 22 player-seasons. Most are classified as Creative Winger (high dribbles, carries, shots per 90). Copa América 2024 is the sole season labelled Pressing Forward, reflecting Argentina's more compact national-team pressing system. Source: `mart_player_clusters` filtered by `player_name`.
 :::
 
 ### RQ2: Club vs National Consistency {#sec-rq2-results}
 
-See also \hyperref[sec-rq2-methods]{RQ2: Club vs National Consistency Scoring}. Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
+See also \hyperref[sec-rq2-methods]{RQ2: Club vs National Consistency Scoring}. Of 489 dual-context players, **157 (32.1%) are Elite** (above peer median in both contexts), **156 (31.9%) Underperformer**, and **176 (36.0%) single-context specialists** (88 club-only, 88 national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest mean z-score gaps are in **passes into the attacking third per 90** ($\Delta z = 0.48$), **interceptions per 90** ($\Delta z = 0.41$), and **carries into the final third per 90** ($\Delta z = 0.37$). System and role differences, not raw goal output, drive the split.
 
 A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (\hyperref[tbl-appendix-docs]{Notebook 08}), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see supplementary documentation, \autoref{tbl-appendix-docs}).
 
@@ -190,13 +190,13 @@ A stable profile is not the same as a strong one. Many players look similar acro
 | Club Specialist | 88 | 18.0% |
 | International Specialist | 88 | 18.0% |
 
-: Observed quadrant counts in `analytics.consistency_scores` (BigQuery). {#tbl-quadrant-dist}
+: Observed quadrant distribution among 489 dual-context players from `analytics.consistency_scores` (BigQuery). Reproduced by: `SELECT performance_quadrant, COUNT(*) FROM analytics.consistency_scores GROUP BY 1`. {#tbl-quadrant-dist}
 
 ::: {#fig-gnabry-quadrant fig-pos="H"}
 
 ![](../presentation/assets/looker-quadrant-scatter.png){width=95%}
 
-Looker Consistency Explorer with Germany selected. Serge Gnabry appears as an International Specialist (stronger vs national-team peers than club peers).
+Looker Consistency Explorer with Germany selected. Each point is one dual-context player; axes are PCA-weighted club and national performance scores. Serge Gnabry (highlighted tooltip) appears as an International Specialist — his national performance score (112%) exceeds the cohort median while his club score ($-$44.76%) falls below it. Source: `analytics.consistency_scores` in BigQuery.
 :::
 
 ### RQ3: Natural Language Access
@@ -249,4 +249,4 @@ Detailed formulas, pipeline architecture, full RQ1/RQ2 analysis notebooks, and m
 | ELT architecture and deployment | [HANDOVER.md](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/HANDOVER.md) |
 | Mart table schemas | [docs/marts_data_dict.md](https://github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026/blob/main/docs/marts_data_dict.md) |
 
-: Repository documentation index with links to detailed supplementary materials. {#tbl-appendix-docs}
+: Repository documentation index with links to detailed supplementary materials. All documents are in the project repository at `github.com/TrilemmaFoundation/UBC-MDS-Soccer-Capstone-2026`. {#tbl-appendix-docs}

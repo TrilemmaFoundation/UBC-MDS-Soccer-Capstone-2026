@@ -8,7 +8,7 @@ Coverage is highly uneven across seasons: 2015–16 alone accounts for roughly h
 
 ![](../results/dashboard/01_match_overview.png){width=95%}
 
-StatsBomb open-data coverage overview: match volume by season and competition.
+StatsBomb open-data coverage overview from the Looker Studio dashboard. Left panel: match count by season, showing a pronounced spike in 2015–16 (~2,000 matches) driven by La Liga and Ligue 1 full-season releases. Right panel: match count by competition across all seasons. The coverage imbalance means per-competition results should be interpreted with sample size in mind. Source: `raw_statsbomb.matches` in BigQuery.
 :::
 
 ## Source
@@ -25,9 +25,9 @@ Three tables are ingested from the API (\autoref{tbl-data-overview}):
 | `events` | One row per on-ball action | ~12.2 million rows |
 | `lineups` | One row per player appearance | 165,820 rows |
 
-: Overview of ingested StatsBomb tables. {#tbl-data-overview}
+: Overview of ingested StatsBomb tables. Row counts from `raw_statsbomb` dataset in BigQuery after full ingestion via `src/ingestion/statsbomb.py`. {#tbl-data-overview}
 
-The `events` table is the analytical backbone. Action types are dominated by Pass (~3.4M), Ball Receipt (~3.2M), Carry (~2.6M), and Pressure (~1.1M). There are 88,023 Shot events with non-null StatsBomb xG values (mean xG per shot: 0.107). The dataset covers 10,808 distinct players across 308 teams. Primary model outputs are **cluster labels** (RQ1), **performance quadrants**, and **consistency scores** (RQ2). Player-level modelling is limited to **men's senior** competitions, which bounded project scope.
+The `events` table is the analytical backbone. Action types are dominated by Pass (3,427,814 rows), Ball Receipt (3,213,507), Carry (2,618,942), and Pressure (1,124,638). There are 88,023 Shot events with non-null StatsBomb xG values (mean xG per shot: 0.107, median: 0.04). The dataset covers 10,808 distinct players across 308 teams in 16 competitions. Primary model outputs are **cluster labels** (RQ1), **performance quadrants**, and **consistency scores** (RQ2). Player-level modelling is limited to **men's senior** competitions, which bounded project scope.
 
 ## Data Quality and Limitations
 
