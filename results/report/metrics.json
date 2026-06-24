@@ -1,0 +1,69 @@
+{
+  "n_competitions": 11,
+  "n_matches": 3464,
+  "n_events": 12188949,
+  "n_lineups": 165820,
+  "n_events_millions": 12.2,
+  "n_player_seasons": 5759,
+  "n_outfield_player_seasons": 5469,
+  "n_goalkeeper_seasons": 290,
+  "n_dual_context_players": 489,
+  "min_minutes": 270,
+  "archetype_counts": {
+    "Creative Playmaker": 807,
+    "Creative Winger": 463,
+    "Defensive Anchor": 1470,
+    "Goalkeeper": 290,
+    "Low Activity": 1963,
+    "Pressing Forward": 766
+  },
+  "quadrant_counts": {
+    "Club Specialist": 88,
+    "Elite": 157,
+    "International Specialist": 88,
+    "Underperformer": 156
+  },
+  "quadrant_shares": {
+    "Elite": 32.10633946830266,
+    "Underperformer": 31.901840490797547,
+    "Club Specialist": 17.995910020449898,
+    "International Specialist": 17.995910020449898
+  },
+  "pct_elite": 32.10633946830266,
+  "pct_underperformer": 31.901840490797547,
+  "pct_club_specialist": 17.995910020449898,
+  "pct_international_specialist": 17.995910020449898,
+  "pct_single_context_specialist": 35.991820040899796,
+  "competition_summary": [
+    {
+      "competition": "La Liga",
+      "largest": "Defensive Anchor (304)",
+      "second_largest": "Low Activity (167)",
+      "notable_pattern": "Highest volume. Defensive Anchors lead"
+    },
+    {
+      "competition": "Serie A",
+      "largest": "Low Activity (240)",
+      "second_largest": "Defensive Anchor (138)",
+      "notable_pattern": "Most Low Activity share among top five"
+    },
+    {
+      "competition": "Ligue 1",
+      "largest": "Defensive Anchor (175)",
+      "second_largest": "Low Activity (148)",
+      "notable_pattern": "Near-even top two clusters"
+    },
+    {
+      "competition": "Premier League",
+      "largest": "Defensive Anchor (169)",
+      "second_largest": "Low Activity (163)",
+      "notable_pattern": "Near-even top two clusters"
+    },
+    {
+      "competition": "Bundesliga",
+      "largest": "Defensive Anchor (145)",
+      "second_largest": "Low Activity (121)",
+      "notable_pattern": "Smallest top-five sample. More Pressing Forward (83)"
+    }
+  ]
+}

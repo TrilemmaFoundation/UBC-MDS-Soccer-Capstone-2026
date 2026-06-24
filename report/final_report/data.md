@@ -19,13 +19,7 @@ All data in this project comes from the StatsBomb open dataset, accessed via the
 
 Three tables are ingested from the API (\autoref{tbl-data-overview}):
 
-| Table | Grain | Scale |
-|-------|-------|-------|
-| `matches` | One row per match | 3,464 matches |
-| `events` | One row per on-ball action | ~12.2 million rows |
-| `lineups` | One row per player appearance | 165,820 rows |
-
-: StatsBomb tables ingested into BigQuery via `statsbombpy`. The events table drives per-90 feature engineering, matches provide competition context, and lineups supply minutes and position. {#tbl-data-overview}
+{{< include final_report/data_overview_table.md >}}
 
 The `events` table is the analytical backbone. Action types are dominated by Pass (~3.4M), Ball Receipt (~3.2M), Carry (~2.6M), and Pressure (~1.1M). There are 88,023 Shot events with non-null StatsBomb xG values (mean xG per shot: 0.107). The dataset covers 10,808 distinct players across 308 teams. Primary model outputs are **cluster labels** (RQ1), **performance quadrants**, and **consistency scores** (RQ2). Player-level modelling is limited to **men's senior** competitions, which bounded project scope.
 

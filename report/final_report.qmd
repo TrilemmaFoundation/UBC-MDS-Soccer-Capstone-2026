@@ -8,6 +8,9 @@ author:
   - Li Pu
 date: "June 16, 2026"
 bibliography: references.bib
+execute:
+  enabled: true
+  echo: false
 format:
   pdf:
     documentclass: article
@@ -26,6 +29,26 @@ format:
         \renewcommand{\headrulewidth}{0pt}
         \usepackage{array}
 ---
+
+```{python}
+#| label: setup-metrics
+#| include: false
+import sys
+from pathlib import Path
+
+ROOT = Path("..").resolve()
+sys.path.insert(0, str(ROOT / "src"))
+
+from report.load import fmt_int, fmt_millions, fmt_pct, load_metrics, pct_round
+from report.tables import (
+    archetype_table_tex,
+    competition_table_tex,
+    data_overview_table_md,
+    quadrant_table_md,
+)
+
+m = load_metrics()
+```
 
 # Executive Summary
 
@@ -54,13 +77,13 @@ StatsBomb open data is ingested through GCS into BigQuery, transformed with dbt 
 Automated ELT pipeline from StatsBomb open data through BigQuery, dbt, and Python ML scripts to Looker Studio and a Django chatbot, orchestrated by Dagster.
 :::
 
-End-to-end validation confirmed aligned row counts (5,759 player-seasons and 489 dual-context players scored). Mart schemas are documented in the supplementary documentation (\autoref{tbl-appendix-docs}).
+End-to-end validation confirmed aligned row counts (`{python} fmt_int(m["n_player_seasons"])` player-seasons and `{python} m["n_dual_context_players"]` dual-context players scored). Mart schemas are documented in the supplementary documentation (\autoref{tbl-appendix-docs}).
 
 ## RQ1: Player Archetype Clustering {#sec-rq1-methods}
 
 This section describes the unsupervised clustering model for RQ1. Findings and dashboard outputs are in \hyperref[sec-rq1-results]{RQ1: Role Distribution}.
 
-We cluster player-seasons from `int_player_season_stats` after applying a **270-minute** minimum per season (*n* = 5,469 outfield, 5,759 including goalkeepers). **Goalkeepers** are excluded from K-Means and assigned a fixed label because their event profiles are structurally unlike outfield players.
+We cluster player-seasons from `int_player_season_stats` after applying a **270-minute** minimum per season (*n* = `{python} fmt_int(m["n_outfield_player_seasons"])` outfield, `{python} fmt_int(m["n_player_seasons"])` including goalkeepers). **Goalkeepers** are excluded from K-Means and assigned a fixed label because their event profiles are structurally unlike outfield players.
 
 **Feature selection.** Thirteen per-90 metrics span attacking output (`xg_per_90`, `shots_per_90`), ball progression (`passes_per_90`, `passes_att_third_per_90`, `pass_completion_pct`, `carries_per_90`, `dribbles_per_90`), defensive work (`pressures_per_90`, `interceptions_per_90`, `blocks_per_90`, `clearances_per_90`, `duels_per_90`), and shot efficiency (`xg_per_shot`). The same 13 features are used in clustering, consistency scoring, and the dashboard so labels stay aligned across the product.
 
@@ -75,33 +98,17 @@ Looker cluster explorer showing outfield player-seasons in PCA space (PC1 vs PC2
 
 The resulting archetypes (\autoref{tbl-cluster-dist}) feed the Looker cluster explorer and chatbot marts. Archetypes describe *how a player is used in a given season*, not a fixed career identity. Lionel Messi is mostly classified as Creative Winger but as Pressing Forward during Copa América 2024, consistent with Argentina's more compact national-team system in that tournament.
 
-```{=latex}
-\begin{table}[htbp]
-\caption{RQ1 archetype distribution across 5,759 player-seasons. Outfield players receive K-Means labels and goalkeepers a fixed label. Low Activity is the largest archetype and Creative Winger the smallest outfield group.}
-\label{tbl-cluster-dist}
-\centering
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.05}
-\begin{tabular}{@{}l r >{\raggedright\arraybackslash}p{0.58\linewidth}@{}}
-\toprule
-Archetype & Seasons & Tactical profile \\
-\midrule
-Low Activity & 1,963 & Low volume across all metrics. Typical of squad players and limited roles \\
-Defensive Anchor & 1,470 & High clearances, interceptions, duels. Low attacking output \\
-Creative Playmaker & 807 & High pass completion, progressive passes, carries. Attacking midfielders \\
-Pressing Forward & 766 & High pressures, shots, and xG. High-energy forwards and pressing wingers \\
-Creative Winger & 463 & High dribbles, carries, shots. Direct wide attackers \\
-Goalkeeper & 290 & Assigned by position. Excluded from K-Means \\
-\bottomrule
-\end{tabular}
-\end{table}
+```{python}
+#| output: asis
+#| echo: false
+print(archetype_table_tex())
 ```
 
 ## RQ2: Club vs National Consistency Scoring {#sec-rq2-methods}
 
 This section describes the within-context scoring model for RQ2. Findings and dashboard outputs are in \hyperref[sec-rq2-results]{RQ2: Club vs National Consistency}.
 
-For **489 dual-context players** with $\geq 270$ minutes in both club and national football, we standardise each of the 13 features **within context**. Club z-scores compare a player only to other club players; national z-scores compare only to national-team peers.
+For **`{python} m["n_dual_context_players"]` dual-context players** with $\geq 270$ minutes in both club and national football, we standardise each of the 13 features **within context**. Club z-scores compare a player only to other club players. National z-scores compare only to national-team peers.
 
 **Z-score standardisation (within each context):**
 
@@ -149,25 +156,10 @@ See also \hyperref[sec-rq1-methods]{RQ1: Player Archetype Clustering}. Chi-squar
 
 League effects are secondary but visible (\autoref{tbl-rq1-competition}). Serie A has the largest Low Activity share among the top five. Bundesliga and La Liga show relatively more Pressing Forwards. The same position can shift $\pm 5$–15 percentage points in archetype share between leagues. Dashboard users should filter by position before comparing leagues.
 
-```{=latex}
-\begin{table}[htbp]
-\caption{Outfield archetype counts by top-five European league (goalkeepers excluded). Defensive Anchor and Low Activity lead in every league, with Serie A showing the highest Low Activity share.}
-\label{tbl-rq1-competition}
-\centering
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.05}
-\begin{tabular}{@{}l l l >{\raggedright\arraybackslash}p{0.36\linewidth}@{}}
-\toprule
-Competition & Largest (seasons) & Second largest & Notable pattern \\
-\midrule
-La Liga & Defensive Anchor (304) & Low Activity (167) & Highest volume. Anchors lead \\
-Serie A & Low Activity (240) & Defensive Anchor (138) & Most Low Activity share among top five \\
-Ligue 1 & Defensive Anchor (175) & Low Activity (148) & Similar anchor vs low-activity mix \\
-Premier League & Defensive Anchor (169) & Low Activity (163) & Near-even top two clusters \\
-Bundesliga & Defensive Anchor (145) & Low Activity (121) & Smallest top-five sample. More Pressing Forward (83) \\
-\bottomrule
-\end{tabular}
-\end{table}
+```{python}
+#| output: asis
+#| echo: false
+print(competition_table_tex())
 ```
 
 ::: {#fig-messi-archetypes fig-pos="H"}
@@ -179,18 +171,15 @@ Messi player-seasons in the cluster explorer. Most are Creative Winger, but Copa
 
 ### RQ2: Club vs National Consistency {#sec-rq2-results}
 
-See also \hyperref[sec-rq2-methods]{RQ2: Club vs National Consistency Scoring}. Of 489 dual-context players, **32% are Elite** (above peer median in both contexts), **32% Underperformer**, and **36% single-context specialists** (18% club-only, 18% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
+See also \hyperref[sec-rq2-methods]{RQ2: Club vs National Consistency Scoring}. Of `{python} m["n_dual_context_players"]` dual-context players, **`{python} pct_round(m, "pct_elite")`% are Elite** (above peer median in both contexts), **`{python} pct_round(m, "pct_underperformer")`% Underperformer**, and **`{python} pct_round(m, "pct_single_context_specialist")`% single-context specialists** (`{python} pct_round(m, "pct_club_specialist")`% club-only, `{python} pct_round(m, "pct_international_specialist")`% national-only, see \autoref{tbl-quadrant-dist}). About two thirds of the cohort rank above or below peer median in **both** settings rather than in only one. Comparing Club Specialist vs International Specialist players, the largest gaps are in **passes into the attacking third per 90**, **interceptions per 90**, and **carries into the final third per 90**. System and role differences, not raw goal output, drive the split.
 
 A stable profile is not the same as a strong one. Many players look similar across contexts while ranking below average in both. Defenders show slightly higher mean consistency than forwards (\hyperref[tbl-appendix-docs]{Notebook 08}), suggesting attacking roles shift more between club tactics and national setups. The dashboard's consistency score and context-shift index measure different things (see supplementary documentation, \autoref{tbl-appendix-docs}).
 
-| Quadrant | Players | Share |
-|----------|---------|-------|
-| Elite | 157 | 32.1% |
-| Underperformer | 156 | 31.9% |
-| Club Specialist | 88 | 18.0% |
-| International Specialist | 88 | 18.0% |
-
-: RQ2 quadrant counts for 489 dual-context players with at least 270 minutes in both settings. Elite and Underperformer each account for about one third of the cohort. {#tbl-quadrant-dist}
+```{python}
+#| output: asis
+#| echo: false
+print(quadrant_table_md())
+```
 
 ::: {#fig-gnabry-quadrant fig-pos="H"}
 
@@ -225,7 +214,7 @@ The **chatbot** covers ad-hoc questions outside fixed dashboard charts, returnin
 
 The original problem was that Trilemma Foundation analysts had no scalable way to extract tactical insights from StatsBomb event data without writing complex SQL. This project addressed that problem by delivering three research products on a single automated pipeline.
 
-**RQ1** established that five tactical archetypes emerge from 5,759 player-seasons across 16 competitions, with position being the dominant driver of cluster assignment. Trilemma can now use archetype labels to profile scouting targets and assess squad balance before a transfer window, replacing ad-hoc SQL with a filterable Looker dashboard. **RQ2** found that 36% of dual-context players specialize in one setting (club or national) while 32% perform above peer median in both, providing a data-grounded tool for national team selection decisions. **RQ3** demonstrated that a Groq LLM reliably translates plain English questions into accurate BigQuery SQL, removing the technical barrier for non-technical analysts entirely.
+**RQ1** established that five tactical archetypes emerge from `{python} fmt_int(m["n_player_seasons"])` player-seasons across `{python} m["n_competitions"]` competitions, with position being the dominant driver of cluster assignment. Trilemma can now use archetype labels to profile scouting targets and assess squad balance before a transfer window, replacing ad-hoc SQL with a filterable Looker dashboard. **RQ2** found that `{python} pct_round(m, "pct_single_context_specialist")`% of dual-context players specialize in one setting (club or national) while `{python} pct_round(m, "pct_elite")`% perform above peer median in both, providing a data-grounded tool for national team selection decisions. **RQ3** demonstrated that a Groq LLM reliably translates plain English questions into accurate BigQuery SQL, removing the technical barrier for non-technical analysts entirely.
 
 The product addresses the core needs described in the project brief. Remaining limitations are men's-only data scope, uneven StatsBomb open-tier coverage, and the chatbot's single-step reasoning constraint. The models address analytical questions within a defined scope: archetypes profile playing style, not transfer value or injury risk; consistency scores inform national-team context, not squad chemistry or fitness. These boundaries are inherent to the available data, not failures of the models themselves.
 
